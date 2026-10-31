@@ -22,3 +22,7 @@ From the **emotion tag** (`happy`, `shock`, `tired`...) and from **what the word
 Override any line with `"pace"` (1 = normal), `"tone"` (semitones) or `"energy"` (0 to 1).
 The full table of emotions is in `voices/human_tts.py` (`EMO`).
 Each person also has their own base pitch and speed so they sound different.
+
+## Clear words come first (self-check)
+Chatterbox can slur or rush words when the emotion is pushed too high. So after each sentence it **listens to itself** (speech recognition, `faster-whisper`): if the words are not recognised, or are spoken too fast (over about 3.9 words a second), it retries calmer, up to 4 times. A pace governor also keeps the final speed under about 3.3 words a second. Emotion is carried mostly by pace, pitch and sentence energy; the emotion level itself is capped (0.75).
+This check hears whether words are CLEAR, not whether the voice sounds nice. Always have Dalia listen to a sample before a long video.
