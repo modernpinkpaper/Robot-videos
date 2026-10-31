@@ -1,8 +1,8 @@
 # Format: reaction video
-A character (or two) watches something and reacts, 30 to 45 seconds.
-- Setup: a big screen, TV or laptop prop with the "thing" shown on it (a text card, a quote, a fake post, a clip made from simple shapes). The character sits (`sit: true`) or stands in front.
-- Structure: SHOW the thing (2 to 4 seconds) -> REACT (face + body + a line) -> SHOW the next -> REACT bigger -> last reaction is the biggest or the funniest.
-- Split screen works well: top = the thing, bottom = the reaction (`renderSplit` in camera/camera.js).
-- Emotions to rotate: shock, laugh, worried, smug, deadpan. Hops and jaw drops on the big beats.
-- Camera: close-up on the face for every reaction, a quick zoomLens when they realize something, a wide with both characters to end.
-- Keep what they watch original. Do not copy a real person's video or post.
+A character in the TOP RIGHT watches a clip in the BOTTOM LEFT and reacts, with captions between them (like a real reaction video).
+Use the tool: `formats/reaction/` (read its README.md). Do not rebuild it.
+- The clip can be a REAL video file or an animated reenactment made with our characters and camera.
+- Structure: clip plays -> pause on a moment -> reactor talks (captions, one *highlighted* word) -> clip continues -> a silent laugh or gasp -> a final line.
+- 30 to 60 seconds. Rotate emotions: shock, laugh, worried, smug, deadpan. Last reaction is the biggest or funniest.
+- Human reactors use Chatterbox voices with pace, emotion and tone set per line (voices/README.md).
+- Real clips belong to someone else: use clips Dalia owns or has permission for, or short clips with real commentary.

@@ -1,4 +1,6 @@
 # Voices
+**Human voices use Chatterbox (natural, with pace, emotion and tone adjusted per line). Robots use Piper.** Always go through `voices/speak.py`. See `voices/README.md`.
+
 All voices are free offline Piper voices (downloaded by `formats/podcast/setup.sh`). The table is in `formats/podcast/pod/voices_cfg.py` as `NAME: (voice, pitch, speed)`. These are computer voices, not real people.
 
 | Character | Sounds like |

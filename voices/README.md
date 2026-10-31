@@ -1,0 +1,24 @@
+# Voices
+
+- **Humans** (DALIA, AMINA, MARCUS, LILY, SOFIA, GRANDPA, KID_BOY, KID_GIRL, NARRATOR) use **Chatterbox**: natural speech with real breaths and rhythm.
+- **Robots** use **Piper**: they are meant to sound like robots.
+- Always call `voices/speak.py` (`synth_lines`). It picks the engine for each character.
+
+## Setup (once)
+`./voices/setup_chatterbox.sh` then `export CHATTERBOX_PY=".../voices/cbenv/bin/python"`. The model is about 3 GB. On a computer without a graphics card it runs about 10 times slower than real time (a 3 second line takes about 30 seconds). Plan for that when making longer videos.
+`python3 voices/make_refs.py` makes the reference clip that each human's voice is copied from (`voices/refs/`). To give a character a different or real voice, replace its file with a clean 10 to 20 second recording (only with that person's permission).
+
+## Pace, emotion and tone are chosen for every line
+From the **emotion tag** (`happy`, `shock`, `tired`...) and from **what the words say**:
+| What the line has | What changes |
+|---|---|
+| `!` | more energy and a little higher |
+| `?` | brighter ending, slightly slower |
+| `...` | slower and softer |
+| a WORD in CAPS | extra emphasis |
+| very short line | a touch slower (lets it land) |
+| long line | a touch faster |
+| commas and full stops | natural pauses between sentences |
+Override any line with `"pace"` (1 = normal), `"tone"` (semitones) or `"energy"` (0 to 1).
+The full table of emotions is in `voices/human_tts.py` (`EMO`).
+Each person also has their own base pitch and speed so they sound different.
