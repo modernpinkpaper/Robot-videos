@@ -1,7 +1,7 @@
 # The menu: pick what you want, say it in plain words
 
 Dalia can ask for a video by mixing choices from four lists. Claude reads this menu, follows the recipe files, and builds it.
-**Do not ask her questions you can answer yourself. If she leaves a choice out, use the default and say which one you chose.**
+**First read `BRIEF.md` (same folder): it lists the 8 things you must know before building, and how to ask Dalia for only the ones that are missing. Do not ask for anything she already said, or for things that are fixed (camera, size).**
 
 ## 1. CAST  (who is on screen)  -> `cast/`
 | Say | Meaning | File |
@@ -42,6 +42,7 @@ Each character has a voice. She can say "deeper", "kid voices", "make the cowork
 - "Story, humans and pets, a day when everything goes right." -> `humans` + `pets` + `story`.
 
 ## Steps every time
+-1. Run the brief (`BRIEF.md`): confirm the 8 required things, save them as `videos/<name>/BRIEF.md`.
 0. Open `examples/INDEX.md`: find the reference video, camera reel and voice samples for the choices, and match them.
 1. Parse her request into cast + format + voices + topic (use defaults for what she did not say).
 2. Read the cast file, the format file, `characters/STYLE.md`, `camera/CAMERA.md`.

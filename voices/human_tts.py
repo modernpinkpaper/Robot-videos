@@ -2,7 +2,7 @@
 # Run with the Chatterbox Python (see voices/setup_chatterbox.sh):
 #   $CHATTERBOX_PY voices/human_tts.py lines.json
 # lines.json = [ { "who": "DALIA", "text": "Wait, she did WHAT?", "emo": "shock", "out": "/path/l00.wav" }, ... ]
-# Optional per line: "pace": 0.9..1.2 (1 = normal), "tone": -2..+2 (semitones, + = brighter), "energy": 0..1 (extra emotion)
+# Optional per line: "voice": use another character's voice (mix and match, e.g. THEO speaking with MARCUS's voice); "pace": 0.9..1.2 (1 = normal), "tone": -2..+2 (semitones, + = brighter), "energy": 0..1 (extra emotion)
 #
 # Every line gets its own pace, emotion and tone chosen from (a) the emotion tag and (b) what the words say:
 #   !  more energy      ?  brighter, slightly slower      ...  slower, softer      ALL CAPS words  emphasis
@@ -39,6 +39,17 @@ PEOPLE = {
     'KID_BOY':  dict(ref='kid_boy',  pitch=3.5,  speed=1.06),
     'KID_GIRL': dict(ref='kid_girl', pitch=4.0,  speed=1.06),
     'NARRATOR': dict(ref='narrator', pitch=-0.5, speed=0.96),
+    # EMOTIONAL ROBOTS characters (characters/expressive). Each has its own reference clip (made by make_refs.py) plus a base pitch and pace.
+    'MARA':     dict(ref='mara',     pitch=0.0,  speed=1.00),
+    'THEO':     dict(ref='theo',     pitch=-0.5, speed=1.00),
+    'PRIYA':    dict(ref='priya',    pitch=0.5,  speed=1.02),
+    'JUNE':     dict(ref='june',     pitch=0.0,  speed=0.92),
+    'KAI':      dict(ref='kai',      pitch=3.0,  speed=1.04),
+    'GUS':      dict(ref='gus',      pitch=-1.5, speed=0.92),
+    'ZOE':      dict(ref='zoe',      pitch=0.5,  speed=1.04),
+    'FINN':     dict(ref='finn',     pitch=0.5,  speed=1.03),
+    'HANA':     dict(ref='hana',     pitch=0.0,  speed=0.98),
+    'NINA':     dict(ref='nina',     pitch=3.5,  speed=1.04),
 }
 HUMANS = set(PEOPLE)
 
@@ -98,7 +109,7 @@ def main(path):
     dev = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = ChatterboxTTS.from_pretrained(device=dev); sr = model.sr
     for row in json.load(open(path)):
-        who = row['who'].upper(); st = style_for(who, row['text'], row.get('emo', 'neutral'), row.get('pace'), row.get('tone'), row.get('energy'))
+        who = row.get('voice', row['who']).upper(); st = style_for(who, row['text'], row.get('emo', 'neutral'), row.get('pace'), row.get('tone'), row.get('energy'))
         parts = []; rates = []
         for sent, pause in pieces(row['text']):
             e = st['exag'] + (0.02 if sent.endswith('!') else 0)

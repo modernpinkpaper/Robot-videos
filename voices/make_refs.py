@@ -20,3 +20,10 @@ for who in ['DALIA', 'AMINA', 'MARCUS', 'LILY', 'SOFIA', 'GRANDPA', 'KID_BOY', '
     sr = v.config.sample_rate
     subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-af', f'asetrate={int(sr*pitch)},aresample=24000,atempo={1/pitch:.4f},highpass=f=90,loudnorm=I=-20:TP=-2', '-ar', '24000', '-ac', '1', f'{HERE}/refs/{who.lower()}.wav'], check=True)
     os.remove(raw); print('ref', who)
+
+# ---- Voices for the EMOTIONAL ROBOTS characters: each one starts from a base voice, shifted in pitch so they all sound different.
+ALIASES = {'mara': ('sofia', 0), 'theo': ('marcus', 0), 'priya': ('lily', 0), 'june': ('grandpa', 4), 'kai': ('kid_boy', 0), 'gus': ('grandpa', 0),
+           'zoe': ('lily', 2.5), 'finn': ('marcus', 3), 'hana': ('sofia', 1.5), 'nina': ('kid_girl', 0)}
+for name, (base, st) in ALIASES.items():
+    pf = 2 ** (st / 12.0)
+    subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', f'{HERE}/refs/{base}.wav', '-af', f'asetrate={int(24000*pf)},aresample=24000,atempo={1/pf:.4f}', '-ar', '24000', '-ac', '1', f'{HERE}/refs/{name}.wav'], check=True); print('ref', name.upper(), '(from', base + ')')

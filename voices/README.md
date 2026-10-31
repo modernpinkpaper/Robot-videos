@@ -1,6 +1,6 @@
 # Voices
 
-- **Humans** (DALIA, AMINA, MARCUS, LILY, SOFIA, GRANDPA, KID_BOY, KID_GIRL, NARRATOR) use **Chatterbox**: natural speech with real breaths and rhythm.
+- **Humans** (DALIA, AMINA, MARCUS, LILY, SOFIA, GRANDPA, KID_BOY, KID_GIRL, NARRATOR, and the Emotional Robots characters MARA, THEO, PRIYA, JUNE, KAI, GUS, ZOE, FINN, HANA, NINA) use **Chatterbox**: natural speech with real breaths and rhythm.
 - **Robots** use **Piper**: they are meant to sound like robots.
 - Always call `voices/speak.py` (`synth_lines`). It picks the engine for each character.
 
@@ -26,3 +26,8 @@ Each person also has their own base pitch and speed so they sound different.
 ## Clear words come first (self-check)
 Chatterbox can slur or rush words when the emotion is pushed too high. So after each sentence it **listens to itself** (speech recognition, `faster-whisper`): if the words are not recognised, or are spoken too fast (over about 3.9 words a second), it retries calmer, up to 4 times. A pace governor also keeps the final speed under about 3.3 words a second. Emotion is carried mostly by pace, pitch and sentence energy; the emotion level itself is capped (0.75).
 This check hears whether words are CLEAR, not whether the voice sounds nice. Always have Dalia listen to a sample before a long video.
+
+## Mix and match (any character, any voice)
+A line has a `who` (the character on screen) and may have a `voice` (whose voice to use). Without `voice`, the character uses its own.
+`{"who": "THEO", "voice": "AMINA", "text": "...", "emo": "happy", "out": "l00.wav"}` -> Theo speaks with Amina's voice.
+So the Emotional Robots, the cute people and the robots can all share the same voices. Samples of every voice: `examples/voices/`.

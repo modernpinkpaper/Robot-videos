@@ -15,6 +15,10 @@ All voices are free offline Piper voices (downloaded by `formats/podcast/setup.s
 | NARRATOR | steady storyteller |
 | MICA, HOOKY, CHARGEY, DRAFTY, LISTER, LOGBOT, LEFTY, KRAFT, DUSTY, DYMO, STATUS | the robot cast |
 
+## Emotional Robots characters
+MARA (calm woman), THEO (deep friendly man), PRIYA (bright young woman), JUNE (slow warm older woman), KAI (boy), GUS (slow deep older man), ZOE (bubbly young woman), FINN (lighter young man), HANA (soft gentle woman), NINA (little girl). DALIA and AMINA are the same as above.
+**Mix and match:** put `"voice": "NAME"` on a line to use another voice for that character.
+
 ## Changing voices
 She can say "deeper", "higher", "grumpy", "slower", "excited". Change the pitch and speed numbers in a copy of the voice entry for that video (pitch below 1 = deeper, above 1 = higher; speed below 1 = faster). Do not edit the shared table for a one-time change: override it inside the video's own plan.
 Emotion goes in the line: `(who, text, emotion, gap)`. The face and body follow the emotion; the voice pace follows the speed number.

@@ -73,5 +73,5 @@ node characters/expressive/make_previews.js video     # the motion clip (slow)
 
 ## Next steps (after Dalia approves)
 1. Pick which characters to keep, change any look Dalia does not like, and add more.
-2. Add voices and lip sync (`talk`) using the piper pipeline.
+2. Voices: DONE. Every character has a Chatterbox voice (`voices/README.md`); lip sync (`talk`) comes from the voice loudness.
 3. Add a "reaction" example video and mark it in `examples/INDEX.md`.
