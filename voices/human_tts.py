@@ -55,7 +55,7 @@ def style_for(who, text, emo='neutral', pace=None, tone=None, energy=None):
     elif n > 120: s['speed'] += 0.03
     if q: s['speed'] -= 0.02
     if energy is not None: s['exag'] = 0.3 + 0.7 * energy
-    s['exag'] = max(0.25, min(1.2, s['exag'])); s['cfg'] = max(0.2, min(0.8, s['cfg']))
+    s['exag'] = max(0.25, min(0.95, s['exag']))   # above about 1.0 the model can ramble; s['cfg'] = max(0.2, min(0.8, s['cfg']))
     s['speed'] = (s['speed'] if pace is None else pace) * P['speed']
     s['pitch'] = s['pitch'] + P['pitch'] + (tone or 0)
     s['ref'] = os.path.join(REFS, P['ref'] + '.wav')
@@ -85,8 +85,15 @@ def main(path):
         parts = []
         for sent, pause in pieces(row['text']):
             e = st['exag'] + (0.04 if sent.endswith('!') else 0) + (0.02 if sent.endswith('?') else 0)
-            wav = model.generate(soften_caps(sent), audio_prompt_path=st['ref'], exaggeration=min(1.2, e), cfg_weight=st['cfg'])
-            parts.append(wav.squeeze(0)); parts.append(torch.zeros(int(sr * pause)))
+            n_words = max(1, len(sent.split())); max_dur = 1.2 + 0.7 * n_words          # a sentence can never take longer than this
+            cfg = st['cfg']
+            for attempt in range(4):                                                        # the model sometimes rambles: retry calmer, then cut
+                wav = model.generate(soften_caps(sent), audio_prompt_path=st['ref'], exaggeration=min(0.95, e), cfg_weight=cfg).squeeze(0)
+                if wav.shape[0] / sr <= max_dur: break
+                print(f'  retry ({wav.shape[0] / sr:.1f}s for {n_words} words)', flush=True); e = max(0.3, e - 0.15); cfg = min(0.8, cfg + 0.1)
+            else:
+                wav = wav[:int(sr * max_dur)]; n = int(sr * 0.12); wav[-n:] = wav[-n:] * torch.linspace(1, 0, n)
+            parts.append(wav); parts.append(torch.zeros(int(sr * pause)))
         audio = torch.cat(parts[:-1]).unsqueeze(0)           # no pause after the last sentence
         raw = tempfile.mktemp(suffix='.wav'); ta.save(raw, audio, sr)
         # pace (tempo) and tone (pitch) without changing the other: shift pitch by resampling, then correct the tempo

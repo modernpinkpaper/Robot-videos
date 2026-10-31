@@ -26,6 +26,9 @@ Same tool for both.
 Tools: ffmpeg + numpy + Pillow (video and audio), the same three.js characters rendered with a transparent background (`reactor.html`), Piper/Chatterbox voices (`voices/speak.py`). No extra video library is needed; MoviePy would also work, but ffmpeg is faster here.
 Layout (576x1024): clip window bottom left (max 300x420, rounded corners, white border), reactor top right, captions in the middle band, pastel background.
 
+## The character has a full body (legs too)
+The reactor sits at a little desk, so the frame shows face, shoulders and chest only. The legs are hidden behind the desk. Never leave a torso floating in empty space with its bottom edge visible. Change the desk with `"desk": {"top": 0xf6e6f2, "front": 0xd69bd0, "y": 2.5}` in `reaction.json` or the framing with `"frame"` in script.json.
+
 ## Making an animated clip to react to
 Use the story or skit format with the camera in `camera/`, render it to an mp4, and use that as `source`.
 

@@ -21,9 +21,13 @@ const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-6, 14, 
 const pk = new THREE.PointLight(0xff8fc8, 26, 40, 2); pk.position.set(-9, 8, 6); scene.add(pk); const bl = new THREE.PointLight(0x8fb8ff, 26, 40, 2); bl.position.set(9, 8, 6); scene.add(bl);
 const kit = createRobotKit(THREE, RoundedBoxGeometry);
 const who = (D.reactor.who || 'dalia'); const P = kit.PEOPLE.find(p => p.name === who.toLowerCase());
-const bot = P ? kit.mkHuman(Object.assign({}, P, { parent: scene, legs: false })) : kit.mkBot(who.toUpperCase(), { parent: scene, legs: false }); bot.idx = 3;
+const bot = P ? kit.mkHuman(Object.assign({}, P, { parent: scene })) : kit.mkBot(who.toUpperCase(), { parent: scene }); bot.idx = 3;
+// The reactor sits at a little desk: it hides the legs (the character still has a full body) and avoids a floating torso.
+{ const bx = kit.box, DK = D.desk || {}, top = DK.top || 0xf6e6f2, front = DK.front || 0xd69bd0, y = DK.y || 2.5;
+  bx(scene, 10, 0.28, 2.6, top, 0, y, 1.25, { round: 0.1 }); bx(scene, 9.6, y - 0.1, 0.3, front, 0, (y - 0.1) / 2, 2.45, { round: 0.1 }); bx(scene, 9.4, 0.14, 0.1, 0xff8fc8, 0, y - 0.45, 2.64, { noShadow: true });
+  kit.mkProp('mug', { parent: scene, x: 2.6, y: y + 0.14, z: 1.6, scale: 0.9 }); kit.mkProp('laptop', { parent: scene, x: -2.4, y: y + 0.14, z: 1.5, ry: 0.5, scale: 1.0 }); }
 // Framing: head and shoulders large, pushed to the top right of the 9:16 frame (set in work/reaction.json "frame" to adjust)
-const F = Object.assign({ pos: [0, 5.4, 22], look: [0, 4.4, 0], fov: 30, offx: -100, offy: 10 }, D.frame || {});
+const F = Object.assign({ pos: [0, 5.6, 14], look: [0, 3.6, 0], fov: 30, offx: -120, offy: 90 }, D.frame || {});
 camera.fov = F.fov; camera.position.set(...F.pos); camera.lookAt(...F.look); camera.setViewOffset(W, H, F.offx, F.offy, W, H); camera.updateProjectionMatrix();
 const lerp = (a, b, t) => a + (b - a) * t, clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), sm = t => { t = clamp(t); return t * t * (3 - 2 * t); };
 const cap = document.getElementById('cap'), capt = document.getElementById('capt');
