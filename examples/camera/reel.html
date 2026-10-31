@@ -1,0 +1,64 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Camera reel</title>
+<style>html,body{margin:0;background:#1d1730}#wrap{position:relative;width:576px;height:1024px}#lab{position:absolute;left:0;right:0;bottom:70px;text-align:center;font:bold 34px Liberation Sans,sans-serif;color:#fff;text-shadow:0 2px 8px #000}#lab small{display:block;font-size:20px;font-weight:normal;opacity:.9;margin-top:4px}#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}</style></head><body>
+<div id="wrap"><div id="lab"></div><div id="flash"></div></div>
+<script type="importmap">{"imports":{"three":"../../characters/three.module.js"}}</script>
+<script type="module">
+// CAMERA REEL: every shot in camera/shots.js, shown on the same stage. Each shot is labeled so Dalia can pick by name.
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
+import { createRobotKit } from '../../characters/robots.js';
+import { evalCam, applyCam, shotAt, whipPan, renderSplit, smooth } from '../../camera/camera.js';
+import { SHOTS } from '../../camera/shots.js';
+const W = 576, H = 1024, wrap = document.getElementById('wrap');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(1); renderer.setSize(W, H);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+wrap.prepend(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xc9dcf5); scene.fog = new THREE.Fog(0xdbe8fa, 90, 260);
+const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 400);
+scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0));
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-8, 22, 24); sun.target.position.set(0, 4, 8); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+{ const c = sun.shadow.camera; c.left = -30; c.right = 30; c.top = 30; c.bottom = -20; c.near = 1; c.far = 120; } sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; scene.add(sun, sun.target);
+const pk = new THREE.PointLight(0xff8fc8, 26, 60, 2); pk.position.set(-12, 12, 14); scene.add(pk); const bl = new THREE.PointLight(0x8fb8ff, 26, 60, 2); bl.position.set(12, 12, 14); scene.add(bl);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 300), new THREE.MeshStandardMaterial({ color: 0xcfe9c8, roughness: 0.9 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const kit = createRobotKit(THREE, RoundedBoxGeometry);
+const cast = [kit.mkHuman(Object.assign({}, kit.PEOPLE[0], { parent: scene, x: -5, z: 9, ry: 0.5 })), kit.mkBot('MICA', { parent: scene, x: 0, z: 9 }), kit.mkHuman(Object.assign({}, kit.PEOPLE[2], { parent: scene, x: 5, z: 9, ry: -0.5 }))];
+cast.forEach((b, i) => { b.idx = i; });
+kit.mkProp('tree', { parent: scene, x: -14, z: 2, scale: 2 }); kit.mkProp('tree', { parent: scene, x: 15, z: 0, scale: 2.2 }); kit.mkProp('house', { parent: scene, x: 0, z: -10, scale: 2.2 }); kit.mkProp('bench', { parent: scene, x: -9, z: 13, ry: 0.3, scale: 1.2 });
+kit.mkProp('balloon', { parent: scene, x: 9, z: 12 }); kit.mkProp('gift', { parent: scene, x: 3, z: 13 });
+const pets = [kit.mkPet('dog', { parent: scene, x: -2.5, z: 12.5, ry: 0.3 }), kit.mkPet('cat', { parent: scene, x: 7.5, z: 11, ry: -0.4 })];
+const head = [0, 5.2, 9];
+// [shot name, shot, seconds, what it is good for]
+const REEL = [
+  ['aerial', SHOTS.aerial([0, 0, 9]), 3.2, 'Opening: swoop down into the scene'],
+  ['wide', SHOTS.wide([0, 5, 9], 36), 2.6, 'Show the whole scene; with handheld shake'],
+  ['pushIn', SHOTS.pushIn([-5, 5.2, 9], 24, 15), 2.8, 'Slow push toward a face: build feeling'],
+  ['closeUp', SHOTS.closeUp([0, 5.2, 9], 17), 2.4, 'Reaction or punchline close-up'],
+  ['zoomLens', SHOTS.zoomLens([5, 5.2, 9], 20, 17), 2.6, 'Lens zoom: a realization'],
+  ['lowAngle', SHOTS.lowAngle([0, 5.2, 9], 16), 2.8, 'Hero angle looking up'],
+  ['orbit', SHOTS.orbit([0, 5, 9], 26, 20, -55, 25), 3.2, 'Circle around the action'],
+  ['dolly', SHOTS.dolly([-22, 6, 28], [8, 6.5, 26], [-6, 5, 9], [4, 5.4, 9]), 3.0, 'Sideways tracking move'],
+  ['pan', SHOTS.pan([0, 6, 24], [-6, 5.4, 9], [6, 5.4, 9]), 3.0, 'Pan across a crowd or row of people'],
+  ['dollyZoom', SHOTS.dollyZoom([0, 5.2, 9], 17, 43), 3.0, 'Vertigo effect: ONE big moment per video'],
+  ['crane', SHOTS.crane([0, 5.2, 9], 15, 33, 24), 3.2, 'Rise and reveal: great ending'],
+  ['pullBack', SHOTS.pullBack([0, 5.2, 9], 24, 62), 3.2, 'Close to wide: the final shot'],
+];
+const SPLIT = 3.4, T0 = 0; let tt = 0; const starts = REEL.map(r => { const s = tt; tt += r[2]; return s; }); const TOTAL = tt + SPLIT;
+const talk = t => cast.forEach((b, i) => kit.animateBot(b, t, { speaking: Math.floor(t * 0.7) % 3 === i, amp: 0.5 + 0.5 * Math.sin(t * 9), emo: ['happy', 'smug', 'sweet'][i], wave: false }));
+window.TOTAL = TOTAL;
+window.renderFrame = t => {
+  t = Math.min(t, TOTAL - 1e-3); talk(t); pets.forEach(p => kit.animatePet(p, t, { happy: true }));
+  const lab = document.getElementById('lab'), flash = document.getElementById('flash');
+  if (t < tt) {
+    const i = starts.findIndex((s, k) => t >= s && (k === starts.length - 1 || t < starts[k + 1])), r = REEL[i], u = (t - starts[i]) / r[2];
+    const S = { end: tt, shots: [{ name: 'x', t: starts[i] }] }; const sh = shotAt({ end: starts[i] + r[2], shots: [{ name: 'x', t: starts[i] }] }, t);
+    const w = whipPan(t, starts.slice(1)); applyCam(camera, evalCam(r[1], sh.u, t, starts[i], i === 0), W / H, w.yaw);
+    renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H); renderer.render(scene, camera); renderer.domElement.style.filter = w.blur > 0.3 ? `blur(${w.blur.toFixed(1)}px)` : 'none'; flash.style.opacity = w.flash.toFixed(3);
+    lab.innerHTML = `${i + 1}. ${r[0]}<small>${r[3]}</small>`;
+  } else {
+    const lt = t - tt, k = smooth(lt / 0.55); renderer.domElement.style.filter = 'none'; flash.style.opacity = 0;
+    renderSplit(renderer, W, H, k, (key, h) => { const c = key === 'top' ? SHOTS.closeUp([-5, 5.2, 9], 17) : SHOTS.closeUp([5, 5.2, 9], 17); applyCam(camera, evalCam(c, Math.min(1, lt / SPLIT), t, tt, false), W / h); renderer.render(scene, camera); });
+    lab.innerHTML = `13. splitScreen<small>Phone calls and two places at once</small>`;
+  }
+};
+window.renderFrame(0); window.ready = true;
+</script></body></html>

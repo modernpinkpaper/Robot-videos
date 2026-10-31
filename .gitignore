@@ -7,3 +7,5 @@ formats/podcast/anim/ep*.json
 out_ep*.mp4
 node_modules/
 __pycache__/
+examples/camera/frames/
+examples/voices/_r.wav

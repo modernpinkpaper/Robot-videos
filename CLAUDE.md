@@ -1,6 +1,8 @@
 # Robot videos repo
 
-## FIRST: read `menu/START_HERE.md`
+## FIRST: read `menu/START_HERE.md`, then `examples/INDEX.md`
+Every format, camera move and voice has a REFERENCE in `examples/INDEX.md` (real videos, a camera reel, voice samples). Open the reference for each choice, read its source files, extract a few frames, and match it. Never guess how something should look or sound.
+
 Dalia picks a CAST (humans / robots / both / pets), a FORMAT (story / skit / talking to the camera / reaction / podcast / explainer) and voices in plain words.
 Example: "Make an animation using humans only in a skit style about a hard day at work with a coworker."
 Parse it, use defaults for anything she leaves out (say which), and follow the matching files in `menu/`. Do not ask her questions you can answer yourself.

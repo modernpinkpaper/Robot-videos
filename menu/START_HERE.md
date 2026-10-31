@@ -41,6 +41,7 @@ Each character has a voice. She can say "deeper", "kid voices", "make the cowork
 - "Story, humans and pets, a day when everything goes right." -> `humans` + `pets` + `story`.
 
 ## Steps every time
+0. Open `examples/INDEX.md`: find the reference video, camera reel and voice samples for the choices, and match them.
 1. Parse her request into cast + format + voices + topic (use defaults for what she did not say).
 2. Read the cast file, the format file, `characters/STYLE.md`, `camera/CAMERA.md`.
 3. Write the script as lines `(WHO, text, emotion, pause)` and a shot plan using the format file's shot recipe.
