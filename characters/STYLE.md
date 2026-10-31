@@ -34,3 +34,7 @@ Same toy look, so any story can have a full cast. See `people.html` for a showca
 
 ## Full bodies
 Every character (robots and humans) now has legs and shoes. Walk with `animateBot(c, t, { walk: true })`, sit with `{ sit: true }`. For a torso-only look behind a desk pass `{ legs: false }`.
+
+## Expressive characters (DRAFT, new)
+For reaction videos where the face must show real emotion (eyes, brows, nose, mouth, teeth), see `characters/EXPRESSIONS.md` and the pictures in `characters/expressive/preview/`.
+It is a separate system next to the robots. Do not use it for a video unless Dalia asks for it or approves it.
