@@ -5,7 +5,8 @@ Owner: Dalia (modern pink paper). Reply to her in **simple English**. She likes 
 ## Two separate pieces. Keep them separate.
 1. **The animation style = the characters.** Folder `characters/`. Read `characters/STYLE.md`.
    Use this for EVERY video she asks for, whatever the topic ("what if nobody lied", "a day in the life of...").
-   Reuse `characters/robots.js` and copy `characters/demo.html` as a starting page. Never redesign the
+   Reuse `characters/robots.js` and copy `characters/demo.html` (robots) or `characters/people.html` (humans, pets, props) as a starting page.
+   If she asks for cute humans, a variety of people, pets or props, use `mkHuman`, `PEOPLE`, `mkPet`, `mkProp` (see STYLE.md). Robots are optional; use people when the story is about people. Never redesign the
    robots or invent a new style. You are free to build any world, story, set and camera around them,
    in the same soft pastel toy look.
 2. **The podcast format.** Folder `formats/podcast/`. ONLY use this if she says "podcast" or "episode".
