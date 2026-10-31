@@ -48,8 +48,9 @@ def main(script_path, out_path):
     dur_src = probe(src, 'format=duration')
     if '--force' not in sys.argv:                                    # QUALITY GATE (tools/lint_dialogue.py): corny lines or reactions that do not fit stop the render
         sys.path.insert(0, ROOT + '/tools'); import lint_dialogue as LD
-        E, W = LD.lint_reaction(S, LD.clip_sentences_for(src), (S.get('end') or dur_src) - S.get('start', 0)); LD.report(E, W, 'quality gate')
-        if E: raise SystemExit('Fix the errors above (see formats/reaction/REACTOR_VOICE.md), then run again. (--force skips this check; do not.)'); s0 = S.get('start', 0); s1 = S.get('end') or dur_src
+        errs, warns = LD.lint_reaction(S, LD.clip_sentences_for(src), (S.get('end') or dur_src) - S.get('start', 0)); LD.report(errs, warns, 'quality gate')
+        if errs: raise SystemExit('Fix the errors above (see formats/reaction/REACTOR_VOICE.md), then run again. (--force skips this check; do not.)')
+    s0 = S.get('start', 0); s1 = S.get('end') or dur_src
     shutil.rmtree(WORK, ignore_errors=True); os.makedirs(WORK + '/frames'); os.makedirs(WORK + '/seg')
     beats = sorted(S['beats'], key=lambda b: b['at'])
     # ---- 1. the reactor's voice (humans: Chatterbox with pace, emotion and tone per line; robots: Piper)
