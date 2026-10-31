@@ -58,8 +58,9 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     const cv = document.createElement('canvas'); cv.width = cv.height = 128; const x = cv.getContext('2d'); x.fillStyle = c1; x.fillRect(0, 0, 128, 128); x.fillStyle = c2;
     if (type === 'stripes') for (let i = 0; i < 128; i += 32) x.fillRect(0, i, 128, 16);
     if (type === 'weave') { for (let i = 0; i < 128; i += 16) { x.fillRect(0, i, 128, 3); x.fillRect(i, 0, 3, 128); } }
+    if (type === 'ribs') for (let i = 0; i < 128; i += 8) x.fillRect(i, 0, 3, 128);
     if (type === 'dots') for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { x.beginPath(); x.arc(16 + i * 32 + (j % 2) * 16, 16 + j * 32, 7, 0, 7); x.fill(); }
-    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(type === 'stripes' ? 1 : 3, type === 'stripes' ? 4 : 3); return t;
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(type === 'stripes' ? 1 : type === 'ribs' ? 2 : 3, type === 'stripes' ? 4 : type === 'ribs' ? 1 : 3); return t;
   }
   // a flat rectangular glasses frame (rounded corners, hollow in the middle)
   function frameGeo(w, h, d) {
@@ -271,6 +272,9 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     { name: 'hana', tags: 'Soft round face · black bob with bangs · small eyes · coral top', bio: 'Quiet and observant. Her one raised eyebrow says it all.', skin: '#f3d0b0', hair: '#15121a', hairStyle: 'bangs', top: '#ff9b7a', bottom: '#4a4466', eye: '#2a1c14',
       build: { w: 0.95, h: 0.98, leg: 1.0, arm: 0.95 }, head: { rx: 1.46, ry: 1.24, rz: 1.2, n: 2.4 },
       look: { eyeScale: 0.92, eyeGap: 1.02, noseSize: 0.65, lipColor: '#c0485f', browThick: 0.85 } },
+    { name: 'dalia', tags: 'Long straight dark hair, slicked back · big wide-set brown eyes · bold thick arched brows · big warm smile · beauty mark · navy ribbed top', bio: 'Big smile, bold brows, and a sharp eye for everything.', skin: '#dcaa82', hair: '#2a1a16', hairStyle: 'long', top: '#27356b', pattern: { type: 'ribs', color2: '#33427d' }, bottom: '#2f2a45', eye: '#3a2118', browColor: '#1f1410',
+      build: { w: 0.98, h: 1.0, leg: 1.05, arm: 0.98 }, head: { rx: 1.42, ry: 1.33, rz: 1.18, n: 2.6 },
+      look: { lashes: 0.5, eyeScale: 1.1, eyeGap: 1.02, browThick: 1.45, noseSize: 1.12, lipColor: '#c4746f', mole: { x: -262, y: 262 } } },
     { name: 'amina', tags: 'Dark chocolate hijab draped down the front · cream cardigan with gold buttons · freckles · thick brows · long lashes · big smile', bio: 'Warm, bright-eyed, with a smile that lights up the room.', skin: '#e8bc98', hair: '#4a2a1e', hairStyle: 'hijab', hijabDrape: true, pin: '#fffaf0', top: '#efe6d2', pattern: { type: 'weave', color2: '#ddd0b4' }, buttons: '#e0b24a', bottom: '#3f3350', eye: '#3a2218', browColor: '#2a1c16',
       build: { w: 1.0, h: 1.0, arm: 0.98 }, head: { rx: 1.44, ry: 1.28, rz: 1.18, n: 2.6 },
       look: { lashes: 1, freckles: 0.9, eyeScale: 1.06, noseSize: 0.8, lipColor: '#c4677b', browThick: 1.2 } },

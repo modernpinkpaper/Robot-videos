@@ -190,6 +190,7 @@ export const LOOK = {
   mustache: null,                // { color, size, style: 'classic'|'handlebar' }
   beard: null,                   // { color, style: 'full'|'goatee'|'stubble' }
   lipColor: null,                // color of the mouth line (pink lips)
+  mole: null,                    // a small beauty mark: { x, y } offset from the middle of the face
 };
 const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); const r = clamp(((n >> 16) & 255) * f, 0, 255) | 0, g = clamp(((n >> 8) & 255) * f, 0, 255) | 0, b = clamp((n & 255) * f, 0, 255) | 0; return `rgb(${r},${g},${b})`; };
 export const CX = 512, CY = 420, EX = 182, RX = 122, RY = 128, MY = 665;
@@ -400,6 +401,7 @@ export function drawFace(x, p, opt = {}) {
   drawWrinkles(x, p, o);
   drawNose(x, p, o);
   drawFreckles(x, p, o);
+  if (o.mole) { x.fillStyle = shade(o.skin, 0.38); x.beginPath(); x.arc(CX + o.mole.x, CY + o.mole.y, 9, 0, 7); x.fill(); }
   const e0 = drawEye(x, p, 0, o), e1 = drawEye(x, p, 1, o);
   drawMustache(x, p, o);
   drawMouth(x, p, o);

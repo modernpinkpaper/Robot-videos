@@ -71,7 +71,7 @@ async function cast(only) {
   p.on('pageerror', e => console.log('pageerror:', e.message)); p.on('console', m => { if (m.type() === 'error') console.log('console:', m.text()); });
   await p.goto(URL + 'stage.html'); await p.waitForFunction(() => window.ready, null, { timeout: 120000 });
   const roster = await p.evaluate(() => window.roster());
-  const SIG = { mara: ['smirk', 'hips'], theo: ['happy', 'idle'], priya: ['smug', 'hips'], june: ['happy', 'crossed'], kai: ['excited', 'wave'], gus: ['annoyed', 'hips'], zoe: ['giggle', 'shrug'], finn: ['nervous smile', 'think'], hana: ['unimpressed', 'idle'], amina: ['big smile', 'idle'] };
+  const SIG = { mara: ['smirk', 'hips'], theo: ['happy', 'idle'], priya: ['smug', 'hips'], june: ['happy', 'crossed'], kai: ['excited', 'wave'], gus: ['annoyed', 'hips'], zoe: ['giggle', 'shrug'], finn: ['nervous smile', 'think'], hana: ['unimpressed', 'idle'], amina: ['big smile', 'idle'], dalia: ['big smile', 'hips'] };
   const SIX = ['happy', 'laugh', 'smirk', 'annoyed', 'shocked', 'sad'];
   const tiles = {};
   const tile = async (W, H, build, view, state) => { await p.setViewportSize({ width: W, height: H }); await p.evaluate(b => window.build(b), build); await p.evaluate(([W, H, v, s]) => window.draw(W, H, [v], 1, [s]), [W, H, view, state]); return (await p.screenshot({ clip: { x: 0, y: 0, width: W, height: H } })).toString('base64'); };
@@ -94,9 +94,9 @@ async function cast(only) {
     await q.screenshot({ path: path.join(OUT, `cast_${r.name}.png`), clip: { x: 0, y: 0, width: 1180, height: 1110 } }); await q.close(); console.log('saved cast_' + r.name + '.png');
   }
   if (!only) {   // lineup of everyone
-    const q = await br.newPage({ viewport: { width: 2400, height: 1500 } });
-    await q.setContent(`<body style="margin:0;background:#dde4f6;font-family:Arial,sans-serif;color:#3a2c4e"><div style="font:bold 48px Arial;padding:24px 30px">The cast (10 characters)</div><div style="display:grid;grid-template-columns:repeat(5,460px);gap:0 8px;padding:0 20px">${roster.map(r => `<div style="position:relative"><img style="display:block;width:460px" src="data:image/png;base64,${tiles[r.name].body}"><div style="position:absolute;left:0;right:0;bottom:12px;text-align:center;font:bold 36px Arial"><span style="background:#fff;border-radius:26px;padding:4px 22px">${r.name[0].toUpperCase() + r.name.slice(1)}</span></div></div>`).join('')}</div></body>`);
-    await q.screenshot({ path: path.join(OUT, '03_cast_all.png'), clip: { x: 0, y: 0, width: 2400, height: 1480 } }); console.log('saved 03_cast_all.png');
+    const q = await br.newPage({ viewport: { width: 2400, height: 2200 } });
+    await q.setContent(`<body style="margin:0;background:#dde4f6;font-family:Arial,sans-serif;color:#3a2c4e"><div style="font:bold 48px Arial;padding:24px 30px">The cast (${roster.length} characters)</div><div style="display:grid;grid-template-columns:repeat(5,460px);gap:0 8px;padding:0 20px">${roster.map(r => `<div style="position:relative"><img style="display:block;width:460px" src="data:image/png;base64,${tiles[r.name].body}"><div style="position:absolute;left:0;right:0;bottom:12px;text-align:center;font:bold 36px Arial"><span style="background:#fff;border-radius:26px;padding:4px 22px">${r.name[0].toUpperCase() + r.name.slice(1)}</span></div></div>`).join('')}</div></body>`);
+    await q.screenshot({ path: path.join(OUT, '03_cast_all.png'), clip: { x: 0, y: 0, width: 2400, height: 100 + 700 * Math.ceil(roster.length / 5) } }); console.log('saved 03_cast_all.png');
   }
   await br.close();
 }
