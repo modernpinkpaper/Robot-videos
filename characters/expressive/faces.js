@@ -1,4 +1,4 @@
-// EXPRESSIVE FACES (DRAFT, waiting for Dalia's approval).
+// EXPRESSIVE FACES (approved by Dalia: the "emotional robots" style).
 // A face is a small set of numbers. Every part of the face has its own numbers, so any character can mix parts:
 //   eyes (open, lower lid, lid slant, look direction, pupil size, shine, tears)
 //   brows (height, angle, arch, pull-in)  nose (scrunch, flare)

@@ -9,6 +9,9 @@ Parse it, use defaults for anything she leaves out (say which), and follow the m
 
 Owner: Dalia (modern pink paper). Reply to her in **simple English**. She likes "just do it".
 
+## Character styles. Keep them separate.
+There are 3 looks: the robots/people (piece 1), the podcast format (piece 2), and **EMOTIONAL ROBOTS** (piece 3, below). Dalia picks the look by name. If she says "emotional robots" (or "emotional robot style", "expressive characters"), read `menu/cast/emotional_robots.md` and use `characters/expressive/`. Otherwise use the default robots/people.
+
 ## Two separate pieces. Keep them separate.
 1. **The animation style = the characters.** Folder `characters/`. Read `characters/STYLE.md`.
    Use this for EVERY video she asks for, whatever the topic ("what if nobody lied", "a day in the life of...").
@@ -34,3 +37,6 @@ Never use a static or single fixed camera. Never invent a different camera syste
 - Voices: piper TTS pipeline is in `formats/podcast/pod/mk.py` (needs `formats/podcast/setup.sh`). Reuse it for any video that needs spoken lines.
 - Before sending a video: look at at least 4 frames, then say honestly what you checked and what you could not (you cannot hear audio).
 - Rendering is slow. Run it in the background and tell her.
+
+## 3. Emotional robots style (approved)
+Folder `characters/expressive/`. 12 named characters with real faces (eyes, brows, nose, mouth, teeth) and 50 facial expressions, made for reaction videos. Only use it when she asks for "emotional robots". Read `menu/cast/emotional_robots.md` and `characters/EXPRESSIONS.md`; look at the pictures in `characters/expressive/preview/` first. Do not edit the character files unless she asks; to change a look, change that character's entry in `ROSTER` (`body.js`). Dalia, Amina and Nina are based on her family: never show real names of family or kids on screen.

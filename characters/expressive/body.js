@@ -1,4 +1,4 @@
-// EXPRESSIVE CHARACTERS: full-body 3D people with the expressive face system (DRAFT, waiting for Dalia's approval).
+// EXPRESSIVE CHARACTERS: full-body 3D people with the expressive face system (approved by Dalia: the "emotional robots" style).
 // Same soft pastel toy look as robots.js, but with real eyes, brows, nose, mouth and teeth (see faces.js).
 //
 //   import { createExpressiveKit } from './body.js';

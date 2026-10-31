@@ -1,4 +1,5 @@
-# Expressive characters (DRAFT: waiting for Dalia to approve)
+# Emotional robots style (approved by Dalia)
+When Dalia says "emotional robots", this is the style. Quick recipe: `menu/cast/emotional_robots.md`.
 
 A second kind of character, made for REACTION videos. Same soft pastel toy look as the robots, but the face is real:
 big eyes with whites and pupils, eyelids, thick eyebrows, nose, cheeks, a mouth with teeth and tongue. Inspired by the "Claim Line" character (the one that rolls his eyes).

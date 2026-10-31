@@ -15,6 +15,11 @@ Status key: GOOD = Dalia picked it as the best example. DRAFT = a working exampl
 | Reaction | none yet | EMPTY | Make one (see `menu/formats/reaction.md`) |
 | Explainer | none yet | EMPTY | Make one (see `menu/formats/explainer.md`) |
 
+## 1b. CHARACTER STYLE references
+| Style | Reference | Status | What to copy |
+|---|---|---|---|
+| Emotional robots (real-face characters) | `characters/expressive/preview/` (`03_cast_all.png`, `cast_<name>.png`, `faces_*.png`, `05_motion_demo.mp4`) | GOOD (Dalia approved the look) | Faces, poses, motion. Recipe: `menu/cast/emotional_robots.md` |
+
 ## 2. CAMERA references
 Watch `examples/camera/camera_reel.mp4` (38s). It shows every shot on the same stage with its name on screen:
 1 aerial, 2 wide, 3 pushIn, 4 closeUp, 5 zoomLens, 6 lowAngle, 7 orbit, 8 dolly, 9 pan, 10 dollyZoom, 11 crane, 12 pullBack, 13 splitScreen (whip-pan between each).
