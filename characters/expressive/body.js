@@ -57,6 +57,7 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
   function patternTex(type, c1, c2) {
     const cv = document.createElement('canvas'); cv.width = cv.height = 128; const x = cv.getContext('2d'); x.fillStyle = c1; x.fillRect(0, 0, 128, 128); x.fillStyle = c2;
     if (type === 'stripes') for (let i = 0; i < 128; i += 32) x.fillRect(0, i, 128, 16);
+    if (type === 'weave') { for (let i = 0; i < 128; i += 16) { x.fillRect(0, i, 128, 3); x.fillRect(i, 0, 3, 128); } }
     if (type === 'dots') for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { x.beginPath(); x.arc(16 + i * 32 + (j % 2) * 16, 16 + j * 32, 7, 0, 7); x.fill(); }
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(type === 'stripes' ? 1 : 3, type === 'stripes' ? 4 : 3); return t;
   }
@@ -122,6 +123,9 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
       bodyG.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 24, 0.07, 6, false), new THREE.MeshBasicMaterial({ color: hexn(O.lanyard) })));
       const badge = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.62, 0.08, 3, 0.08), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 })); badge.position.set(0, y0 - 1.35, eggZ(0, y0 - 1.35, D) + 0.06); badge.rotation.x = -0.12; bodyG.add(badge);
     }
+    if (O.buttons) {   // a row of buttons down the middle of the front
+      for (let i = 0; i < 4; i++) { const y = topY - 1.25 - i * 0.62 * B.h; const bt = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), new THREE.MeshStandardMaterial({ color: hexn(O.buttons), roughness: 0.3, metalness: 0.5 })); bt.scale.z = 0.6; bt.position.set(0, y, eggZ(0, y, D) + 0.04); bodyG.add(bt); }
+    }
     // head (its chin overlaps the top of the torso)
     const head = new THREE.Group(); head.position.set(0, headY, 0); head.scale.setScalar(B.head); bodyG.add(head);
     const hm = new THREE.Mesh(blob(HD.rx, HD.ry, HD.rz, { n: HD.n }), mat(skin, { roughness: 0.62 })); hm.castShadow = true; hm.receiveShadow = true; head.add(hm);
@@ -155,6 +159,12 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     else if (st === 'hijab') {
       const sh = new THREE.Mesh(blob(rx * 1.13, ry * 1.13, rz * 1.15, { thLen: 126 * D2R, n: HD.n }), hmat); sh.rotation.x = -(Math.PI / 2 - 0.26); sh.castShadow = true; head.add(sh);   // the opening faces the front
       const dr = ball(head, 1.2, hair, 0, -ry * 0.8, -0.45, { m: { roughness: 0.5 } }); dr.scale.set(1.25, 1.05, 0.95);
+      if (O.hijabDrape) {   // the scarf hangs down the front in two soft panels (one long, one folded across)
+        const soft = (w, h, x, y, rz, tiltX) => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), hmat); m.scale.set(w, h, 0.17); m.position.set(x, y, eggZ(x, y, D) + 0.1); m.rotation.set(tiltX, 0, rz); m.castShadow = true; bodyG.add(m); return m; };
+        soft(0.5, 1.5, 0.78, topY - 1.5, -0.06, 0.12);      // the long panel down the front
+        soft(0.46, 1.05, -0.72, topY - 1.0, 0.55, 0.1);     // the folded panel across the chest
+      }
+      if (O.pin) ball(head, 0.13, hexn(O.pin), rx * 1.1, -0.55, 0.5, { noShadow: true, m: { roughness: 0.25 } });
     }
     // glasses (sized from the character's eye size and spacing)
     if (O.glasses) {
@@ -261,9 +271,9 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     { name: 'hana', tags: 'Soft round face · black bob with bangs · small eyes · coral top', bio: 'Quiet and observant. Her one raised eyebrow says it all.', skin: '#f3d0b0', hair: '#15121a', hairStyle: 'bangs', top: '#ff9b7a', bottom: '#4a4466', eye: '#2a1c14',
       build: { w: 0.95, h: 0.98, leg: 1.0, arm: 0.95 }, head: { rx: 1.46, ry: 1.24, rz: 1.2, n: 2.4 },
       look: { eyeScale: 0.92, eyeGap: 1.02, noseSize: 0.65, lipColor: '#c0485f', browThick: 0.85 } },
-    { name: 'amina', tags: 'Dusty-rose hijab · long lashes · warm hazel eyes · purple top', bio: 'Warm, funny, and the best listener. Dimples for days.', skin: '#c98f64', hair: '#d890b4', hairStyle: 'hijab', top: '#8a6ad0', bottom: '#4a3c70', eye: '#8a6a3a', browColor: '#3a2a22',
+    { name: 'amina', tags: 'Dark chocolate hijab draped down the front · cream cardigan with gold buttons · freckles · thick brows · long lashes · big smile', bio: 'Warm, bright-eyed, with a smile that lights up the room.', skin: '#e8bc98', hair: '#4a2a1e', hairStyle: 'hijab', hijabDrape: true, pin: '#fffaf0', top: '#efe6d2', pattern: { type: 'weave', color2: '#ddd0b4' }, buttons: '#e0b24a', bottom: '#3f3350', eye: '#3a2218', browColor: '#2a1c16',
       build: { w: 1.0, h: 1.0, arm: 0.98 }, head: { rx: 1.44, ry: 1.28, rz: 1.18, n: 2.6 },
-      look: { lashes: 0.9, eyeScale: 1.08, noseSize: 0.85, lipColor: '#b04a62', browThick: 1.0 } },
+      look: { lashes: 1, freckles: 0.9, eyeScale: 1.06, noseSize: 0.8, lipColor: '#c4677b', browThick: 1.2 } },
   ];
   const PEOPLE_X = ROSTER;
   return { mkExpressive, animateExpressive, POSES, ROSTER, PEOPLE_X, blob, HEAD, ARM_LEN };

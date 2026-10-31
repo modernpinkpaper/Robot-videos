@@ -71,7 +71,7 @@ async function cast(only) {
   p.on('pageerror', e => console.log('pageerror:', e.message)); p.on('console', m => { if (m.type() === 'error') console.log('console:', m.text()); });
   await p.goto(URL + 'stage.html'); await p.waitForFunction(() => window.ready, null, { timeout: 120000 });
   const roster = await p.evaluate(() => window.roster());
-  const SIG = { mara: ['smirk', 'hips'], theo: ['happy', 'idle'], priya: ['smug', 'hips'], june: ['happy', 'crossed'], kai: ['excited', 'wave'], gus: ['annoyed', 'hips'], zoe: ['giggle', 'shrug'], finn: ['nervous smile', 'think'], hana: ['unimpressed', 'idle'], amina: ['happy', 'idle'] };
+  const SIG = { mara: ['smirk', 'hips'], theo: ['happy', 'idle'], priya: ['smug', 'hips'], june: ['happy', 'crossed'], kai: ['excited', 'wave'], gus: ['annoyed', 'hips'], zoe: ['giggle', 'shrug'], finn: ['nervous smile', 'think'], hana: ['unimpressed', 'idle'], amina: ['big smile', 'idle'] };
   const SIX = ['happy', 'laugh', 'smirk', 'annoyed', 'shocked', 'sad'];
   const tiles = {};
   const tile = async (W, H, build, view, state) => { await p.setViewportSize({ width: W, height: H }); await p.evaluate(b => window.build(b), build); await p.evaluate(([W, H, v, s]) => window.draw(W, H, [v], 1, [s]), [W, H, view, state]); return (await p.screenshot({ clip: { x: 0, y: 0, width: W, height: H } })).toString('base64'); };
