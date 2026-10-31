@@ -12,7 +12,7 @@ Status key: GOOD = Dalia picked it as the best example. DRAFT = a working exampl
 | Talking to the camera | `videos/disagree/disagree.mp4` (34s, "How the smartest people disagree") | DRAFT | One person, a hook, 3 steps, one closing line. Cuts on lines. Source: `plan.py`, `index.html` |
 | Podcast | `examples/podcast/ep10_a_monday_in_the_print_room.mp4` (2:49) | DRAFT | Studio, six robots, info cards, ON AIR. Source: `formats/podcast/pod/eps/e10.py` |
 | Skit | none yet | EMPTY | Make one (see `menu/formats/skit.md`), then ask Dalia to confirm it |
-| Reaction | none yet | EMPTY | Make one (see `menu/formats/reaction.md`) |
+| Reaction | `examples/reaction/reaction_demo.mp4` (23s: Dalia reacts to "How the smartest people disagree") | DRAFT | Reactor top right, clip bottom left, captions with a highlighted word, clip pauses while she talks. Tool: `formats/reaction/` |
 | Explainer | none yet | EMPTY | Make one (see `menu/formats/explainer.md`) |
 
 ## 1b. CHARACTER STYLE references
@@ -32,7 +32,7 @@ Real uses in finished videos (look at the shot names in each video's `shots.js` 
 Status of "best camera video": DRAFT until Dalia names the favourite.
 
 ## 3. VOICE references
-Listen to `examples/voices/<name>.mp3`. Each is the character saying "Hi, I am NAME. This is how I sound...". All are free computer voices (Piper), tuned by pitch and speed in `formats/podcast/pod/voices_cfg.py`.
+Listen to `examples/voices/<name>.mp3`. Human voices are made with Chatterbox (natural, pace, emotion and tone per line); robots with Piper. `dalia_happy`, `dalia_sad`, `dalia_shock`, `dalia_stern`, `dalia_excited`, `dalia_tired` show the same person with different emotions. Each is the character saying "Hi, I am NAME. This is how I sound...". All are free computer voices (Piper), tuned by pitch and speed in `formats/podcast/pod/voices_cfg.py`.
 - Humans: dalia, amina, marcus, lily, sofia, grandpa, kid_boy, kid_girl, narrator
 - Robots: mica, hooky, chargey, drafty, lister, logbot, lefty, kraft, dusty, dymo, status
 Where voices are used in real videos: no_lies (mica, chargey, drafty, hooky, kraft, lister, dymo, logbot), disagree (dalia), one_minute (dalia, mica), podcast ep10 (mica, lefty, kraft, dusty, dymo, status).

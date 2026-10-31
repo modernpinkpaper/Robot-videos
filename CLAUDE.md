@@ -34,7 +34,8 @@ Never use a static or single fixed camera. Never invent a different camera syste
 ## Rules
 - Do not edit `characters/robots.js` unless she asks. If something must change, add an option.
 - Keep staff names, kids' names, exact money, medical details and passwords off screen.
-- Voices: piper TTS pipeline is in `formats/podcast/pod/mk.py` (needs `formats/podcast/setup.sh`). Reuse it for any video that needs spoken lines.
+- Voices: ALWAYS use `voices/speak.py`. Humans (DALIA, AMINA, MARCUS, LILY, SOFIA, GRANDPA, KID_BOY, KID_GIRL, NARRATOR) use Chatterbox with pace, emotion and tone set per line; robots use Piper. Read `voices/README.md`. Do not use Piper for a human.
+- Reaction videos: use `formats/reaction/` (top-right reactor, bottom-left clip). Do not rebuild it.
 - Before sending a video: look at at least 4 frames, then say honestly what you checked and what you could not (you cannot hear audio).
 - Rendering is slow. Run it in the background and tell her.
 

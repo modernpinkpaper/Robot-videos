@@ -9,3 +9,6 @@ node_modules/
 __pycache__/
 examples/camera/frames/
 examples/voices/_r.wav
+formats/reaction/work/
+voices/cbenv/
+voices/_r.wav

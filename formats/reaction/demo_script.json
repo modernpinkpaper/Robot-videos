@@ -1,0 +1,5 @@
+{ "source": "../../videos/disagree/disagree.mp4", "reactor": "dalia", "voice_who": "DALIA", "mode": "pause", "start": 0, "end": 14,
+  "beats": [
+   { "at": 4.0, "say": "Okay, that is a *really* good point.", "emo": "happy", "act": "nod" },
+   { "at": 9.0, "act": "laugh", "emo": "laugh", "dur": 1.5 },
+   { "at": 12.0, "say": "Wait. She said *WHAT*?! I did not see that coming!", "emo": "shock", "act": "gasp" } ] }
