@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Cast sheets</title><style>html,body{margin:0;background:#cfe0f5}</style></head><body><div id="wrap"></div>
+<script type="importmap">{"imports":{"three":"../../characters/three.module.js"}}</script>
+<script type="module">
+// Cast sheets for Dalia's review: ?set=people | robots | pets
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
+import { createRobotKit } from '../../characters/robots.js';
+const SET = new URLSearchParams(location.search).get('set') || 'people', W = 1200, H = 760;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(1); renderer.setSize(W, H);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+document.getElementById('wrap').appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xdbe8fa);
+scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0));
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-6, 22, 24); sun.target.position.set(0, 4, 4); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+{ const c = sun.shadow.camera; c.left = -30; c.right = 30; c.top = 30; c.bottom = -20; c.near = 1; c.far = 100; } sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; scene.add(sun, sun.target);
+const pk = new THREE.PointLight(0xff8fc8, 26, 60, 2); pk.position.set(-14, 12, 12); scene.add(pk); const bl = new THREE.PointLight(0x8fb8ff, 26, 60, 2); bl.position.set(14, 12, 12); scene.add(bl);
+const fl = new THREE.Mesh(new THREE.PlaneGeometry(200, 120), new THREE.MeshStandardMaterial({ color: 0xe8e0f8, roughness: 0.8 })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; scene.add(fl);
+const kit = createRobotKit(THREE, RoundedBoxGeometry); const camera = new THREE.PerspectiveCamera(30, W / H, 0.1, 300);
+function lab(text, x, z, col = '#4a3a6a') { const c = document.createElement('canvas'); c.width = 512; c.height = 96; const x2 = c.getContext('2d'); x2.font = 'bold 54px Liberation Sans, sans-serif'; x2.textAlign = 'center'; x2.fillStyle = col; x2.fillText(text, 256, 66); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; const m = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 1.05), new THREE.MeshBasicMaterial({ map: t, transparent: true })); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.03, z); scene.add(m); }
+const items = [];
+if (SET === 'people') { kit.PEOPLE.forEach((p, i) => { const col = i % 4, row = Math.floor(i / 4); const x = -9.5 + col * 6.3, z = row ? 13 : -3; const b = kit.mkHuman(Object.assign({}, p, { parent: scene, x, z })); b.idx = i; b.emo = ['happy', 'sweet', 'smug', 'happy', 'excited', 'sweet', 'excited', 'happy'][i]; items.push(b); lab(p.name.replace('_', ' '), x, z + 2.6); }); camera.position.set(0, 34, 40); camera.lookAt(0, 0.5, 6); }
+if (SET === 'robots') { ['MICA', 'HOOKY', 'CHARGEY', 'DRAFTY', 'LISTER', 'LOGBOT', 'LEFTY', 'KRAFT', 'DUSTY', 'DYMO', 'STATUS'].forEach((k, i) => { const col = i % 6, row = Math.floor(i / 6); const x = -15.5 + col * 6.2 + row * 3.1, z = row ? 13 : -3; const b = kit.mkBot(k, { parent: scene, x, z }); b.idx = i; b.emo = 'happy'; items.push(b); lab(k, x, z + 2.6); }); camera.position.set(0, 38, 44); camera.lookAt(0, 0.5, 6); }
+if (SET === 'pets') { ['dog', 'cat', 'bunny', 'cow', 'sheep', 'chicken', 'bird', 'pig'].forEach((k, i) => { const col = i % 4, row = Math.floor(i / 4); const x = -8.5 + col * 5.6, z = row ? 5 : -3; const p = kit.mkPet(k, { parent: scene, x, z, ry: 0.3, scale: 1.5 }); items.push({ pet: p }); lab(k, x, z + 2.8); }); [['tree', -14, -8], ['house', 0, -10], ['car', 12, 12], ['balloon', -12, 10], ['gift', -6, 12], ['cake', 0, 12], ['sofa', 7, 12], ['bench', 14, -8]].forEach(([n, x, z]) => kit.mkProp(n, { parent: scene, x, z, scale: n === 'house' ? 1.5 : 1.1 })); camera.position.set(0, 32, 38); camera.lookAt(0, 0.5, 4); }
+items.forEach(b => { if (b.pet) kit.animatePet(b.pet, 1, { happy: true }); else kit.animateBot(b, 1.3, { emo: b.emo, speaking: false }); });
+renderer.render(scene, camera); window.ready = true;
+</script></body></html>
