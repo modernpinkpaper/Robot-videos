@@ -1,4 +1,5 @@
 // THE ROBOT LOOK (characters only, no podcast set). Do not restyle: reuse as is.
+// All characters have full bodies (legs). Pass { legs: false } to mkBot/mkHuman for a torso-only look (e.g. behind a desk).
 // Usage: const kit = createRobotKit(THREE, RoundedBoxGeometry);
 //   const bot = kit.mkBot('MICA', { parent: scene, x: 0, y: 0, z: 0, scale: 1 });
 //   every frame: kit.animateBot(bot, t, { speaking, amp, emo });   // emo: happy excited deadpan sweet stern tired dramatic worried shock smug laugh neutral
@@ -36,11 +37,17 @@ const POOL = {
   STATUS:  { kind: 'printer', acc: 0xa07af0, eye: '#e6d8ff', col: '#8a62e0', s: 1.0 },
   DALIA:   { kind: 'human',   acc: 0xf2a0c0, eye: '#2a1a14', col: '#e0689a', s: 1.0 },
 };
+// Full body: two legs with shoes, hip at y=2.3 (pivot so they can swing when walking)
+function addLegs(g, color, shoe) {
+  return [-1, 1].map(sx => { const lg = new THREE.Group(); lg.position.set(sx * 0.5, 2.3, 0); g.add(lg); box(lg, 0.8, 2.0, 0.9, color, 0, -1.0, 0, { round: 0.25 }); box(lg, 0.95, 0.35, 1.2, shoe, 0, -2.12, 0.15, { round: 0.12 }); return lg; });
+}
 function mkBot(key, opts = {}) {
+  if (POOL[key] && POOL[key].kind === 'human') return mkHuman(Object.assign({}, PEOPLE[0], opts));
   const cfg = Object.assign({ x: 0, y: 0, z: 0, ry: 0 }, POOL[key], opts); const g = new THREE.Group(); g.position.set(cfg.x, cfg.y, cfg.z); g.rotation.y = cfg.ry; g.scale.setScalar(cfg.s * (opts.scale || 1)); if (opts.parent) opts.parent.add(g);
   const human = cfg.kind === 'human', printer = cfg.kind === 'printer';
   const white = key === 'STATUS' ? 0xe8e0ff : (key === 'DUSTY' ? 0xe6e2ee : 0xf8f5fc); const skin = 0xe3b88d;
   const body = new THREE.Group(); g.add(body);
+  const legs = (opts.legs === false || cfg.kind === 'human') ? [] : addLegs(g, white, cfg.acc);
   if (printer) {
     box(body, 2.5, 1.7, 1.45, white, 0, 3.1, 0, { round: 0.3, m: key === 'STATUS' ? { transparent: true, opacity: 0.78 } : undefined }); box(body, 1.8, 0.14, 0.1, 0x2a2438, 0, 3.15, 0.74, { noShadow: true });
     box(body, 1.4, 0.04, 0.9, 0xffffff, 0, 3.15, 1.1, { noShadow: true }); box(body, 1.7, 0.08, 0.7, 0xd8d0e8, 0, 3.97, 0.1, { noShadow: true });
@@ -84,7 +91,7 @@ function mkBot(key, opts = {}) {
   if (key === 'DUSTY') { for (let i = 0; i < 4; i++) ball(body, 0.2 + (i % 2) * 0.08, 0xc8c8d2, -1.0 + i * 0.7, 4.0 + (i % 2) * 0.1, -0.1 + (i % 2) * 0.4, { noShadow: true }); box(body, 0.5, 0.5, 0.04, 0xfff08a, 0.7, 2.8, 0.76, { noShadow: true }).rotation.z = 0.15; box(body, 0.5, 0.5, 0.04, 0xffb6d6, 0.95, 3.35, 0.76, { noShadow: true }).rotation.z = -0.1; box(head, 0.7, 0.2, 0.08, 0xf2c8a0, -0.6, 0.8, 0.85, { noShadow: true }).rotation.z = 0.5; box(head, 0.7, 0.2, 0.08, 0xf2c8a0, -0.6, 0.8, 0.86, { noShadow: true }).rotation.z = -0.5; cyl(g, 0.28, 0.4, 0xffffff, -1.2, 2.95, 1.4, { seg: 14 }); }
   if (key === 'DYMO') { const roll = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.22, 12, 28), mat(0x2fb0d0)); roll.position.set(0, 2.15, 0); roll.rotation.x = Math.PI / 2 - 0.3; head.add(roll); box(g, 1.2, 0.5, 0.04, 0xffffff, 0.2, 2.5, 1.0, { noShadow: true }); textPlane(g, 'SHIPPED', 1.1, 0.4, null, '#1f98b8', 'bold 70px Liberation Sans, sans-serif', 0.2, 2.5, 1.03); }
   if (key === 'STATUS') { box(head, 2.0, 0.55, 0.04, 0xffffff, 0, 2.55, 0.4, { noShadow: true }); textPlane(head, 'STATUS INQUIRY', 1.9, 0.5, null, '#8a62e0', 'bold 56px Liberation Sans, sans-serif', 0, 2.55, 0.43); }
-  return { key, cfg, g, body, head, arms, fx, ft, ant, bulb, blinkPhase: Math.random() * 6 };
+  return { key, cfg, g, body, head, arms, legs, fx, ft, ant, bulb, blinkPhase: Math.random() * 6 };
 }
 const rr = (x, a, b, c, d, r) => { x.beginPath(); x.roundRect(a, b, c, d, r); };
 function drawFace(b, s) {
@@ -140,6 +147,7 @@ function animateBot(b, t, st = {}) {
   b.arms[0].rotation.z = isSp ? 0.25 + 0.3 * amp : 0.05; b.arms[1].rotation.z = isSp ? -0.25 - 0.3 * amp : -0.05;
   if (st.wave) { b.arms[1].rotation.z = -2.4 + Math.sin(t * 9) * 0.35; b.arms[1].rotation.x = 0; }
   if (st.walk) { b.arms[0].rotation.x = Math.sin(t * 7) * 0.6; b.arms[1].rotation.x = -Math.sin(t * 7) * 0.6; }
+  if (b.legs) b.legs.forEach((l, i) => { l.rotation.x = st.walk ? Math.sin(t * 7 + i * Math.PI) * 0.7 : (st.sit ? -1.4 : 0); });
   b.bulb.material.color.setHex(isSp ? 0xff4d6d : 0x66ff99); b.ant.scale.setScalar(1 + (isSp ? 0.25 * amp : 0));
 }
 
@@ -154,7 +162,7 @@ function mkHuman(o = {}) {
   const cfg = { kind: 'human', skinHex: O.skin, eye: O.eye, acc: top, s: 1 };
   const body = new THREE.Group(); g.add(body);
   box(body, 2.0, 1.8, 1.25, top, 0, 3.15, 0, { round: 0.4 }); box(body, 0.9, 0.5, 0.06, 0xffffff, 0, 2.85, 0.64, { round: 0.06, noShadow: true });
-  if (O.legs) for (const s of [-1, 1]) { box(g, 0.8, 2.0, 0.9, bottom, s * 0.5, 1.25, 0, { round: 0.25 }); box(g, 0.95, 0.35, 1.2, 0xf8f5fc, s * 0.5, 0.18, 0.15, { round: 0.12 }); }
+  const legs = O.legs ? addLegs(g, bottom, 0xf8f5fc) : [];
   const bulb = ball(body, 0.01, 0xffffff, 0, 0, 0, { noShadow: true, mat: new THREE.MeshBasicMaterial({ color: 0xffffff }) });
   cyl(body, 0.35, 0.35, skin, 0, 4.1, 0, { seg: 14 });
   const head = new THREE.Group(); head.position.set(0, 5.05, 0); body.add(head);
@@ -178,7 +186,7 @@ function mkHuman(o = {}) {
   const face = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.4), new THREE.MeshBasicMaterial({ map: ft })); face.position.set(0, -0.05, 0.86); head.add(face);
   const ant = ball(head, 0.01, 0xffffff, 0, 0, 0, { noShadow: true });
   const arms = [-1, 1].map(s => { const a = new THREE.Group(); a.position.set(s * 1.2, 3.75, 0.1); body.add(a); box(a, 0.5, 1.3, 0.5, top, 0, -0.55, 0, { round: 0.2 }); ball(a, 0.34, skin, 0, -1.3, 0, {}); return a; });
-  return { key: 'HUMAN', cfg, g, body, head, arms, fx, ft, ant, bulb, blinkPhase: Math.random() * 6 };
+  return { key: 'HUMAN', cfg, g, body, head, arms, legs, fx, ft, ant, bulb, blinkPhase: Math.random() * 6 };
 }
 // Ready-made variety (skin tones, hair, outfits). Use: kit.PEOPLE.map(p => kit.mkHuman(Object.assign({}, p, { parent, x })))
 const PEOPLE = [

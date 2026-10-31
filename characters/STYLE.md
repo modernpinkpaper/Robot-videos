@@ -31,3 +31,6 @@ Same toy look, so any story can have a full cast. See `people.html` for a showca
 - `kit.mkPet('dog'|'cat'|'bunny'|'cow'|'sheep'|'chicken'|'bird'|'pig', { x, z, scale, color })`. Animate with `kit.animatePet(pet, t, { walk, happy, sniff })`.
 - `kit.mkProp(name, { x, y, z, scale, color, text })`. Names: tree bush flower bench table chair sofa bed mug laptop phone books balloon gift cake lamp ball heart star sign house car cloud sun bone fish door window mailbox fence.
 - Need something that is not listed? Build it from rounded boxes and balls in soft pastel colors, same as the existing ones, and add it as a new entry. Do not use a different art style.
+
+## Full bodies
+Every character (robots and humans) now has legs and shoes. Walk with `animateBot(c, t, { walk: true })`, sit with `{ sit: true }`. For a torso-only look behind a desk pass `{ legs: false }`.
