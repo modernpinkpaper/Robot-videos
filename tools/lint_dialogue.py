@@ -133,9 +133,12 @@ if __name__ == '__main__':
     path = args[0]; kind, data = load_rows(path)
     if kind == 'reaction':
         base = os.path.dirname(os.path.abspath(path)); src = data['source'] if os.path.isabs(data['source']) else os.path.join(base, data['source'])
-        sents = clip_sentences_for(src); dur = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src]).decode().split()[0])
-        if sents is None: print('note: no speech recognition available, cue-fit checks skipped')
-        E, W = lint_reaction(data, sents, (data.get('end') or dur) - data.get('start', 0))
+        sents = None; dur = None
+        if os.path.exists(src):
+            sents = clip_sentences_for(src); dur = float(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', src]).decode().split()[0])
+        else: print(f'note: the clip file is not here ({os.path.basename(src)}), so only the words are checked, not the reactions against the clip')
+        if os.path.exists(src) and sents is None: print('note: no speech recognition available, cue-fit checks skipped')
+        E, W = lint_reaction(data, sents, ((data.get('end') or dur) - data.get('start', 0)) if dur else None)
     else:
         E, W = lint_lines(data, fmt)
     report(E, W, os.path.basename(path)); sys.exit(1 if E else 0)
