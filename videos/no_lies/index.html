@@ -1,0 +1,181 @@
+<!doctype html><html><head><meta charset="utf-8"><title>What if nobody lied?</title>
+<style>
+html,body{margin:0;background:#1d1730;overflow:hidden}
+#wrap{position:relative;width:576px;height:1024px;overflow:hidden;font-family:"Liberation Sans",Arial,sans-serif}
+canvas{display:block}
+.ov{position:absolute;left:0;right:0;pointer-events:none}
+#vig{inset:0;top:0;bottom:0;background:radial-gradient(ellipse at 50% 46%,rgba(60,30,100,0) 58%,rgba(60,30,100,.28) 100%)}
+#flash{top:0;bottom:0;background:#fff;opacity:0}
+#fade{top:0;bottom:0;background:#1d1730;opacity:0}
+#cap{bottom:96px;text-align:center;opacity:0}
+#cap .who{display:inline-block;font:800 20px/1 "Liberation Sans",Arial,sans-serif;color:#fff;padding:6px 14px;border-radius:14px 14px 0 0;letter-spacing:1px;text-transform:uppercase}
+#cap .txt{display:block;margin:0 26px;font:800 33px/1.18 "Liberation Sans",Arial,sans-serif;color:#fff;background:rgba(36,28,66,.84);padding:12px 18px 14px;border-radius:22px;box-shadow:0 6px 0 rgba(0,0,0,.18)}
+#title{top:92px;text-align:center;opacity:0}
+#title div{font:900 92px/0.98 "Liberation Sans",Arial,sans-serif;color:#fff;text-transform:uppercase;-webkit-text-stroke:0;text-shadow:0 7px 0 #ff6fae,0 10px 0 rgba(60,20,90,.55),0 0 28px rgba(255,255,255,.7);opacity:0}
+#title div.b{color:#fff6a8;text-shadow:0 7px 0 #4a8bff,0 10px 0 rgba(60,20,90,.55),0 0 28px rgba(255,255,255,.7)}
+#card{top:170px;text-align:center;opacity:0}
+#card .pill{display:inline-block;margin:0 34px;padding:26px 30px 30px;border-radius:44px;background:rgba(255,246,238,.96);box-shadow:0 10px 0 rgba(255,111,174,.9),0 0 50px rgba(255,200,230,.7)}
+#card .l1{font:900 50px/1.05 "Liberation Sans",Arial,sans-serif;color:#2a2147;text-transform:uppercase}
+#card .l2{font:900 62px/1.05 "Liberation Sans",Arial,sans-serif;color:#ff6fae;text-transform:uppercase;margin-top:6px}
+#card .h{font:900 40px/1 "Liberation Sans",Arial,sans-serif;color:#ff6fae;margin-top:8px}
+</style></head><body><div id="wrap"><div id="cv"></div>
+<div class="ov" id="vig"></div><div class="ov" id="flash"></div>
+<div class="ov" id="title"><div>What if</div><div class="b">nobody</div><div>lied?</div></div>
+<div class="ov" id="card"><div class="pill"><div class="l1">Would you want</div><div class="l2">to live here?</div><div class="h">&#9825; &#9825; &#9825;</div></div></div>
+<div class="ov" id="cap"><span class="who" id="capwho"></span><span class="txt" id="captxt"></span></div>
+<div class="ov" id="fade"></div></div>
+<script type="importmap">{"imports":{"three":"../../characters/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
+import { createRobotKit } from '../../characters/robots.js';
+import { buildSets } from './sets.js';
+import { LIGHTS, WARM_POS, SC, CAMS } from './shots.js';
+const W = 576, H = 1024;
+const TL = await (await fetch('work/timeline.json')).json();
+const TOTAL = TL.total;
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, t) => a + (b - a) * t, smooth = t => { t = clamp(t); return t * t * (3 - 2 * t); };
+const EASE = { lin: u => u, io: smooth, in: u => u * u, out: u => 1 - (1 - u) * (1 - u) };
+const backOut = u => { const c = 1.9; return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2); };
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+$('cv').appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 400);
+// the standard light rig for the robot look (see characters/demo.html), tinted per scene
+const hemi = new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; scene.add(sun, sun.target);
+const pk = new THREE.PointLight(0xff8fc8, 26, 40, 2); pk.position.set(-9, 10, 4); scene.add(pk);
+const bl = new THREE.PointLight(0x8fb8ff, 26, 40, 2); bl.position.set(9, 10, 4); scene.add(bl);
+const warm = new THREE.PointLight(0xffc27a, 0, 60, 1.6); scene.add(warm);
+
+const skyCache = {};
+function sky(a, b) { const k = a + b; if (skyCache[k]) return skyCache[k]; const c = document.createElement('canvas'); c.width = 4; c.height = 256; const x = c.getContext('2d'); const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, a); g.addColorStop(1, b); x.fillStyle = g; x.fillRect(0, 0, 4, 256); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return skyCache[k] = t; }
+function setLight(name, shadow, center) {
+  const L = LIGHTS[name]; scene.background = sky(L.bg[0], L.bg[1]);
+  scene.fog = L.fog ? new THREE.Fog(L.fog[0], L.fog[1], L.fog[2]) : null;
+  hemi.color.set(L.hemi[0]); hemi.groundColor.set(L.hemi[1]); hemi.intensity = L.hemi[2];
+  sun.color.set(L.sun[0]); sun.intensity = L.sun[1]; pk.color.set(L.pk[0]); pk.intensity = L.pk[1]; bl.color.set(L.bl[0]); bl.intensity = L.bl[1];
+  if (L.warm) { warm.intensity = name === 'night' ? 130 : 300; warm.position.set(...WARM_POS[name]); } else warm.intensity = 0;
+  const wide = shadow === 'wide', c = sun.shadow.camera;
+  sun.target.position.set(0, 5, wide ? 8 : 3); const k = wide ? 2.4 : 1; sun.position.set(-6 * k, 16 * k, 14 * k + (wide ? 8 : 3));
+  if (name === 'sunset') sun.position.set(-26, 12, 18);
+  const ex = wide ? 38 : 20; c.left = -ex; c.right = ex; c.top = wide ? 46 : 26; c.bottom = wide ? -30 : -10; c.near = 1; c.far = wide ? 140 : 80; c.updateProjectionMatrix();
+}
+
+const kit = createRobotKit(THREE, RoundedBoxGeometry);
+const sets = buildSets(THREE, kit, scene, RoundedBoxGeometry);
+const ORDER = ['MICA', 'HOOKY', 'CHARGEY', 'DRAFTY', 'LISTER', 'LOGBOT', 'KRAFT', 'DYMO'];
+const bots = {};
+ORDER.forEach((k, i) => { const b = kit.mkBot(k, { parent: scene }); b.idx = i; b.blinkPhase = i * 0.37; b.g.visible = false; bots[k] = b; });
+bots.DRAFTY.hatP = sets.addHat(bots.DRAFTY); bots.CHARGEY.phoneP = sets.addPhone(bots.CHARGEY); bots.HOOKY.phoneP = sets.addPhone(bots.HOOKY); bots.CHARGEY.capP = sets.addCap(bots.CHARGEY);
+const SET_NAMES = ['town', 'sign', 'stage', 'confP', 'confV', 'party', 'shop', 'park', 'night', 'bedroom'];
+const accCss = k => '#' + kit.POOL[k].acc.toString(16).padStart(6, '0');
+const NAMES = { MICA: 'Mica', HOOKY: 'Hooky', CHARGEY: 'Chargey', DRAFTY: 'Drafty', LISTER: 'Lister', LOGBOT: 'Logbot', KRAFT: 'Kraft', DYMO: 'Dymo' };
+
+// ---------------------------------------------------------------- characters
+function evalKf(spec, lt) {
+  const n = a => ({ t: a[0], x: a[1], z: a[2], y: a[3] || 0, ry: a[4] !== undefined ? a[4] : spec.ry });
+  const kf = spec.kf.map(n), f = kf[0];
+  if (kf.length === 1 || lt <= f.t) return { x: f.x, z: f.z, y: f.y, ry: f.ry, walk: false };
+  for (let i = 0; i < kf.length - 1; i++) {
+    const a = kf[i], b = kf[i + 1];
+    if (lt < b.t) {
+      const raw = (lt - a.t) / (b.t - a.t), u = smooth(raw), dx = b.x - a.x, dz = b.z - a.z, moving = Math.hypot(dx, dz) > 0.3;
+      let ry;
+      if (moving) { const tr = Math.atan2(dx, dz); let d = b.ry - tr; d = ((d + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI; ry = tr + d * smooth((raw - 0.7) / 0.3); } else ry = lerp(a.ry, b.ry, u);
+      return { x: lerp(a.x, b.x, moving ? raw : u), z: lerp(a.z, b.z, moving ? raw : u), y: lerp(a.y, b.y, u), ry, walk: moving };
+    }
+  }
+  const l = kf[kf.length - 1]; return { x: l.x, z: l.z, y: l.y, ry: l.ry, walk: false };
+}
+const lineAt = (t, si) => TL.lines.find(l => l.scene === si && t >= l.v0 - 0.05 && t <= l.v1 + 0.12);
+function poseBots(def, cast, S, si, t) {
+  const lt = t - S.start, lines = S.lines.map(i => TL.lines[i]);
+  const c = { L: i => lines[i].v0 - S.start, E: S.end - S.start, line: lineAt(t, si) };
+  for (const k of ORDER) bots[k].g.visible = false;
+  for (const who of cast) {
+    const spec = def.cast[who], b = bots[who]; b.g.visible = true;
+    const p = evalKf(spec, lt), patch = def.act ? (def.act(who, lt, c) || {}) : {};
+    const speaking = patch.speaking !== undefined ? patch.speaking : !!(c.line && c.line.who === who);
+    let amp = patch.amp !== undefined ? patch.amp : 0;
+    if (speaking && patch.amp === undefined) { const e = c.line.env, ix = Math.floor((t - c.line.start) * 48); amp = e[clamp(ix, 0, e.length - 1)] ?? 0; }
+    let emo = patch.emo || spec.emo || 'neutral'; if (c.line && c.line.who === who) emo = c.line.emo;
+    const hop = patch.hop ? Math.abs(Math.sin(t * 9 + b.idx * 1.7)) * 0.45 : 0;
+    b.g.position.set(p.x, p.y + hop, p.z); b.g.rotation.y = patch.ry !== undefined ? patch.ry : p.ry;
+    if (b.hatP) b.hatP.visible = !!spec.hat; if (b.phoneP) b.phoneP.visible = !!spec.phone; if (b.capP) b.capP.visible = !!spec.cap;
+    kit.animateBot(b, t, { speaking, amp, emo, walk: p.walk, wave: !!patch.wave });
+  }
+}
+function showSets(names) { for (const n of SET_NAMES) sets[n].g.visible = names.includes(n); }
+
+// ---------------------------------------------------------------- cameras
+const lerp3 = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+function evalCam(cd, u, t, tShot, first) {
+  const e = EASE[cd.ease || 'io'](clamp(u));
+  let p;
+  if (cd.orbit) { const o = cd.orbit, a = lerp(o.a[0], o.a[1], e) * Math.PI / 180, r = lerp(o.r[0], o.r[1], e); p = [o.c[0] + Math.sin(a) * r, lerp(o.h[0], o.h[1], e), o.c[2] + Math.cos(a) * r]; } else p = lerp3(cd.p[0], cd.p[1], e);
+  const l = lerp3(cd.l[0], cd.l[1], e); let fov = lerp(cd.f[0], cd.f[1], e); const roll = cd.r ? lerp(cd.r[0], cd.r[1], e) : 0;
+  const sh = cd.shake || 0; if (sh) { p[0] += Math.sin(t * 11.3) * sh + Math.sin(t * 5.1) * sh; p[1] += Math.sin(t * 9.7 + 1) * sh; l[0] += Math.sin(t * 7.9) * sh * 1.5; l[1] += Math.cos(t * 6.3) * sh * 1.5; }
+  if (!first) fov *= 1 - 0.07 * Math.exp(-(t - tShot) * 16);        // small "punch-in" on every cut
+  return { p, l, fov, roll };
+}
+function applyCam(c, aspect, yaw = 0) {
+  camera.aspect = aspect; camera.fov = c.fov; camera.updateProjectionMatrix(); camera.position.set(...c.p);
+  let dx = c.l[0] - c.p[0], dz = c.l[2] - c.p[2]; if (yaw) { const cs = Math.cos(yaw), sn = Math.sin(yaw); [dx, dz] = [dx * cs + dz * sn, -dx * sn + dz * cs]; }
+  camera.up.set(0, 1, 0); camera.lookAt(c.p[0] + dx, c.l[1], c.p[2] + dz); if (c.roll) camera.rotateZ(c.roll * Math.PI / 180);
+}
+function shotAt(S, t) { let i = 0; for (let k = 0; k < S.shots.length; k++) if (t >= S.shots[k].t - 1e-6) i = k; const st = S.shots[i].t, en = i + 1 < S.shots.length ? S.shots[i + 1].t : S.end; return { i, st, en, name: S.shots[i].name, u: (t - st) / (en - st) }; }
+
+// ---------------------------------------------------------------- frame
+const cv = renderer.domElement;
+window.renderFrame = t => {
+  t = clamp(t, 0, TOTAL - 1e-3);
+  let si = TL.scenes.findIndex(s => t >= s.start && t < s.end); if (si < 0) si = TL.scenes.length - 1;
+  const S = TL.scenes[si], def = SC[S.id], lt = t - S.start, sh = shotAt(S, t), cd = CAMS[sh.name];
+  const cueAbs = id => { const sc = TL.scenes.find(s => s.id === id); return sc; };
+  for (const n of ['town', 'party', 'shop', 'park', 'night']) if (sets[n].upd) sets[n].upd(t);
+  const shopS = cueAbs('shop'), partyS = cueAbs('party'), voteS = cueAbs('vote');
+  sets.shop.upd(t, TL.lines[shopS.lines[0]].v0 + 1.8);
+  sets.party.upd(t, null);
+  sets.confP.upd(t - (TL.lines[partyS.lines[3]].v0 - 0.1), 0, 8, 3);
+  sets.confV.upd(t - (TL.lines[voteS.lines[1]].v0 + 0.3), 0, 6, 6);
+  // whip-pan between scenes (blur + fast turn + flash)
+  let yaw = 0, blur = 0, flash = 0;
+  for (let k = 1; k < TL.scenes.length; k++) { const tb = TL.scenes[k].start, d = t - tb, dir = k % 2 ? 1 : -1; if (d > -0.2 && d < 0.2) { if (d < 0) { const u = (d + 0.2) / 0.2; yaw = dir * 0.9 * u * u; blur = 20 * Math.pow(u, 1.2); } else { const u = d / 0.2; yaw = -dir * 0.9 * (1 - u) * (1 - u); blur = 20 * Math.pow(1 - u, 1.2); } flash = 0.22 * (1 - Math.abs(d) / 0.2); } }
+  renderer.setScissorTest(false);
+  if (def.split) {
+    const k = smooth(lt / 0.55), gap = 12 * k, topH = Math.round(lerp(H, (H - 12) / 2, k)), botH = H - topH - Math.round(gap);
+    renderer.setClearColor(0x1d1730, 1); renderer.setViewport(0, 0, W, H); renderer.clear();
+    renderer.setScissorTest(true);
+    const panels = [['top', 0, topH], ['bot', topH + Math.round(gap), botH]];
+    for (const [key, y0, h] of panels) {
+      if (h < 4) continue;
+      const half = def[key]; showSets(half.sets); setLight(half.light, 'room'); poseBots(def, half.cast, S, si, t);
+      const cc = cd[key], first = sh.i === 0;
+      applyCam(evalCam(cc, sh.u, t, sh.st, first), W / h);
+      const yb = H - y0 - h; renderer.setViewport(0, yb, W, h); renderer.setScissor(0, yb, W, h); renderer.render(scene, camera);
+    }
+    renderer.setScissorTest(false);
+  } else {
+    showSets(def.sets); setLight(def.light, def.shadow); poseBots(def, Object.keys(def.cast), S, si, t);
+    applyCam(evalCam(cd, sh.u, t, sh.st, sh.i === 0), W / H, yaw);
+    renderer.setViewport(0, 0, W, H); renderer.render(scene, camera);
+  }
+  cv.style.filter = blur > 0.3 ? `blur(${blur.toFixed(1)}px)` : 'none'; $('flash').style.opacity = flash.toFixed(3);
+  // ---- captions
+  const ln = TL.lines.find(l => t >= l.v0 - 0.08 && t <= l.v1 + 0.3), cap = $('cap'), card0 = TL.lines[TL.lines.length - 1].v1 - 0.8;
+  if (ln && t < card0 + 0.4) { $('capwho').textContent = NAMES[ln.who]; $('capwho').style.background = accCss(ln.who); $('captxt').textContent = ln.text; cap.style.opacity = clamp(Math.min((t - ln.v0 + 0.08) / 0.1, (ln.v1 + 0.3 - t) / 0.12)).toFixed(2); } else cap.style.opacity = 0;
+  // ---- title card at the start
+  const ti = $('title'); ti.style.opacity = t < 2.72 ? 1 : clamp(1 - (t - 2.72) / 0.18);
+  [...ti.children].forEach((d, i) => { const u = clamp((t - 0.3 - i * 0.38) / 0.42); d.style.opacity = u > 0 ? 1 : 0; d.style.transform = `scale(${(0.2 + 0.8 * backOut(u)).toFixed(3)}) rotate(${((1 - u) * (i % 2 ? 6 : -6)).toFixed(2)}deg)`; });
+  // ---- closing question
+  const cu = clamp((t - card0) / 0.55), cd2 = $('card'); cd2.style.opacity = cu > 0 ? 1 : 0; cd2.style.transform = `scale(${(0.3 + 0.7 * backOut(cu)).toFixed(3)}) translateY(${(Math.sin(t * 2.2) * 4).toFixed(1)}px)`;
+  $('fade').style.opacity = clamp((t - (TOTAL - 0.7)) / 0.6).toFixed(3);
+  $('vig').style.display = 'block';
+};
+window.renderFrame(0.5); window.ready = true;
+</script></body></html>
