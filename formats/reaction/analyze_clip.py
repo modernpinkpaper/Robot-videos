@@ -54,7 +54,16 @@ def speech(x, a):
         if k: out.append(dict(t=round(a + s.end, 2), kind=k, strength=float(min(1, st)), text=text[:80]))
     return out
 
+def sentences(path, a=0, b=0):
+    """[{start, end, text}] for the quality check (needs faster-whisper)."""
+    x = load_audio(path, a, b)
+    from faster_whisper import WhisperModel
+    segs, _ = WhisperModel('base', compute_type='int8').transcribe(x, language='en', beam_size=5, vad_filter=True)
+    return [dict(start=round(a + s.start, 2), end=round(a + s.end, 2), text=s.text.strip()) for s in segs]
+
 if __name__ == '__main__':
+    if '--sentences' in sys.argv:
+        args = [v for v in sys.argv[1:] if not v.startswith('--')]; print(json.dumps(sentences(args[0]))); sys.exit(0)
     args = [v for v in sys.argv[1:] if not v.startswith('--')]; path = args[0]; a = float(args[1]) if len(args) > 1 else 0; b = float(args[2]) if len(args) > 2 else 0
     x = load_audio(path, a, b); ev = []
     try: ev += speech(x, a)

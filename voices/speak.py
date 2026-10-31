@@ -27,7 +27,12 @@ def _piper(rows):
         sr = v.config.sample_rate
         subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-af', f'asetrate={int(sr*pitch)},aresample=44100,atempo={1/pitch:.4f},highpass=f=90,aecho=0.8:0.9:5:0.18,loudnorm=I=-18:TP=-2', '-ar', '44100', '-ac', '1', r['out']], check=True); os.remove(raw)
 
-def synth_lines(rows):
+def synth_lines(rows, fmt=None):
+    # QUALITY GATE for every format: corny, stiff or mismatched lines stop the build. Format = story, skit, talk, reaction, podcast, explainer. (SKIP_LINT=1 skips it; do not.)
+    if not os.environ.get('SKIP_LINT'):
+        sys.path.insert(0, ROOT + '/tools'); import lint_dialogue as LD
+        E, W = LD.lint_lines([dict(who=r.get('who', ''), text=r['text'], emo=r.get('emo', 'neutral')) for r in rows], fmt or os.environ.get('VIDEO_FORMAT', 'default')); LD.report(E, W, 'quality gate')
+        if E: raise SystemExit('Fix the errors above (see menu/QUALITY.md), then run again.')
     vw = lambda r: r.get('voice', r['who']).upper()
     humans = [r for r in rows if vw(r) in HUMANS]; robots = [r for r in rows if vw(r) not in HUMANS]
     if robots: _piper(robots)

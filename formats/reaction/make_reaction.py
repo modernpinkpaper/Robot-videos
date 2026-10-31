@@ -45,7 +45,11 @@ def main(script_path, out_path):
     S = json.load(open(script_path)); base = os.path.dirname(os.path.abspath(script_path))
     src = S['source'] if os.path.isabs(S['source']) else os.path.join(base, S['source'])
     reactor = S.get('reactor', 'dalia'); who = S.get('voice_who', reactor).upper(); mode = S.get('mode', 'pause')
-    dur_src = probe(src, 'format=duration'); s0 = S.get('start', 0); s1 = S.get('end') or dur_src
+    dur_src = probe(src, 'format=duration')
+    if '--force' not in sys.argv:                                    # QUALITY GATE (tools/lint_dialogue.py): corny lines or reactions that do not fit stop the render
+        sys.path.insert(0, ROOT + '/tools'); import lint_dialogue as LD
+        E, W = LD.lint_reaction(S, LD.clip_sentences_for(src), (S.get('end') or dur_src) - S.get('start', 0)); LD.report(E, W, 'quality gate')
+        if E: raise SystemExit('Fix the errors above (see formats/reaction/REACTOR_VOICE.md), then run again. (--force skips this check; do not.)'); s0 = S.get('start', 0); s1 = S.get('end') or dur_src
     shutil.rmtree(WORK, ignore_errors=True); os.makedirs(WORK + '/frames'); os.makedirs(WORK + '/seg')
     beats = sorted(S['beats'], key=lambda b: b['at'])
     # ---- 1. the reactor's voice (humans: Chatterbox with pace, emotion and tone per line; robots: Piper)
@@ -142,4 +146,4 @@ def main(script_path, out_path):
     shutil.rmtree(WORK + '/frames', ignore_errors=True); shutil.rmtree(WORK + '/seg', ignore_errors=True)
     print('made', out_path, f'{total:.1f}s')
 
-if __name__ == '__main__': main(sys.argv[1], sys.argv[2])
+if __name__ == '__main__': main(*[a for a in sys.argv[1:] if not a.startswith('--')][:2])
