@@ -1,0 +1,335 @@
+<!doctype html><html><head><meta charset="utf-8"><title>GitHub basics</title>
+<style>
+html,body{margin:0;background:#1d1730;overflow:hidden}
+#stage{position:relative;width:576px;height:1024px;overflow:hidden}
+canvas{display:block}
+#ui{position:absolute;left:0;top:0;width:576px;height:1024px;pointer-events:none;font-family:'Liberation Sans','DejaVu Sans',Arial,sans-serif}
+#track{position:absolute;top:14px;left:0;width:576px;display:flex;justify-content:center;gap:6px}
+.chip{font-weight:bold;font-size:14px;padding:5px 10px;border-radius:14px;background:rgba(255,255,255,.55);color:#6d6585;border:2px solid transparent}
+.chip.on{background:#fff;color:#5b3fc0;border-color:#8a62e0;transform:scale(1.12)}
+.chip.done{background:#d9f5df;color:#2d8b3a}
+#card{position:absolute;left:44px;top:62px;width:488px;box-sizing:border-box;padding:16px 22px 18px;border-radius:30px;text-align:center;border:6px solid #8a62e0;background:#fff;box-shadow:0 8px 0 rgba(60,40,110,.25);transform-origin:50% 0;opacity:0}
+#card .big{font-size:50px;font-weight:bold;line-height:1.1;color:#5b3fc0}
+#card .sub{font-size:27px;font-weight:bold;color:#4a4560;margin-top:6px;line-height:1.2}
+#card.do{background:#e6f9ea;border-color:#3fb145}#card.do .big{color:#2d8b3a}
+#card.dont{background:#ffe6ec;border-color:#e8506a}#card.dont .big{color:#d23a56}
+#card .row{display:flex;align-items:center;justify-content:center;gap:14px}
+#card .dot{width:54px;height:54px;border-radius:27px;color:#fff;font-size:36px;line-height:54px;font-weight:bold}
+#card.do .dot{background:#3fb145}#card.dont .dot{background:#e8506a}
+#card .pills{display:flex;flex-direction:column;gap:7px;align-items:stretch}
+#card .pill{font-size:28px;font-weight:bold;color:#fff;border-radius:22px;padding:6px 12px;text-align:left}
+#cap{position:absolute;left:22px;right:22px;bottom:34px;padding:12px 18px 14px;border-radius:26px;background:rgba(29,23,48,.82);color:#fff;text-align:center;font-weight:bold;font-size:31px;line-height:1.22;opacity:0}
+#cap .who{display:inline-block;font-size:17px;padding:2px 12px;border-radius:12px;margin-bottom:4px;color:#1d1730}
+#flash{position:absolute;inset:0;background:#fff;opacity:0}
+</style></head><body><div id="stage"><div id="wrap"></div>
+<div id="ui"><div id="track"></div><div id="card"></div><div id="cap"></div><div id="flash"></div></div></div>
+<script type="importmap">{"imports":{"three":"../../characters/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
+import { createRobotKit } from '../../characters/robots.js';
+import { evalCam, applyCam, whipPan, shotAt, clamp, lerp } from '../../camera/camera.js';
+import { SHOTS } from '../../camera/shots.js';
+
+// same random numbers every render, so every worker draws the same blinks
+let seed = 20260131; Math.random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+const rnd = (a, b) => a + Math.random() * (b - a);
+const W = 576, H = 1024;
+const TL = await (await fetch('./build/timeline.json')).json();
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+document.getElementById('wrap').appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xc2d8f2);
+const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 400);
+// the standard light rig (moved to the current stage each scene)
+scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0));
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+{ const c = sun.shadow.camera; c.left = -28; c.right = 28; c.top = 28; c.bottom = -12; c.near = 1; c.far = 80; } sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; scene.add(sun, sun.target);
+const pk = new THREE.PointLight(0xff8fc8, 26, 46, 2); scene.add(pk);
+const bl = new THREE.PointLight(0x8fb8ff, 26, 46, 2); scene.add(bl);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(900, 260), new THREE.MeshStandardMaterial({ color: 0xe8e0f8, roughness: 0.7 })); floor.rotation.x = -Math.PI / 2; floor.position.x = 250; floor.receiveShadow = true; scene.add(floor);
+const kit = createRobotKit(THREE, RoundedBoxGeometry);
+const { box, cyl, ball, mkProp, animateBot, PEOPLE } = kit;
+const C = { mint: 0x9fe3c8, sky: 0x9cc8f5, peach: 0xffc9a8, lilac: 0xc9b6f2, butter: 0xffe49a, pink: 0xffb3d1, white: 0xf8f5fc, dark: 0x2a2438, green: 0x56c85a, red: 0xe8506a, blue: 0x4a8bff, brown: 0xb8741f, choc: 0x8a5a34 };
+const SW = 70; // distance between stages
+
+// ---------- small helpers
+const fin = (ts, a, b) => clamp((ts - a) / (b - a));
+const pop = (ts, t0, d = 0.4) => { const u = clamp((ts - t0) / d); if (u <= 0) return 0; const c1 = 1.70158, c3 = c1 + 1; return Math.max(0.0001, 1 + c3 * Math.pow(u - 1, 3) + c1 * Math.pow(u - 1, 2)); };
+const setS = (o, s) => { o.visible = s > 0.002; o.scale.setScalar(Math.max(s, 0.0001)); };
+const sm = u => u * u * (3 - 2 * u);
+function board(g, lines, w, h, bgN, fg, x, y, z, o = {}) {
+  lines = [].concat(lines); const grp = new THREE.Group(); grp.position.set(x, y, z); g.add(grp); const d = o.d || 0.35;
+  box(grp, w, h, d, bgN, 0, 0, 0, { round: 0.2 });
+  if (o.post) cyl(grp, 0.12, y, 0x9a6a3e, 0, -y / 2 - h / 2 + 0.0, -0.05, { seg: 8 }).scale.y = (y - h / 2) / y;
+  const cw = 512, ch = Math.round(512 * h / w), c = document.createElement('canvas'); c.width = cw; c.height = ch; const x2 = c.getContext('2d'); x2.textAlign = 'center'; x2.textBaseline = 'middle';
+  const n = lines.length; lines.forEach((ln, i) => { const px = o.px ? (o.px[i] || o.px[0]) : Math.min(ch / n * 0.62, cw * 0.9 / (ln.length * 0.56)); x2.font = `bold ${px}px "Liberation Sans","DejaVu Sans",Arial,sans-serif`; x2.fillStyle = (o.fgs && o.fgs[i]) || fg; x2.fillText(ln, cw / 2, ch * (i + 0.5) / n + 2); });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.96, h * 0.94), new THREE.MeshBasicMaterial({ map: t, transparent: true, toneMapped: false })); m.position.z = d / 2 + 0.02; grp.add(m);
+  return grp;
+}
+function roadSeg(g, x0, z0, x1, z1, col, w = 2.2) { const L = Math.hypot(x1 - x0, z1 - z0); const m = box(g, L + w * 0.5, 0.3, w, col, (x0 + x1) / 2, 0.18, (z0 + z1) / 2, { round: 0.12 }); m.rotation.y = -Math.atan2(z1 - z0, x1 - x0); return m; }
+function node(g, x, z, col = C.choc, y = 0.75) { const n = new THREE.Group(); n.position.set(x, y, z); g.add(n); ball(n, 1.15, col, 0, 0.45, 0, {}); cyl(n, 1.6, 0.18, 0xffffff, 0, -0.2, 0, { seg: 24, noShadow: true }); return n; }
+function checkMark(g, x, y, z, col = 0x3fb145, s = 1) { const k = new THREE.Group(); k.position.set(x, y, z); k.scale.setScalar(s); g.add(k); ball(k, 1.5, col, 0, 0, 0, {}); const a = box(k, 0.4, 1.0, 0.3, 0xffffff, -0.45, -0.15, 1.2, { round: 0.15, noShadow: true }); a.rotation.z = 0.8; const b = box(k, 0.4, 1.9, 0.3, 0xffffff, 0.3, 0.1, 1.2, { round: 0.15, noShadow: true }); b.rotation.z = -0.7; return k; }
+function crossMark(g, x, y, z, col = 0xe8506a, s = 1, len = 7) { const k = new THREE.Group(); k.position.set(x, y, z); k.scale.setScalar(s); g.add(k); for (const r of [0.785, -0.785]) { const b = box(k, 1.0, len, 0.5, col, 0, 0, 0, { round: 0.3, noShadow: true }); b.rotation.z = r; } return k; }
+function folder(g, label, x, y, z, s = 1, col = C.butter, dark = 0xf2c660) {
+  const f = new THREE.Group(); f.position.set(x, y, z); f.scale.setScalar(s); g.add(f);
+  box(f, 8, 5.4, 1.2, dark, 0, 2.7, 0, { round: 0.4 }); box(f, 3.2, 0.7, 1.2, dark, -2.4, 5.6, 0, { round: 0.2 });
+  box(f, 6.6, 4.2, 0.1, 0xffffff, 0, 3.4, 0.4, { round: 0.08 }); box(f, 8, 4.4, 0.6, col, 0, 2.2, 0.75, { round: 0.4 });
+  board(f, [label], 6.4, 1.7, 0xfff7e0, '#5a3a8a', 0, 2.3, 1.1, { d: 0.2 }); return f;
+}
+function recipeCard(g, x, y, z, col = C.choc) { const k = new THREE.Group(); k.position.set(x, y, z); g.add(k); box(k, 2.8, 3.4, 0.14, 0xffffff, 0, 0, 0, { round: 0.1 }); ball(k, 0.7, col, 0, 0.7, 0.12, { noShadow: true }).scale.z = 0.3; for (let i = 0; i < 3; i++) box(k, 1.9 - i * 0.3, 0.16, 0.05, 0xc9b6f2, 0, -0.5 - i * 0.4, 0.1, { noShadow: true }); return k; }
+function envelope(g) { const e = new THREE.Group(); g.add(e); box(e, 3.4, 2.3, 0.4, 0xffb3d1, 0, 0, 0, { round: 0.15 }); for (const s of [-1, 1]) { const b = box(e, 2.0, 0.18, 0.1, 0xff6fae, s * 0.8, 0.5, 0.25, { noShadow: true }); b.rotation.z = s * -0.55; } ball(e, 0.35, 0xff4a7a, 0, 0.1, 0.3, { noShadow: true }); return e; }
+function floppy(g, x, y, z, s = 1) { const f = new THREE.Group(); f.position.set(x, y, z); f.scale.setScalar(s); g.add(f); box(f, 5, 5, 0.6, C.blue, 0, 0, 0, { round: 0.3 }); box(f, 3, 1.7, 0.2, 0xdde4f0, 0.2, 1.5, 0.35, { round: 0.1, noShadow: true }); box(f, 3.6, 2.4, 0.2, 0xffffff, 0, -1.1, 0.35, { round: 0.1, noShadow: true }); for (let i = 0; i < 2; i++) box(f, 2.4, 0.15, 0.05, 0xc9b6f2, 0, -0.7 - i * 0.7, 0.48, { noShadow: true }); return f; }
+function mergeButton(g, x, z, s = 1) { const b = new THREE.Group(); b.position.set(x, 0, z); b.scale.setScalar(s); g.add(b); cyl(b, 2.8, 1.4, 0x3a3158, 0, 0.7, 0, { seg: 32 }); const top = cyl(b, 2.1, 1.0, 0x56c85a, 0, 1.8, 0, { seg: 32, m: { emissive: 0x2a9a3a, emissiveIntensity: 0.55 } }); board(b, ['Merge'], 4.6, 1.3, 0x56c85a, '#ffffff', 0, 0.75, 2.85, { d: 0.2 }); b.userData.top = top; return b; }
+function scenery(g, k) {
+  const cols = [C.lilac, C.mint, C.sky, C.peach, 0xf2ecdc, 0xf6e7b8, C.mint, C.lilac];
+  const d = cyl(g, 25, 0.5, cols[k % 8], 0, -0.2, 0, { seg: 64, noShadow: true }); d.receiveShadow = true; cyl(g, 26.2, 0.3, 0xffffff, 0, -0.4, 0, { seg: 64, noShadow: true });
+  for (let i = 0; i < 11; i++) { const a = -0.3 + i * (Math.PI + 0.6) / 10; const x = Math.cos(Math.PI - a) * 22, z = -Math.sin(a) * 15 - 8; mkProp(i % 4 === 1 ? 'bush' : (i % 4 === 3 ? 'flower' : 'tree'), { parent: g, x, z: Math.min(z, -12), scale: 1.4 + (i % 3) * 0.25 }); }
+  for (let i = 0; i < 4; i++) mkProp('cloud', { parent: g, x: -26 + i * 17, y: 24 + (i % 2) * 6, z: -34, scale: 3.4 });
+}
+
+// ---------- the cast (re-used in every scene)
+const cast = {
+  MICA: kit.mkBot('MICA', { parent: scene }),
+  YOU: kit.mkHuman(Object.assign({}, PEOPLE[0], { parent: scene })),
+  CHARGEY: kit.mkBot('CHARGEY', { parent: scene }),
+};
+Object.values(cast).forEach((b, i) => b.idx = i + 1);
+const NAMEOF = { MICA: 'Mica', YOU: 'You', CHARGEY: 'Chargey' }, CCOL = { MICA: '#7be8e0', YOU: '#ffb3d1', CHARGEY: '#a9c8ff' };
+
+// ---------- stages. Each returns { chars(ts) -> positions, update(ts, t), focus(i) -> [x,y,z] local, L(i) not needed }
+const stages = [];
+const S = [];   // { g, ...built stuff }
+function mkStage(k) { const g = new THREE.Group(); g.position.x = k * SW; scene.add(g); scenery(g, k); return g; }
+
+// Roads used in the branch / pull request / merge scenes
+function mkRoads(g, o = {}) {
+  const R = {}; roadSeg(g, -11, -8, 11, -8, 0x7fb2ee, 3.2);
+  R.mainNodes = [-8, -4.5, -1].map(x => node(g, x, -8, C.choc));
+  const br = new THREE.Group(); br.position.set(-1, 0, -8); g.add(br); R.branch = br; // local coords: world = (-1 + lx, -8 + lz)
+  roadSeg(br, 0, 0, 3.2, 4.6, 0xff8fbd, 3.0); roadSeg(br, 3.2, 4.6, 12, 6.5, 0xff8fbd, 3.0);
+  R.bpos = [[6, 6.5], [8.8, 6.5], [11.6, 6.5]]; R.bnodes = R.bpos.map(([lx, lz]) => node(br, lx + 0, lz, C.choc));
+  R.bsign = board(g, ['chocolate-cookies'], 10, 1.9, C.pink, '#5a1f3e', 7, 8.2, -3.9, { post: true, px: [54] });
+  R.msign = board(g, ['main'], 4.4, 1.7, C.sky, '#1d3a6e', -9.4, 4.4, -8, { post: true, px: [80] });
+  R.mtag = board(g, ['the real book'], 7.6, 1.5, 0xffffff, '#1d3a6e', -4, 7.0, -8, { px: [46] });
+  return R;
+}
+const lerp3 = (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+
+// 0 INTRO ------------------------------------------------------------
+{ const g = mkStage(0); const sign = board(g, ['GitHub', 'made easy'], 16, 6.4, C.butter, '#3b2f63', 0, 12.5, -7, { px: [140, 70] });
+  const bal = [[-12, -3, 'balloon', '#ff6a9a'], [12, -3, 'balloon', '#6ab8ff'], [-9, -8, 'balloon', '#ffd34a'], [9, -9, 'balloon', '#56c85a']].map(([x, z, n, c]) => mkProp(n, { parent: g, x, z, scale: 1.6, color: c }));
+  const stars = [-10, 10].map((x, i) => mkProp('star', { parent: g, x, y: 15, z: -5, scale: 1.8 }));
+  S[0] = { g, chars: ts => ({ MICA: { x: -4.5, z: 3.5, ry: 0.2, wave: ts < 3.0 }, YOU: { x: 4.5, z: 3.5, ry: -0.2 } }), focus: i => [0, 8, -4, 20],
+    update(ts, t) { setS(sign, pop(ts, 0.3, 0.6)); stars.forEach((s, i) => { s.rotation.z = t * 0.8 * (i ? -1 : 1); s.position.y = 15 + Math.sin(t * 2 + i) * 0.6; }); bal.forEach((b, i) => b.position.y = Math.sin(t * 1.3 + i) * 0.4); } };
+}
+// 1 WHAT IS GITHUB -------------------------------------------------------
+{ const g = mkStage(1); const cloud = mkProp('cloud', { parent: g, x: 0, y: 14, z: -5, scale: 3.4 }); const cf = folder(g, 'my-project', 0, 11.6, -2.0, 0.34);
+  const lap = mkProp('laptop', { parent: g, x: 0, y: 0, z: -2, scale: 2.6 });
+  const balls = [0, 1, 2, 3, 4].map(i => ball(g, 0.42, C.butter, 0, 0, -3, { noShadow: true, m: { emissive: 0xffd34a, emissiveIntensity: 0.4 } }));
+  const clock = new THREE.Group(); clock.position.set(9.5, 6.5, -3.5); g.add(clock); const face = cyl(clock, 3.4, 0.7, 0xffffff, 0, 0, 0, { seg: 40 }); face.rotation.x = Math.PI / 2; const rim = cyl(clock, 3.8, 0.5, C.mint, 0, 0, -0.2, { seg: 40 }); rim.rotation.x = Math.PI / 2;
+  for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; box(clock, 0.22, i % 3 ? 0.5 : 0.9, 0.1, C.dark, Math.sin(a) * 2.8, Math.cos(a) * 2.8, 0.45, { noShadow: true }).rotation.z = -a; }
+  const mh = new THREE.Group(); mh.position.z = 0.5; clock.add(mh); box(mh, 0.28, 2.6, 0.1, C.dark, 0, 1.2, 0, { round: 0.1, noShadow: true }); const hh = new THREE.Group(); hh.position.z = 0.52; clock.add(hh); box(hh, 0.36, 1.8, 0.1, C.red, 0, 0.8, 0, { round: 0.1, noShadow: true }); ball(clock, 0.3, C.dark, 0, 0, 0.55, { noShadow: true });
+  const arrow = mkProp('star', { parent: g, x: 6.2, y: 11, z: -3, scale: 0.0001 });
+  const team = [2, 3, 4].map((pi, i) => { const b = kit.mkHuman(Object.assign({}, PEOPLE[pi], { parent: g, x: -12 + i * 2.2, z: -3 + (i % 2) * 0.8, scale: 0.7, ry: 0.25 - i * 0.15 })); b.idx = 5 + i; return b; });
+  const tf = folder(g, 'team', -9.8, 0, 0.6, 0.3);
+  S[1] = { g, chars: ts => ({ MICA: { x: -3.5, z: 5.5, ry: 0.2 }, YOU: { x: 4, z: 5.5, ry: -0.2 } }), focus: i => [[0, 11, -4, 14], [0, 5, -2, 12], [0, 8, -3, 16], [9.5, 6.5, -3.5, 11], [-9, 4, -3, 12]][Math.min(i, 4)],
+    update(ts, t, L) {
+      setS(cloud, pop(ts, 0.3, 0.6)); setS(cf, pop(ts, L(0) + 1.2, 0.5) * 0.34); setS(lap, pop(ts, L(0) + 0.6, 0.5));
+      balls.forEach((b, i) => { const on = ts > L(0) + 2.0, u = ((ts * 0.5 + i / 5) % 1); b.visible = on; b.position.set(Math.sin(u * 9 + i) * 0.6, lerp(5.5, 11.2, u), -3); b.scale.setScalar(Math.sin(u * Math.PI)); });
+      setS(clock, pop(ts, L(3) + 0.5, 0.5)); const rw = ts > L(3) + 1.2 ? (ts - L(3) - 1.2) : 0; mh.rotation.z = rw * 5.5; hh.rotation.z = rw * 0.45 - 0.6;
+      team.forEach((b, i) => { setS(b.g, pop(ts, L(4) + 0.4 + i * 0.25, 0.45) * 0.7); animateBot(b, t, { wave: i === 1 && ts > L(4) + 1.5, emo: 'happy' }); }); setS(tf, pop(ts, L(4) + 1.2, 0.45) * 0.3);
+    } };
+}
+// 2 REPO -----------------------------------------------------------------
+{ const g = mkStage(2); const f1 = folder(g, 'cookie-book', 0, 0, -5, 1.7); f1.userData = {};
+  const cards = [-4.2, 0, 4.2].map((x, i) => recipeCard(g, x, 11.5 + (i % 2) * 0.8, -3.2, [C.choc, 0xe8a060, 0xd98a50][i]));
+  const f2 = folder(g, 'cakes', 0, 0, -4, 1, C.pink, 0xf08ab0), f3 = folder(g, 'bread', 0, 0, -4, 1, C.mint, 0x6cc7a0);
+  const pile = []; for (let i = 0; i < 9; i++) { const f = folder(g, 'fix ' + (i + 1), rnd(-9, 9), 0, rnd(-5, -2), 0.5, [C.butter, C.pink, C.mint, C.sky][i % 4], 0xd8c8a0); f.rotation.y = rnd(-0.7, 0.7); f.rotation.z = rnd(-0.15, 0.15); pile.push(f); }
+  const x1 = crossMark(g, 0, 6, 1.5, C.red, 1, 9), ok = checkMark(g, 0, 9.5, -1, 0x3fb145, 1.2);
+  S[2] = { g, chars: ts => ({ MICA: { x: -10, z: 9.5, ry: 0.35 }, YOU: { x: 10, z: 9.5, ry: -0.35 } }), focus: i => [[0, 5, -4, 16], [0, 5, -4, 16], [0, 5, -4, 16], [0, 8, -3, 18], [0, 4, -4, 26], [0, 3, -3, 24]][Math.min(i, 5)],
+    update(ts, t, L) {
+      const row = fin(ts, L(4) + 0.3, L(4) + 1.1), gone = fin(ts, L(5) - 0.3, L(5) + 0.5);
+      const rs = 1 - gone; f1.position.x = lerp(0, -9, sm(row)); setS(f1, lerp(1.7, 1.0, sm(row)) * (gone > 0 ? Math.max(0.0001, 1 - gone) : 1));
+      setS(f2, pop(ts, L(4) + 0.6, 0.5) * rs); f2.position.x = 0; setS(f3, pop(ts, L(4) + 0.9, 0.5) * rs); f3.position.x = 9;
+      cards.forEach((c, i) => { setS(c, pop(ts, L(3) + 0.3 + i * 0.35, 0.5) * (1 - fin(ts, L(4), L(4) + 0.4))); c.position.y = 11.5 + (i % 2) * 0.8 + Math.sin(t * 2 + i) * 0.35; c.rotation.y = Math.sin(t * 1.4 + i) * 0.3; });
+      setS(ok, pop(ts, L(4) + 1.4, 0.5) * rs);
+      pile.forEach((f, i) => { const st = L(5) + 0.3 + i * 0.16, u = fin(ts, st, st + 0.5); f.visible = ts > st; f.position.y = lerp(14, 0, u * u); f.position.z = f.position.z; });
+      setS(x1, pop(ts, L(5) + 2.0, 0.4));
+    } };
+}
+// 3 COMMIT ------------------------------------------------------------------
+{ const g = mkStage(3); roadSeg(g, -11, -3, 11, -3, 0x7fb2ee, 3.0);
+  const xs = [-7.5, -2.5, 2.5, 7.5], notes = [['add sugar', 'cookies'], ['fix a', 'typo'], ['less', 'salt'], ['add', 'sprinkles']];
+  const ns = xs.map((x, i) => node(g, x, -3, C.mint)), fl = xs.map((x, i) => board(g, notes[i], 4.6, 2.6, 0xffffff, '#2a2438', x, 5.6, -3, { post: true, px: [64] }));
+  
+  const dsk = floppy(g, 0, 10.5, -7, 1.5); const marker = mkProp('heart', { parent: g, x: 0, y: 0, z: -3, scale: 1.3 });
+  const lump = new THREE.Group(); lump.position.set(7.5, 0, -3); g.add(lump); ball(lump, 3.2, C.pink, 0, 3.0, 0, {}); [[-2, 2, 1], [2, 3.5, 0.5], [0.5, 5.4, 0], [-1, 4.4, 2.2]].forEach(([x, y, z]) => ball(lump, 1.7, [C.mint, C.butter, C.sky, C.lilac][Math.abs(x * 2 | 0) % 4], x, y, z, {}));
+  const lsign = board(g, ['a whole week of changes'], 9.4, 1.9, 0xffffff, '#d23a56', 7.5, 9.6, -3, { px: [36] }); const x4 = crossMark(g, 7.5, 4, 1, C.red, 1, 8), ok = checkMark(g, 0, 8.3, -2, 0x3fb145, 1.1);
+  const nt = [0.6, 1.9, 0.2, 0]; // node times (relative to L index below)
+  S[3] = { g, chars: ts => ({ MICA: { x: -11, z: 7, ry: 0.3 }, YOU: { x: 11, z: 7, ry: -0.3 } }), focus: i => [[0, 4, -3, 20], [0, 8, -5, 14], [0, 5, -3, 20], [0, 5, -3, 20], [5, 5, -3, 18]][Math.min(i, 4)],
+    update(ts, t, L) {
+      const tt = [L(1) + 0.9, L(1) + 2.3, L(2) + 0.2, L(3) + 0.2];
+      setS(dsk, pop(ts, L(1) + 0.2, 0.5)); dsk.rotation.y = Math.sin(t * 1.3) * 0.5;
+      ns.forEach((n, i) => { const p = 1.35 * pop(ts, tt[i], 0.45) * (i === 3 ? (1 - fin(ts, L(4) - 0.2, L(4) + 0.3)) : 1); setS(n, p); setS(fl[i], pop(ts, tt[i] + 0.25, 0.45) * (i === 3 ? (1 - fin(ts, L(4) - 0.2, L(4) + 0.3)) : 1)); });
+      // heart "go back to any save": starts on node 3, jumps back to node 1
+      const m0 = L(2) + 1.6, mu = fin(ts, m0 + 0.2, m0 + 1.4); const fromX = xs[2], toX = xs[0]; marker.visible = ts > L(2) + 0.6 && ts < L(3) + 0.2; marker.position.set(lerp(fromX, toX, sm(mu)), 6.4 + Math.sin(mu * Math.PI) * 3, -3);
+      setS(ok, pop(ts, L(3) + 0.9, 0.5) * (1 - fin(ts, L(4), L(4) + 0.3)));
+      const u = fin(ts, L(4) + 0.3, L(4) + 0.9); lump.visible = ts > L(4) + 0.3; lump.position.y = lerp(16, 0, u * u); setS(lsign, pop(ts, L(4) + 1.1, 0.4)); setS(x4, pop(ts, L(4) + 1.6, 0.4));
+    } };
+}
+// 4 BRANCH --------------------------------------------------------------------
+{ const g = mkStage(4); const R = mkRoads(g); R.bnodes.forEach(n => n.visible = false);
+  const br2 = new THREE.Group(); br2.position.set(-4.5, 0, -8); g.add(br2); roadSeg(br2, 0, 0, 2.2, -3.4, C.mint, 2); roadSeg(br2, 2.2, -3.4, 10, -5, C.mint, 2); const s2 = board(g, ['fix-typo'], 6.2, 1.8, C.mint, '#14513e', 6.2, 3.6, -13.2, { px: [64] }); const n2 = node(br2, 7, -5, C.choc);
+  const safe = board(g, ['SAFE'], 4.2, 1.6, 0x56c85a, '#ffffff', -4.5, 10, -8, { px: [80] }); const x5 = crossMark(g, -4.5, 3.2, -5.5, C.red, 1, 6); const shield = mkProp('heart', { parent: g, x: -4.5, y: 11.8, z: -8, scale: 1.1 });
+  S[4] = { g, chars: ts => ({ MICA: { x: -11, z: 6, ry: 0.25 }, YOU: { x: 10, z: 5, ry: -0.3 } }), focus: i => [[-4, 4, -8, 22], [1.5, 3, -5, 22], [6, 4, -2, 22], [6, 4, -2, 22], [0, 4, -9, 26], [-4, 5, -8, 22]][Math.min(i, 5)],
+    update(ts, t, L) {
+      setS(R.msign, pop(ts, 0.4, 0.5)); setS(R.mtag, pop(ts, L(0) + 0.6, 0.5)); R.mainNodes.forEach((n, i) => setS(n, pop(ts, 0.2 + i * 0.2, 0.4)));
+      setS(safe, pop(ts, L(1) + 2.2, 0.5) * (1 - fin(ts, L(5) - 0.2, L(5) + 0.3))); setS(shield, pop(ts, L(1) + 2.4, 0.5) * (1 - fin(ts, L(5) - 0.2, L(5) + 0.3)));
+      setS(R.branch, pop(ts, L(1) + 0.8, 0.9)); setS(R.bsign, pop(ts, L(3) + 0.3, 0.5));
+      R.bnodes.forEach((n, i) => { n.visible = ts > L(3) + 1.5 + i * 0.9; setS(n, pop(ts, L(3) + 1.5 + i * 0.9, 0.45)); });
+      setS(br2, pop(ts, L(4) + 0.6, 0.8)); setS(s2, pop(ts, L(4) + 1.0, 0.5));
+      const sh = ts > L(5) ? Math.sin(t * 40) * 0.12 * Math.max(0, 1 - (ts - L(5)) / 3) : 0; R.mainNodes.forEach(n => n.position.x += 0); R.msign.rotation.z = sh * 0.5; setS(x5, pop(ts, L(5) + 1.3, 0.4));
+    } };
+}
+// 5 PULL REQUEST ------------------------------------------------------------------
+{ const g = mkStage(5); const R = mkRoads(g); const env = envelope(g); const panel = board(g, ['Pull request', 'Add chocolate cookies', 'chocolate-cookies  →  main'], 11, 5.4, 0xffffff, '#2a2438', 0.5, 10.5, -7.0, { fgs: ['#5b3fc0', '#2a2438', '#8a62e0'], px: [60, 40, 34] });
+  const b1 = board(g, ['Add more chocolate chips!'], 8.6, 2.6, 0xfff4d8, '#2a2438', -6.5, 11.5, -1, { px: [38] }), b2 = board(g, ['Fixed!'], 5, 2.2, 0xdff7e4, '#2d8b3a', 8, 10.5, 2.5, { px: [70] });
+  const ready = checkMark(g, -7, 11.5, -6, 0x3fb145, 1.2), draft = board(g, ['DRAFT'], 7.2, 2.4, 0xb8b4c8, '#ffffff', 5.5, 8.5, -6.5, { px: [120], d: 0.5 }); draft.rotation.z = -0.22;
+  S[5] = { g, chars: ts => ({ MICA: { x: 0.5, z: 5.5, ry: 0.1 }, YOU: { x: 9, z: 3, ry: -0.4 }, CHARGEY: { x: -7, z: 0, ry: 0.35 } }), focus: i => [[5, 4, -2, 24], [0.5, 9, -6, 18], [0.5, 8, -6, 20], [-4, 7, -3, 18], [4, 7, -1, 20], [0.5, 9, -6, 18], [2, 8, -6, 18]][Math.min(i, 6)],
+    update(ts, t, L) {
+      setS(R.msign, 1); R.mainNodes.forEach(n => setS(n, 1)); R.bnodes.forEach(n => setS(n, 1)); setS(R.bsign, 1);
+      setS(panel, pop(ts, L(1) + 0.2, 0.55)); const u = fin(ts, L(1) + 1.2, L(1) + 3.0); const from = [10, 3.5, 0.5], to = [-3.6, 3.6, 2.6]; const p = lerp3(from, to, sm(u)); env.position.set(p[0], p[1] + Math.sin(u * Math.PI) * 6, p[2]); env.rotation.z = Math.sin(u * Math.PI * 2) * 0.3; env.visible = ts > L(1) + 0.9; env.scale.setScalar(ts > L(5) ? Math.max(0.0001, 1 - fin(ts, L(5), L(5) + 0.4)) : 1);
+      setS(b1, pop(ts, L(3) + 0.6, 0.45) * (1 - fin(ts, L(5) - 0.2, L(5) + 0.2))); setS(b2, pop(ts, L(4) + 0.6, 0.45) * (1 - fin(ts, L(5) - 0.2, L(5) + 0.2)));
+      setS(ready, pop(ts, L(5) + 0.9, 0.5) * (1 - fin(ts, L(6) - 0.2, L(6) + 0.2)));
+      const dp = pop(ts, L(6) + 1.6, 0.35); setS(draft, dp); draft.rotation.z = -0.22 + (dp > 0 ? Math.sin(Math.min(1, (ts - L(6) - 1.6) * 4) * 12) * 0.03 : 0);
+    } };
+}
+// 6 MERGE --------------------------------------------------------------------------
+{ const g = mkStage(6); const R = mkRoads(g); const btn = mergeButton(g, -1.5, 3.8, 1.0);
+  const ok = checkMark(g, -7, 9.5, 0, 0x3fb145, 1.2); const okb = board(g, ['Approved'], 6.4, 1.8, 0xdff7e4, '#2d8b3a', -7, 6.5, 0, { px: [64] });
+  const ready = board(g, ['Ready to merge', '✓ Approved', '✓ Checks passed'], 8.8, 5.2, 0xffffff, '#2a2438', 1.2, 10.5, -7, { fgs: ['#5b3fc0', '#2d8b3a', '#2d8b3a'], px: [48, 44, 44] });
+  const notready = board(g, ['Not ready', '✕ Changes requested', '✕ A check failed'], 8.8, 5.2, 0xffe6ec, '#2a2438', 1.2, 10.5, -7, { fgs: ['#d23a56', '#d23a56', '#d23a56'], px: [48, 38, 38] });
+  const targets = [[2.2, -8], [5.4, -8], [8.6, -8]]; const done = targets.map(([x, z]) => node(g, x, z, C.choc)); const conf = []; for (let i = 0; i < 46; i++) { const c = box(g, 0.34, 0.34, 0.12, [0xff6fae, 0xffd34a, 0x6ab8ff, 0x56c85a, 0xc9b6f2][i % 5], 0, 0, 0, { noShadow: true, round: 0.05 }); c.userData = { vx: rnd(-9, 9), vy: rnd(8, 17), vz: rnd(-3, 4), sp: rnd(2, 9) }; conf.push(c); }
+  const poof = mkProp('star', { parent: g, x: 4, y: 6, z: 3, scale: 0.0001 });
+  S[6] = { g, chars: ts => ({ MICA: { x: -9, z: 4.5, ry: 0.35 }, YOU: { x: 5, z: 5.5, ry: -0.3, ...(0) }, CHARGEY: { x: -7, z: 0, ry: 0.35 } }), focus: i => [[-5, 6, -2, 18], [3, 3, -6, 22], [-1.5, 3, 3, 16], [0, 7, 0, 18], [1.2, 9, -6, 18], [1.2, 9, -6, 18], [4, 4, -4, 24]][Math.min(i, 6)],
+    update(ts, t, L, D) {
+      setS(R.msign, 1); R.mainNodes.forEach(n => setS(n, 1)); setS(R.bsign, 1 - fin(ts, L(6) + 0.2, L(6) + 1.0)); const delb = fin(ts, L(6) + 0.2, L(6) + 1.3);
+      setS(ok, pop(ts, 0.5, 0.5) * (1 - fin(ts, L(1), L(1) + 0.3))); setS(okb, pop(ts, 0.7, 0.45) * (1 - fin(ts, L(1), L(1) + 0.3)));
+      setS(R.branch, 1 - sm(delb)); R.branch.rotation.y = delb * 3;
+      const press = L(2) + 1.8; const pu = Math.sin(clamp((ts - press) / 0.35) * Math.PI); btn.userData.top.position.y = 1.8 - pu * 0.45; btn.rotation.y = 0;
+      R.bnodes.forEach((n, i) => { const st = press + 0.3 + i * 0.3, u = fin(ts, st, st + 1.1); const a = [-1 + R.bpos[i][0], 0.75, -8 + R.bpos[i][1]], b = [targets[i][0], 0.75, targets[i][1]]; n.visible = true; const q = lerp3(a, b, sm(u)); n.position.set(q[0] - (-1), q[1] + Math.sin(u * Math.PI) * 4, q[2] - (-8)); n.visible = u < 1 && ts < L(6) + 1.3; });
+      done.forEach((n, i) => setS(n, ts > press + 0.3 + i * 0.3 + 1.1 ? 1 : 0));
+      const cs = L(3) - 0.1; conf.forEach((c, i) => { const q = ts - cs; c.visible = q > 0 && q < 3.2; const v = c.userData; c.position.set(2 + v.vx * q * 0.5, 7 + v.vy * q - 9 * q * q * 0.6, 0 + v.vz * q); c.rotation.set(q * v.sp, q * v.sp * 0.7, 0); });
+      setS(ready, pop(ts, L(4) + 0.3, 0.45) * (1 - fin(ts, L(5), L(5) + 0.25))); setS(notready, pop(ts, L(5) + 0.35, 0.45));
+      btn.userData.top.material.emissiveIntensity = 0.55 + Math.sin(t * 5) * 0.2;
+    } };
+}
+// 7 RECAP --------------------------------------------------------------------------
+{ const g = mkStage(7); const stx = [-18, -9, 0, 9, 18]; const items = [];
+  const mini = new THREE.Group(); items[0] = folder(g, 'repo', stx[0], 0.3, -4.5, 0.5);
+  items[1] = floppy(g, stx[1], 3.4, -4.5, 0.75);
+  const fk = new THREE.Group(); fk.position.set(stx[2] - 3, 0.4, -4.5); g.add(fk); roadSeg(fk, 0, 0, 6, 0, C.sky, 1.2); roadSeg(fk, 2, 0, 4, 2.4, C.pink, 1.2); roadSeg(fk, 4, 2.4, 6.2, 2.4, C.pink, 1.2); [0.5, 2.5, 5.5].forEach(x => node(fk, x, 0, C.choc, 0.6).scale.setScalar(0.55)); [4.6].forEach(x => node(fk, x, 2.4, C.choc, 0.6).scale.setScalar(0.55)); items[2] = fk;
+  items[3] = envelope(g); items[3].position.set(stx[3], 3.2, -4.5); items[3].scale.setScalar(0.9);
+  items[4] = mergeButton(g, stx[4], -4.5, 0.7);
+  const names = [['1  Repo', 'project folder'], ['2  Commit', 'save point'], ['3  Branch', 'safe copy lane'], ['4  Pull request', 'ask for a look'], ['5  Merge', 'join into main']], cols = [C.butter, C.mint, C.pink, C.lilac, 0x9fe3a8];
+  const pads = stx.map((x, i) => { cyl(g, 4, 0.5, cols[i], x, 0.1, -4.5, { seg: 32, noShadow: true }); return board(g, names[i], 8, 3.2, 0xffffff, '#3b2f63', x, 8.4, -4.5, { px: [i === 3 ? 44 : 52, 36] }); });
+  const keys = ts0 => 0; // positions set below
+  S[7] = { g, stx, chars: (ts, L) => { const K = [[0, -13], [L(0) + 1.6, -18.5], [L(1) + 3.3, -18.5], [L(1) + 5.3, -9.5], [L(2) + 0.1, -9.5], [L(2) + 2.0, 0.5], [L(2) + 3.3, 0.5], [L(2) + 5.0, 9.5], [L(3) + 0.1, 9.5], [L(3) + 2.2, 18.5], [L(4) + 0.1, 18.5], [L(5) + 0.4, 0], [1e6, 0]]; let x = K[0][1], vel = 0; for (let i = 0; i < K.length - 1; i++) if (ts >= K[i][0] && ts < K[i + 1][0]) { const u = (ts - K[i][0]) / (K[i + 1][0] - K[i][0]); const d = K[i + 1][1] - K[i][1]; x = K[i][1] + d * u; vel = Math.abs(d) / (K[i + 1][0] - K[i][0]); }
+      const dir = vel > 0.3 ? 0 : 0; return { MICA: { x: x - 2, z: 3, ry: vel > 0.3 ? 0 : 0.2, walk: vel > 0.5 }, YOU: { x: x + 2, z: 3, ry: vel > 0.3 ? 0 : -0.2, walk: vel > 0.5 } }; },
+    focus: (i, j) => { const k = [[2, 0], [0, 1], [2, 3], [4, 4], [4, 4], [2, 2]][Math.min(i, 5)]; return [stx[k[j % 2]], 4, -4.5, 12]; },
+    update(ts, t, L) { pads.forEach((p, i) => setS(p, pop(ts, 0.3 + i * 0.15, 0.5))); items.forEach((it, i) => { const q = it.userData && it.userData.baseS; }); items[3].rotation.y = Math.sin(t * 1.5) * 0.4; items[1].rotation.y = Math.sin(t * 1.3) * 0.5; } };
+}
+
+// ---------- timeline + camera plans ------------------------------------------------
+const scs = TL.scenes; const sceneAt = t => { for (let i = scs.length - 1; i >= 0; i--) if (t >= scs[i].t0 - 1e-6) return i; return 0; };
+const Lof = (sc, i) => (sc.lines[Math.min(i, sc.lines.length - 1)].v0 - sc.t0);
+function charsAt(si, ts) { const sc = scs[si]; return S[si].chars(ts, i => Lof(sc, i)); }
+function headOf(si, who, ts) { const c = charsAt(si, ts)[who] || charsAt(si, ts).MICA; const b = cast[who]; return [si * SW + c.x, 5.05 * b.g.scale.x + 0.5, c.z]; }
+const plans = scs.map((sc, si) => {
+  const cuts = []; 
+  sc.lines.forEach((l, i) => { const d = l.v1 - l.v0, n = d > 5.6 ? 3 : d > 3.0 ? 2 : 1; for (let j = 0; j < n; j++) cuts.push({ t: j === 0 ? l.v0 - 0.12 : l.v0 + d * j / n, line: i, j, n }); });
+  const FOC = S[si].focus; const cx = si * SW;
+  // a "set" shot frames a whole illustration: f = [x,y,z,width]; d = distance so that the width fits the tall frame
+  const setShot = (type, f, ci) => {
+    const w = f[3] || 14, d = w * 2.7, fx = cx + f[0], fy = f[1], fz = f[2], ey = fy + d * 0.26, s = ci % 2 ? 1 : -1, c = [fx, fy, fz];
+    if (type === 'orbit') return { orbit: { c, r: [d * 1.05, d * 0.92], a: [s * 38, s * 6], h: [ey, ey - 1.5] }, l: [c, c], f: [40, 38], ease: 'io' };
+    if (type === 'dolly') return { p: [[fx - 0.45 * w * s, ey, fz + d], [fx + 0.45 * w * s, ey + 1, fz + d * 0.94]], l: [[fx - 0.08 * w * s, fy, fz], [fx + 0.08 * w * s, fy, fz]], f: [40, 38], ease: 'io' };
+    if (type === 'pan') return { p: [[fx, ey, fz + d * 1.02], [fx + 1.5 * s, ey - 0.4, fz + d]], l: [[fx - 0.28 * w * s, fy, fz], [fx + 0.28 * w * s, fy, fz]], f: [40, 34], ease: 'io' };
+    if (type === 'crane') return { p: [[fx, fy + 1.5, fz + d * 0.85], [fx + 0.1 * w * s, fy + d * 0.62, fz + d * 1.25]], l: [c, [fx, fy - 1, fz - 1]], f: [38, 44], ease: 'io' };
+    if (type === 'low') return { p: [[fx - 0.2 * w * s, 1.6, fz + d * 0.95], [fx - 0.3 * w * s, 3.2, fz + d * 0.82]], l: [[fx, fy + 1, fz], [fx, fy + 1.5, fz]], f: [38, 34], r: [3 * s, -1], ease: 'io' };
+    return { p: [[fx + 0.18 * w * s, ey + 2, fz + d * 1.2], [fx + 0.04 * w * s, ey, fz + d * 0.96]], l: [c, c], f: [38, 32], ease: 'io' };   // push in
+  };
+  const SET = ['push', 'orbit', 'dolly', 'pan', 'crane', 'low'], SPK = ['pushIn', 'closeUp', 'lowAngle', 'zoomLens', 'closeUp'];
+  const shots = [{ t: sc.t0, name: si === 0 ? 'aerial' : 'wide', cam: si === 0 ? SHOTS.aerial([cx, 0, -2]) : (si % 2 ? SHOTS.crane([cx, 5, 0], 22, 40, 20) : SHOTS.wide([cx, 6, -2], 44)) }];
+  let prevKind = 'spk', nSet = 0, nSpk = 0;
+  cuts.forEach((c, ci) => {
+    const l = sc.lines[c.line], t0 = c.t, t1 = ci + 1 < cuts.length ? cuts[ci + 1].t : sc.t1;
+    // MICA's teaching lines show the picture first; questions and reactions show the face first. Then we alternate.
+    let kind = c.j === 0 ? (l.who === 'MICA' || l.card ? 'set' : 'spk') : (prevKind === 'set' ? 'spk' : 'set');
+    if (c.j > 0 && l.who === 'MICA' && c.line % 2 === 0 && si < 7) kind = 'set';
+    if (c.j === 0 && prevKind === kind && !(l.card && l.card.k !== 'term') && !(l.who === 'MICA' && c.line % 2 === 1 && si < 7)) kind = kind === 'set' ? 'spk' : 'set';
+    prevKind = kind; let cam, name;
+    if (kind === 'spk') { const type = SPK[nSpk++ % SPK.length], who = l.who; name = type; const a = headOf(si, who, t0 - sc.t0), b = headOf(si, who, t1 - sc.t0);
+      const s0 = SHOTS[type](a, ...(type === 'closeUp' ? [17, { roll: (nSpk % 2 ? 2.5 : -2.5) }] : [])), s1 = SHOTS[type](b, ...(type === 'closeUp' ? [17, { roll: 0 }] : []));
+      cam = Object.assign({}, s0, { p: [s0.p[0], s1.p[1]], l: [s0.l[0], s1.l[1]] }); if (type !== 'lowAngle') cam.shake = 0.025; }
+    else { const type = SET[(nSet++ + si) % SET.length]; name = type; cam = setShot(type, FOC(c.line, c.j), ci); if (type !== 'low') cam.shake = 0.02; }
+    shots.push({ t: t0, name, cam });
+  });
+  return { end: sc.t1, shots };
+});
+// special moments
+{ // once per video: dolly zoom on YOU in the merge scene ("Yay!")
+  const si = 6, sc = scs[si]; const p = plans[si]; const l = sc.lines[3]; const k = p.shots.findIndex(s => s.t >= l.v0 - 0.2); if (k > 0) p.shots[k].cam = SHOTS.dollyZoom(headOf(si, 'YOU', l.v0 - sc.t0), 17, 40);
+  // the ending: pull back to a wide of all five stations
+  const sj = 7, sc7 = scs[sj], p7 = plans[sj]; const lf = sc7.lines[5]; p7.shots = p7.shots.filter(s => s.t < lf.v0 - 0.3); p7.shots.push({ t: lf.v0 - 0.15, name: 'pullBack', cam: { p: [[sj * SW - 2, 5.2, 22], [sj * SW, 17, 100]], l: [[sj * SW, 5.2, 3], [sj * SW, 11, -4]], f: [34, 48], ease: 'io' } });
+}
+const CUTS = scs.slice(0, -1).map(s => s.t1);
+
+// ---------- on-screen words ------------------------------------------------------
+const el = id => document.getElementById(id), card = el('card'), cap = el('cap'), flash = el('flash'), track = el('track');
+const STEPS = ['Repo', 'Commit', 'Branch', 'Pull request', 'Merge']; track.innerHTML = STEPS.map(s => `<div class="chip">${s}</div>`).join(''); const chips = [...track.children];
+const PILL = ['#8a62e0', '#2fb8a8', '#e8689a', '#f09a10', '#3fb145'];
+let lastCardKey = '';
+function drawUI(t, si) {
+  const sc = scs[si]; chips.forEach((c, i) => { c.className = 'chip' + (sc.step === 5 ? ' done' : (sc.step === i ? ' on' : (sc.step > i ? ' done' : ''))); }); track.style.opacity = sc.step === -1 ? 0.0 : 1;
+  // card
+  let showing = null, cs = 0, ce = 0;
+  sc.lines.forEach((l, i) => { if (!l.card) return; const nx = sc.lines.slice(i + 1).find(q => q.card); const s = l.v0 - 0.05, e = Math.min(l.v1 + (l.card.hold ?? 1.2), nx ? nx.v0 - 0.05 : 1e9, sc.t1 - 0.05); if (t >= s && t < e) { showing = l.card; cs = s; ce = e; } });
+  if (showing) {
+    const key = showing.k + showing.t + showing.s; if (key !== lastCardKey) { lastCardKey = key; card.className = showing.k === 'do' ? 'do' : showing.k === 'dont' ? 'dont' : '';
+      card.innerHTML = showing.k === 'chips' ? `<div class="big" style="font-size:34px;margin-bottom:8px">Five words to learn</div><div class="pills">${STEPS.map((s, i) => `<div class="pill" style="background:${PILL[i]}" data-i="${i}">${i + 1}  ${s}</div>`).join('')}</div>`
+        : (showing.k === 'term' ? `<div class="big">${showing.t}</div><div class="sub">${showing.s}</div>` : `<div class="row"><div class="dot">${showing.k === 'do' ? '✓' : '✕'}</div><div class="big">${showing.t}</div></div><div class="sub">${showing.s}</div>`); }
+    const u = clamp((t - cs) / 0.3), o = clamp((ce - t) / 0.2), sc2 = (1 + 1.7 * Math.pow(u - 1, 3) + 0.7 * Math.pow(u - 1, 2)); card.style.opacity = Math.min(u * 3, o); card.style.transform = `scale(${Math.max(0.01, sc2) * (0.94 + 0.06 * o)})`;
+    if (showing.k === 'chips') card.querySelectorAll('.pill').forEach((p, i) => { const q = clamp((t - cs - 0.35 - i * 0.28) / 0.25); p.style.opacity = q; p.style.transform = `translateX(${(1 - q) * 40}px)`; });
+  } else { card.style.opacity = 0; lastCardKey = ''; }
+  // caption
+  let line = null; sc.lines.forEach(l => { if (t >= l.v0 - 0.05 && t < l.v1 + 0.45) line = l; });
+  if (line) { cap.innerHTML = `<div class="who" style="background:${CCOL[line.who]}">${NAMEOF[line.who]}</div><br>${line.text}`; cap.style.opacity = Math.min(1, clamp((t - line.v0 + 0.05) / 0.15), clamp((line.v1 + 0.45 - t) / 0.2)); } else cap.style.opacity = 0;
+}
+
+// ---------- the frame function -------------------------------------------------------
+window.renderFrame = t => {
+  const si = sceneAt(t), sc = scs[si], ts = t - sc.t0, st = S[si]; const L = i => Lof(sc, i), D = i => sc.lines[i].v1 - sc.t0;
+  S.forEach((s, i) => s.g.visible = i === si);
+  const cx = si * SW; sun.position.set(cx - 6, 16, 14); sun.target.position.set(cx, 5, 0); pk.position.set(cx - 9, 10, 4); bl.position.set(cx + 9, 10, 4);
+  // who is talking
+  let cur = null, last = null; sc.lines.forEach(l => { if (t >= l.v0 - 0.02) last = l; if (t >= l.v0 && t <= l.v1 + 0.05) cur = l; });
+  const pos = st.chars(ts, L);
+  for (const who of Object.keys(cast)) { const b = cast[who], p = pos[who]; if (!p) { b.g.visible = false; continue; } b.g.visible = true; b.g.position.set(cx + p.x, 0, p.z); b.g.rotation.y = p.ry || 0;
+    const sp = cur && cur.who === who; const amp = sp ? (cur.env[Math.max(0, Math.min(cur.env.length - 1, Math.floor((t - cur.e0) * 48)))] || 0) : 0;
+    let emo = 'neutral'; if (sp) emo = cur.emo; else if (last && last.who === who && t - last.v1 < 1.0) emo = last.emo; else if (last) emo = last.emo === 'worried' ? 'sweet' : (last.emo === 'stern' ? 'neutral' : 'happy');
+    const other = last ? pos[last.who] : null; const look = other ? [clamp((other.x - p.x) / 8, -1, 1) * 0.8, 0.1] : null;
+    animateBot(b, t, { speaking: !!sp, amp, emo, look: look || undefined, wave: !!p.wave, walk: !!p.walk }); }
+  st.update(ts, t, L, D);
+  // camera
+  const pl = plans[si]; const sh = shotAt(pl, t); const shot = pl.shots[sh.i];
+  const wp = whipPan(t, CUTS); const c = evalCam(shot.cam, sh.u, t, shot.t, si === 0 && sh.i === 0);
+  applyCam(camera, c, W / H, wp.yaw); renderer.domElement.style.filter = wp.blur > 0.4 ? `blur(${wp.blur.toFixed(1)}px)` : 'none';
+  renderer.render(scene, camera);
+  flash.style.opacity = wp.flash; drawUI(t, si);
+};
+window.dbg = () => ({ pos: camera.position.toArray(), fov: camera.fov, plan: plans.map(p => p.shots.map(x => [x.name, +x.t.toFixed(1)])), mica: cast.MICA.g.position.toArray(), you: cast.YOU.g.position.toArray() }); window.TL = TL; window.renderFrame(0.5); window.ready = true;
+</script></body></html>
