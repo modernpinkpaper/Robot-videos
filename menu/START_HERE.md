@@ -10,6 +10,7 @@ Dalia can ask for a video by mixing choices from four lists. Claude reads this m
 | "robots only" | the robot characters only | `cast/robots.md` |
 | "both" / "humans and robots" | mixed cast | `cast/mixed.md` |
 | "animals", "pets" | add pets (any cast) | `cast/pets.md` |
+| "emotional robots" / "expressive characters" | the real-face characters (12 named people) | `cast/emotional_robots.md` |
 Default: humans for stories about people or work or life, robots for business tool or tech topics.
 
 ## 2. FORMAT  (how it is told)  -> `formats/`

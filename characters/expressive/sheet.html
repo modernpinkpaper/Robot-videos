@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Face sheets</title>
+<style>html,body{margin:0;background:#f3eefb;font-family:Arial Rounded MT Bold,Arial,sans-serif}</style></head><body><div id="w"></div>
+<script type="module">
+import { drawFace, drawHead2D, EXPR, EXPR_GROUPS, mix, E, DEF } from './faces.js';
+// window.renderSheet(items, {cols, title, skin, hair, cell}) items: [{label, p}]
+window.renderSheet = (items, o = {}) => {
+  const cols = o.cols || 3, cw = o.cell || 400, ch = Math.round(cw * 860 / 1024) + 56, head = o.title ? 80 : 0, rows = Math.ceil(items.length / cols);
+  const c = document.createElement('canvas'); c.width = cols * cw + 20; c.height = rows * ch + head + 20; const x = c.getContext('2d');
+  x.fillStyle = '#f3eefb'; x.fillRect(0, 0, c.width, c.height);
+  if (o.title) { x.fillStyle = '#3a2c4e'; x.font = 'bold 40px Arial'; x.textAlign = 'left'; x.fillText(o.title, 24, 54); }
+  const tmp = document.createElement('canvas'); tmp.width = 1024; tmp.height = 860; const t = tmp.getContext('2d');
+  items.forEach((it, i) => {
+    const cx = 10 + (i % cols) * cw, cy = head + 10 + Math.floor(i / cols) * ch;
+    x.fillStyle = '#ffffff'; x.beginPath(); x.roundRect(cx + 6, cy + 4, cw - 12, ch - 8, 22); x.fill();
+    t.clearRect(0, 0, 1024, 860);
+    drawHead2D(t, { skin: o.skin || '#e3b88d', hair: o.hair || '#3a2c3e', hairStyle: o.hairStyle || 'bun' });
+    const f = document.createElement('canvas'); f.width = 1024; f.height = 860; drawFace(f.getContext('2d'), it.p, { skin: o.skin || '#e3b88d', brow: o.brow || '#3a2c3e' });
+    t.drawImage(f, 0, 0);
+    x.drawImage(tmp, cx + 14, cy + 10, cw - 28, (cw - 28) * 860 / 1024);
+    x.fillStyle = '#3a2c4e'; x.font = 'bold 26px Arial'; x.textAlign = 'center'; x.fillText(it.label, cx + cw / 2, cy + ch - 18);
+  });
+  document.getElementById('w').innerHTML = ''; document.getElementById('w').appendChild(c); return [c.width, c.height];
+};
+window.api = { EXPR, EXPR_GROUPS, mix, E, DEF };
+window.ready = true;
+</script></body></html>
