@@ -8,11 +8,17 @@ The robots and `robots.js` are NOT changed. Everything lives in `characters/expr
 - `01_hero_mara.png` full body + close up of the hero (Mara)
 - `02_hero_turnaround.png` front, three-quarter, side, back
 - `03_cast.png` the 5 starter characters (different skin tones, hair, ages, glasses, a kid)
-- `04_poses.png` 9 body poses (idle, hips, shrug, facepalm, wave, armsUp, crossed, point, think)
+- `04_poses.png` 9 body poses (idle, hips, shrug, facepalm, wave, armsUp, crossed, point, think), all with the new noodle arms
 - `faces_1_calm.png` ... `faces_7_shy_and_awkward.png` all 50 faces, grouped
 - `parts_1_eyes.png`, `parts_2_brows.png`, `parts_3_mouths.png`, `parts_4_nose_cheeks_extras.png` each part on its own
 - `mix_and_match.png` parts taken from different feelings ("Fine." = sad eyes + big smile)
 - `05_motion_demo.mp4` Mara cycling through feelings, including an animated eye roll
+
+## How the body is built (matches the Claim Line people)
+- ONE soft egg-shaped torso, wider at the bottom. No neck: the head sits right on the torso and its chin overlaps it.
+- Arms are single smooth tubes that start inside the side of the torso and bend like noodles, ending in a round mitten. No joints, no gaps.
+- Short stubby legs ending in big round shoes.
+- Poses are written as where the elbow and the hand go (`POSES` in `body.js`), so a new pose is just two points per arm.
 
 ## How a face works (`faces.js`)
 A face is a set of numbers. Each part of the face has its own numbers, so a character can mix parts.

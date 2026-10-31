@@ -28,6 +28,19 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     }
     g.computeVertexNormals(); return g;
   }
+  // a soft egg for the torso: wide at the bottom, narrower at the top (sx, sy, sz = radii at the widest part)
+  function egg(sx, sy, sz) {
+    const g = new THREE.SphereGeometry(1, 48, 36), pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      const w = 1 - 0.34 * smooth01((y + 0.15) / 1.15);            // narrower toward the top
+      pos.setXYZ(i, x * sx * w, y * sy, z * sz * w);
+    }
+    g.computeVertexNormals(); return g;
+  }
+  const smooth01 = t => { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); };
+  // z of the front surface of the egg at (x, y) in body space (used to stick the badge strap on the front)
+  function eggZ(x, y) { const yy = (y - 2.95) / 1.55, w = 1 - 0.34 * smooth01((yy + 0.15) / 1.15), rx = 1.28 * w, rz = 0.98 * w; const q = 1 - (x / rx) ** 2 - yy * yy; return rz * Math.sqrt(Math.max(0.02, q)); }
   const HEAD = { rx: 1.5, ry: 1.3, rz: 1.2 };
   // the face decal: same blob, slightly bigger, UV mapped straight from the front so the 2D face fits exactly
   function facePatch() {
@@ -41,16 +54,19 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
   }
   const FACE_GEO = facePatch();
 
-  const POSES = {   // per arm: [out, forward, elbowBend, forearmInward] in degrees; lift = shoulder raise
-    idle:     { L: [9, 0, 10, 0],    R: [9, 0, 10, 0] },
-    hips:     { L: [38, 0, 0, 82],   R: [38, 0, 0, 82] },
-    shrug:    { L: [24, 0, 20, -55], R: [24, 0, 20, -55], lift: 0.28 },
-    facepalm: { L: [9, 0, 10, 0],    R: [6, 96, 128, 52] },
-    wave:     { L: [9, 0, 10, 0],    R: [150, 0, 30, 0] },
-    armsUp:   { L: [165, 0, 10, 0],  R: [165, 0, 10, 0] },
-    crossed:  { L: [12, 28, 95, 62], R: [12, 28, 95, 62] },
-    point:    { L: [9, 0, 10, 0],    R: [8, 84, 6, 0] },
-    think:    { L: [12, 30, 95, 62], R: [10, 70, 135, 28] },
+  // Poses: where the ELBOW (e) and HAND (h) go, [x, y, z], for the right arm. The left arm uses the same numbers mirrored,
+  // unless a pose gives its own `L`. The arm is one smooth tube that bends through those points (like noodle arms).
+  const SHOULDER = [0.55, 3.8, 0.0];
+  const POSES = {
+    idle:     { R: { e: [1.75, 3.05, 0.15], h: [1.95, 2.1, 0.3] } },
+    hips:     { R: { e: [2.55, 3.15, -0.15], h: [1.5, 2.45, 0.4] } },
+    shrug:    { R: { e: [2.25, 3.6, 0.25], h: [3.0, 4.15, 0.95] }, lift: 0.3 },
+    facepalm: { R: { e: [2.1, 4.2, 1.05], h: [0.3, 5.45, 2.0] }, L: { e: [-1.75, 3.05, 0.15], h: [-1.95, 2.1, 0.3] } },
+    wave:     { R: { e: [2.55, 4.7, 0.45], h: [3.0, 6.3, 0.5] }, L: { e: [-1.75, 3.05, 0.15], h: [-1.95, 2.1, 0.3] } },
+    armsUp:   { R: { e: [2.7, 5.0, 0.2], h: [2.5, 6.9, 0.3] } },
+    crossed:  { R: { e: [1.9, 2.95, 1.05], h: [-0.9, 3.45, 1.55] }, L: { e: [-1.9, 2.8, 0.85], h: [0.9, 3.15, 1.35] } },
+    point:    { R: { e: [1.95, 3.6, 1.0], h: [2.5, 4.05, 2.7] }, L: { e: [-1.75, 3.05, 0.15], h: [-1.95, 2.1, 0.3] } },
+    think:    { R: { e: [1.7, 3.6, 0.95], h: [0.55, 4.45, 1.85] }, L: { e: [-1.9, 2.8, 0.85], h: [0.9, 3.1, 1.35] } },
   };
 
   function mkExpressive(o = {}) {
@@ -59,15 +75,24 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     const g = new THREE.Group(); g.position.set(O.x, O.y, O.z); g.rotation.y = O.ry; g.scale.setScalar((O.kid ? 0.74 : 1) * O.scale); if (O.parent) O.parent.add(g);
     const body = new THREE.Group(); g.add(body);
     const bodyG = new THREE.Group(); body.add(bodyG);   // torso and everything above the hips (leans and bounces)
-    // legs and shoes
-    const legs = [-1, 1].map(s => { const l = new THREE.Group(); l.position.set(s * 0.52, 2.62, 0); g.add(l); box(l, 0.9, 2.0, 0.95, bottom, 0, -1.05, 0, { round: 0.34 }); box(l, 1.0, 0.55, 1.45, hexn(O.shoe), 0, -2.3, 0.22, { round: 0.26 }); return l; });
-    // torso
-    box(bodyG, 2.2, 2.25, 1.4, top, 0, 3.82, 0, { round: 0.62 });
-    box(bodyG, 1.0, 0.34, 0.1, 0xffffff, 0, 4.78, 0.62, { round: 0.1, noShadow: true });       // collar
-    if (O.lanyard) { box(bodyG, 0.16, 1.2, 0.05, hexn(O.lanyard), 0, 4.15, 0.72, { round: 0.05, noShadow: true }); box(bodyG, 0.5, 0.65, 0.07, 0xffffff, 0, 3.25, 0.74, { round: 0.1, noShadow: true }); }
-    cyl(bodyG, 0.36, 0.5, skin, 0, 5.05, 0, { seg: 16 });
-    // head
-    const head = new THREE.Group(); head.position.set(0, 6.5, 0); bodyG.add(head);
+    // legs: short stubby tubes ending in big round shoes (like the Claim Line people)
+    const shoeC = hexn(O.shoe);
+    const legs = [-1, 1].map(s => {
+      const l = new THREE.Group(); l.position.set(s * 0.55, 1.5, 0); g.add(l);
+      const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.36, 0.75, 6, 14), mat(bottom)); leg.position.set(0, -0.55, 0); leg.castShadow = true; l.add(leg);
+      const shoe = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), mat(shoeC, { roughness: 0.45 })); shoe.scale.set(0.58, 0.46, 0.82); shoe.position.set(0, -1.1, 0.2); shoe.castShadow = true; l.add(shoe);
+      return l;
+    });
+    // torso: ONE soft egg shape, wider at the bottom, no neck. The head sits right on top of it.
+    const torso = new THREE.Mesh(egg(1.28, 1.55, 0.98), mat(top, { roughness: 0.6 })); torso.position.set(0, 2.95, 0); torso.castShadow = true; torso.receiveShadow = true; bodyG.add(torso);
+    if (O.lanyard) {   // a thin strap that follows the front of the egg, with a small badge
+      const pts = []; for (let i = 0; i <= 10; i++) { const u = i / 10, x = (1 - Math.abs(u * 2 - 1)) * 0 + (u < 0.5 ? -1 : 1) * (0.5 - Math.abs(u - 0.5)) * 1.0; const yy = 4.35 - Math.sin(Math.min(u, 1 - u) * Math.PI) * 1.05; pts.push([x, yy]); }
+      const curve = new THREE.CatmullRomCurve3([[-0.62, 4.42], [-0.38, 3.9], [0, 3.35], [0.38, 3.9], [0.62, 4.42]].map(([x, y]) => new THREE.Vector3(x, y, eggZ(x, y) + 0.03)));
+      const lan = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, 0.07, 6, false), new THREE.MeshBasicMaterial({ color: hexn(O.lanyard) })); bodyG.add(lan);
+      const badge = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.62, 0.08, 3, 0.08), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 })); badge.position.set(0, 3.1, eggZ(0, 3.1) + 0.06); badge.rotation.x = -0.12; bodyG.add(badge);
+    }
+    // head (its chin overlaps the top of the torso)
+    const head = new THREE.Group(); head.position.set(0, 5.5, 0); bodyG.add(head);
     const hm = new THREE.Mesh(blob(HEAD.rx, HEAD.ry, HEAD.rz), mat(skin, { roughness: 0.62 })); hm.castShadow = true; hm.receiveShadow = true; head.add(hm);
     for (const s of [-1, 1]) { const e = ball(head, 0.36, skin, s * 1.5, -0.15, 0, { noShadow: true }); e.scale.set(0.5, 1.2, 1); }
     // face (canvas texture drawn by faces.js)
@@ -91,14 +116,14 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     }
     if (O.glasses) for (const s of [-1, 1]) { const rg = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.06, 10, 28), new THREE.MeshBasicMaterial({ color: 0x3a2f4a })); rg.position.set(s * 0.607, 0.09, 1.15); head.add(rg); }
     if (O.glasses) { const br = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.06, 0.06), new THREE.MeshBasicMaterial({ color: 0x3a2f4a })); br.position.set(0, 0.13, 1.17); head.add(br); }
-    // arms
-    const arms = [-1, 1].map((s, i) => {
-      const sh = new THREE.Group(); sh.position.set(s * 1.35, 4.55, 0); bodyG.add(sh);
-      box(sh, 0.62, 1.35, 0.62, top, 0, -0.62, 0, { round: 0.26 });
-      const el = new THREE.Group(); el.position.set(0, -1.22, 0); sh.add(el);
-      box(el, 0.54, 1.15, 0.54, top, 0, -0.5, 0, { round: 0.24 });
-      const hand = ball(el, 0.4, skin, 0, -1.18, 0, {}); const thumb = ball(el, 0.17, skin, -s * 0.3, -1.02, 0.18, { noShadow: true });
-      return { sh, el, side: s };
+    // arms: ONE smooth tube each, coming out of the side of the torso, bending like a noodle, ending in a round mitten
+    const sleeve = mat(top, { roughness: 0.6 });
+    const arms = [-1, 1].map(s => {
+      const grp = new THREE.Group(); bodyG.add(grp);
+      const tube = new THREE.Mesh(new THREE.BufferGeometry(), sleeve); tube.castShadow = true; grp.add(tube);
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.43, 18, 14), mat(skin)); hand.castShadow = true; grp.add(hand);
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(0.37, 14, 12), sleeve); grp.add(cap);   // rounded shoulder end, hidden inside the torso
+      return { grp, tube, hand, cap, side: s, e: new THREE.Vector3(), h: new THREE.Vector3() };
     });
     // shadow blob under the feet is left to the scene (soft shadows already handle it)
     const c = { g, body, bodyG, head, face, fx, ft, arms, legs, O, blink: Math.random() * 6, pose: Object.assign({}, POSES.idle), seed: Math.random() * 10 };
@@ -108,18 +133,26 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
   const shadeBrow = hex => { const n = parseInt(hex.slice(1), 16); const f = 0.8; return `rgb(${((n >> 16) & 255) * f | 0},${((n >> 8) & 255) * f | 0},${(n & 255) * f | 0})`; };
 
   // poseName: a name from POSES, or [nameA, nameB, k] to blend. t = seconds.
+  const V3 = (a, mx = 1) => new THREE.Vector3(a[0] * mx, a[1], a[2]);
+  function armPoints(P, side) {
+    const sp = P[side < 0 ? 'L' : 'R'] || (P.R && { e: [-P.R.e[0], P.R.e[1], P.R.e[2]], h: [-P.R.h[0], P.R.h[1], P.R.h[2]] });
+    return sp;
+  }
   function applyPose(c, name, t, extra = {}) {
     const get = n => POSES[n] || POSES.idle;
     let A, B, k = 0; if (Array.isArray(name)) { A = get(name[0]); B = get(name[1]); k = SMOOTH(name[2]); } else { A = get(name); B = A; }
-    const sw = extra.wave ? Math.sin(t * 9) * 16 : 0;
+    const lift = lerp(A.lift || 0, B.lift || 0, k);
     c.arms.forEach((a, i) => {
-      const key = a.side < 0 ? 'L' : 'R';
-      const v = [0, 1, 2, 3].map(j => lerp(A[key][j], B[key][j], k)), lift = lerp(A.lift || 0, B.lift || 0, k);
-      const breathe = Math.sin(t * 1.6 + i) * 1.2;
-      a.sh.position.y = 4.55 + lift;
-      const out = v[0] + breathe + (key === 'R' ? sw : 0);
-      a.sh.rotation.set(-v[1] * D2R, 0, a.side * out * D2R);          // lift the arm: forward (x) and out to the side (z)
-      a.el.rotation.set(-v[2] * D2R, 0, -a.side * v[3] * D2R);        // bend the elbow, turn the forearm toward the body
+      const pa = armPoints(A, a.side), pb = armPoints(B, a.side);
+      const e = V3(pa.e).lerp(V3(pb.e), k), h = V3(pa.h).lerp(V3(pb.h), k);
+      const br = Math.sin(t * 1.6 + i) * 0.04; h.y += br; e.y += br * 0.5;
+      if (extra.wave && a.side > 0) { h.x += Math.sin(t * 9) * 0.45; e.x += Math.sin(t * 9 + 0.6) * 0.12; }
+      e.y += lift * 0.5; h.y += lift;
+      const S = new THREE.Vector3(a.side * SHOULDER[0], SHOULDER[1] + lift * 0.4, SHOULDER[2]);
+      const C = e.clone().multiplyScalar(2).sub(S.clone().add(h).multiplyScalar(0.5));       // control point so the curve passes by the elbow
+      const curve = new THREE.QuadraticBezierCurve3(S, C, h);
+      a.tube.geometry.dispose(); a.tube.geometry = new THREE.TubeGeometry(curve, 18, 0.34, 14, false);
+      a.hand.position.copy(h); a.cap.position.copy(S);
     });
   }
 

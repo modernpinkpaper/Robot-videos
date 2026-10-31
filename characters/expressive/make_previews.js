@@ -46,15 +46,15 @@ async function stills() {
   const shot = async (name, W, H, build, views, states, t = 1) => { await p.setViewportSize({ width: W, height: H }); await p.evaluate(b => window.build(b), build); await p.evaluate(([W, H, v, s, t]) => window.draw(W, H, v, t, s), [W, H, views, states, t]); await p.screenshot({ path: path.join(OUT, name) }); console.log('saved', name); };
   const V = (x, y, w, h, pos, look, fov = 35) => ({ x, y, w, h, cam: { pos, look, fov } });
   // 1 meet the hero: full body + close up
-  await shot('01_hero_mara.png', 1000, 900, [{ person: 'mara' }], [V(0, 0, 500, 900, [0, 5, 25], [0, 4.2, 0]), V(500, 0, 500, 900, [0, 6.7, 10], [0, 6.5, 0])], [{ face: 'smirk', pose: 'hips' }]);
+  await shot('01_hero_mara.png', 1000, 900, [{ person: 'mara' }], [V(0, 0, 500, 900, [0, 4.4, 22], [0, 3.7, 0]), V(500, 0, 500, 900, [0, 5.9, 10], [0, 5.7, 0])], [{ face: 'smirk', pose: 'hips' }]);
   // 2 turnaround
-  await shot('02_hero_turnaround.png', 1200, 560, [{ person: 'mara' }], [0, 1, 2, 3].map(i => { const a = [0, 40, 90, 180][i] * Math.PI / 180; return V(i * 300, 0, 300, 560, [Math.sin(a) * 23, 4.5, Math.cos(a) * 23], [0, 4.2, 0], 36); }), [{ face: 'happy', pose: 'idle', alive: false }]);
+  await shot('02_hero_turnaround.png', 1200, 560, [{ person: 'mara' }], [0, 1, 2, 3].map(i => { const a = [0, 40, 90, 180][i] * Math.PI / 180; return V(i * 300, 0, 300, 560, [Math.sin(a) * 20, 4.0, Math.cos(a) * 20], [0, 3.6, 0], 36); }), [{ face: 'happy', pose: 'idle', alive: false }]);
   // 3 the starter cast
   const faces = ['happy', 'smug', 'surprised', 'worried', 'excited'];
-  await shot('03_cast.png', 1200, 640, xs().map((n, i) => ({ person: n, x: (i - 2) * 4.3, ry: -(i - 2) * 0.08 })), [V(0, 0, 1200, 640, [0, 4.4, 22], [0, 4.0, 0], 40)], faces.map((f, i) => ({ face: f, pose: ['idle', 'hips', 'idle', 'crossed', 'armsUp'][i] })));
+  await shot('03_cast.png', 1300, 640, xs().map((n, i) => ({ person: n, x: (i - 2) * 5.2, ry: -(i - 2) * 0.08 })), [V(0, 0, 1300, 640, [0, 4.0, 23], [0, 3.5, 0], 40)], faces.map((f, i) => ({ face: f, pose: ['idle', 'hips', 'idle', 'crossed', 'armsUp'][i] })));
   // 4 poses
   const poses = ['idle', 'hips', 'shrug', 'facepalm', 'wave', 'armsUp', 'crossed', 'point', 'think'], pf = ['neutral', 'smirk', 'speechless', 'cringe', 'happy', 'excited', 'unimpressed', 'determined', 'thinking'];
-  const pv = []; poses.forEach((n, i) => pv.push(V((i % 3) * 330, Math.floor(i / 3) * 520, 330, 520, [0, 4.6, 22], [0, 4.2, 0], 36)));
+  const pv = []; poses.forEach((n, i) => pv.push(V((i % 3) * 330, Math.floor(i / 3) * 520, 330, 520, [0, 4.2, 19], [0, 3.7, 0], 36)));
   for (let i = 0; i < 9; i++) { /* one character, drawn nine times with different states */ }
   await p.setViewportSize({ width: 990, height: 1560 });
   for (let i = 0; i < 9; i++) { await p.evaluate(b => window.build(b), [{ person: 'mara' }]); await p.evaluate(([i, pose, face, v]) => window.draw(990, 1560, [v], 1, [{ pose, face, alive: false }]), [i, poses[i], pf[i], pv[i]]); await p.screenshot({ path: path.join(OUT, `_pose${i}.png`), clip: { x: pv[i].x, y: pv[i].y, width: 330, height: 520 } }); }
@@ -91,8 +91,8 @@ async function video() {
       const pose = k === 0 ? cur[2] : [prev[2], cur[2], bl];
       const state = { face, pose, laugh: o.laugh || 0, shake: o.shake || 0, quiver: o.quiver || 0, slump: o.slump || 0, tilt: o.roll ? 0.12 * Math.sin(Math.min(1, tl / 1.2) * Math.PI) : undefined };
       window.label(cur[0]);
-      const ang = Math.sin(t * 0.35) * 0.28, R = 15.5;
-      window.draw(576, 1024, [{ x: 0, y: 0, w: 576, h: 1024, cam: { pos: [Math.sin(ang) * R, 6.4 + Math.sin(t * 0.5) * 0.25, Math.cos(ang) * R], look: [0, 5.4, 0], fov: 34 } }], t, [state]);
+      const ang = Math.sin(t * 0.35) * 0.28, R = 14.5;
+      window.draw(576, 1024, [{ x: 0, y: 0, w: 576, h: 1024, cam: { pos: [Math.sin(ang) * R, 5.6 + Math.sin(t * 0.5) * 0.25, Math.cos(ang) * R], look: [0, 4.6, 0], fov: 34 } }], t, [state]);
     }, [i / fps]);
     await p.screenshot({ path: path.join(FR, `f_${String(i).padStart(4, '0')}.jpg`), type: 'jpeg', quality: 90 });
     if (i % 60 === 0) console.log('frame', i);
