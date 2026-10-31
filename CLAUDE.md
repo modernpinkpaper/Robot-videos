@@ -35,7 +35,7 @@ Never use a static or single fixed camera. Never invent a different camera syste
 - Do not edit `characters/robots.js` unless she asks. If something must change, add an option.
 - Keep staff names, kids' names, exact money, medical details and passwords off screen.
 - Voices: ALWAYS use `voices/speak.py`. Humans (DALIA, AMINA, MARCUS, LILY, SOFIA, GRANDPA, KID_BOY, KID_GIRL, NARRATOR, and the Emotional Robots characters MARA, THEO, PRIYA, JUNE, KAI, GUS, ZOE, FINN, HANA, NINA) use Chatterbox with pace, emotion and tone set per line; robots use Piper. Read `voices/README.md`. Do not use Piper for a human. Mix and match is allowed: a line can carry `"voice": "AMINA"` to use another character's voice.
-- Reaction videos: use `formats/reaction/` (top-right reactor, bottom-left clip). Do not rebuild it.
+- Reaction videos: use `formats/reaction/` (top-right reactor, bottom-left clip). Do not rebuild it. BEFORE writing anything read `formats/reaction/REACTOR_VOICE.md`: read the clip's transcript first, write cues by meaning, keep spoken lines short and specific to the clip, never generic praise or repeating the clip's words.
 - Before sending a video: look at at least 4 frames, then say honestly what you checked and what you could not (you cannot hear audio).
 - Rendering is slow. Run it in the background and tell her.
 

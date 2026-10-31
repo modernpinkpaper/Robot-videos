@@ -18,7 +18,7 @@ import sys, os, re, json, wave, subprocess, shutil, time
 import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE)); WORK = HERE + '/work'
 sys.path.insert(0, ROOT + '/voices'); sys.path.insert(0, HERE)
-from behavior import plan_reactions, forced_from_script
+from behavior import plan_reactions, forced_from_script, cues_to_reacts
 W, H, FPS, SR = 576, 1024, 24, 44100
 BOX_W, BOX_H, MARGIN = 300, 420, 18          # the clip's window, bottom left
 
@@ -76,17 +76,20 @@ def main(script_path, out_path):
     if s1 > cur: segs.append(('play', cur, s1, out_t)); out_t += s1 - cur
     total = out_t + 1.0
     # ---- 2b. automatic human behavior: reactions found in the clip, looks at the camera (formats/reaction/behavior.py)
+    if S.get('cues'): reacts = reacts + cues_to_reacts(S['cues'], segs)           # written by the director from the transcript: they fit the meaning
     if S.get('auto', True):
         events = []
-        try:
-            py = os.environ.get('CHATTERBOX_PY') if (os.environ.get('CHATTERBOX_PY') and os.path.exists(os.environ.get('CHATTERBOX_PY'))) else sys.executable
-            env = {k: v for k, v in os.environ.items() if k not in ('PYTHONPATH', 'PYTHONHOME')}
-            res = subprocess.run([py, HERE + '/analyze_clip.py', src, str(s0), str(s1)], capture_output=True, text=True, env=env)
-            events = json.loads(res.stdout.strip().splitlines()[-1]) if res.stdout.strip() else []
-            if res.stderr.strip(): print(res.stderr.strip()[-300:], file=sys.stderr)
-        except Exception as ex: print('clip analysis skipped:', ex, file=sys.stderr)
+        if not S.get('cues') or S.get('auto_words'):                              # word-list guesses are only a fallback when there are no cues
+            try:
+                py = os.environ.get('CHATTERBOX_PY') if (os.environ.get('CHATTERBOX_PY') and os.path.exists(os.environ.get('CHATTERBOX_PY'))) else sys.executable
+                env = {k: v for k, v in os.environ.items() if k not in ('PYTHONPATH', 'PYTHONHOME')}
+                cmd = [py, HERE + '/analyze_clip.py', src, str(s0), str(s1)] + (['--sound'] if S.get('sound_reactions') else [])
+                res = subprocess.run(cmd, capture_output=True, text=True, env=env)
+                events = json.loads(res.stdout.strip().splitlines()[-1]) if res.stdout.strip() else []
+                if res.stderr.strip(): print(res.stderr.strip()[-300:], file=sys.stderr)
+            except Exception as ex: print('clip analysis skipped:', ex, file=sys.stderr)
         auto = plan_reactions(events, segs, talks, reacts, total, seed=S.get('seed', 7), glances=S.get('glances', True))
-        print(f'clip events: {len(events)}; automatic reactions: {sum(1 for a in auto if a["kind"] != "glance")}; looks at the camera: {sum(1 for a in auto if a["kind"] == "glance")}')
+        print(f'clip events: {len(events)}; cues: {len(S.get("cues", []))}; automatic reactions: {sum(1 for a in auto if a["kind"] != "glance")}; silent looks at the camera: {sum(1 for a in auto if a["kind"] == "glance")}')
         reacts = reacts + auto
     # ---- 3. the clip's video (fit in the bottom-left window) and its audio
     sw = min(BOX_W, int(BOX_H * (probe(src, 'stream=width') / probe(src, 'stream=height')))); sh = int(round(sw * probe(src, 'stream=height') / probe(src, 'stream=width')))

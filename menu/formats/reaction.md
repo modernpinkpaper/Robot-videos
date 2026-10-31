@@ -9,3 +9,5 @@ Use the tool: `formats/reaction/` (read its README.md). Do not rebuild it.
 
 The reactor behaves like a person by itself (eyes on the clip, silent looks at the camera, laughs, gasps, head shakes, nods found from the clip). Read `formats/reaction/BEHAVIOR.md`. You only write what the reactor SAYS and any reaction you want forced.
 Default reactor: Dalia (Emotional Robots, real face).
+
+**Writing rules:** read `formats/reaction/REACTOR_VOICE.md` first (transcript first, specific short lines, faces that fit the moment, no corny praise).

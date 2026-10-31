@@ -6,8 +6,9 @@ A character sits in the **top right**, watches a clip in the **bottom left**, an
 Same tool for both.
 
 ## Make one
+0. **Read `REACTOR_VOICE.md` first**: how to write reactions that fit and lines that do not sound corny.
 1. Pick the clip. For a real clip run `python3 formats/reaction/transcribe.py clip.mp4` to see what is said and when.
-2. Write `script.json` (copy `demo_script.json`). Each beat is a moment in the clip (`at`, in seconds):
+2. Write `script.json` (copy `demo_script.json`): `cues` (silent reactions by meaning) and `beats` (the few spoken lines). Each beat is a moment in the clip (`at`, in seconds):
    - **talk beat**: `{ "at": 12.4, "say": "Wait. She said *WHAT*?!", "emo": "shock", "act": "gasp" }`
    - **silent reaction**: `{ "at": 20, "act": "laugh", "emo": "laugh", "dur": 1.5 }`
 3. Run `python3 formats/reaction/make_reaction.py script.json out.mp4`

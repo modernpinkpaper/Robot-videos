@@ -1,5 +1,5 @@
 # LISTENS to the clip Dalia reacts to and finds the moments a real person would react to.
-#   python3 analyze_clip.py clip.mp4 [start end]      prints JSON: [{t, kind, strength, text}]   (t = seconds in the clip)
+#   python3 analyze_clip.py clip.mp4 [start end] [--sound]   (--sound also reacts to sudden loud sounds; off by default)      prints JSON: [{t, kind, strength, text}]   (t = seconds in the clip)
 # kinds: laugh  gasp  shake  nod  tilt  sympathy  startle  cut
 # How: (1) speech recognition gives sentences and their end times, (2) word lists decide what each sentence is (funny, shocking, absurd,
 # something to agree with, a question, something sad), (3) sudden loud sounds are "startle", (4) hard video cuts are weak "cut" events.
@@ -55,12 +55,13 @@ def speech(x, a):
     return out
 
 if __name__ == '__main__':
-    path = sys.argv[1]; a = float(sys.argv[2]) if len(sys.argv) > 2 else 0; b = float(sys.argv[3]) if len(sys.argv) > 3 else 0
+    args = [v for v in sys.argv[1:] if not v.startswith('--')]; path = args[0]; a = float(args[1]) if len(args) > 1 else 0; b = float(args[2]) if len(args) > 2 else 0
     x = load_audio(path, a, b); ev = []
     try: ev += speech(x, a)
     except Exception as e: print('speech recognition skipped:', e, file=sys.stderr)
-    try: ev += loud_spikes(x, a)
-    except Exception as e: print('sound check skipped:', e, file=sys.stderr)
+    if '--sound' in sys.argv:                                   # OFF by default: music and sound effects caused false gasps
+        try: ev += loud_spikes(x, a)
+        except Exception as e: print('sound check skipped:', e, file=sys.stderr)
     try: ev += cuts(path, a, b)
     except Exception as e: print('cut check skipped:', e, file=sys.stderr)
     print(json.dumps(sorted(ev, key=lambda e: e['t'])))

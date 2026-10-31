@@ -1,4 +1,6 @@
-# How the reactor behaves (human rules, no script needed)
+# How the reactor behaves
+
+**Two layers.** (1) **Cues** and spoken lines, written by the director AFTER reading the clip's transcript so they fit the meaning (guide: `REACTOR_VOICE.md`, read it first). (2) **Automatic rules** below: baseline watching, rare silent looks at the camera, timing and variety. The word-list guesses in the table are only a FALLBACK when no cues are written (they judge by keywords, so they can miss the mood). Sudden-sound reactions are OFF by default (music and effects caused false gasps): `"sound_reactions": true` turns them on.
 
 The reactor now acts like a person watching a clip. Most of it happens by itself. The script only adds what you want to SAY or force.
 The rules live in `behavior.py` (plain words at the top). The clip is listened to by `analyze_clip.py`.
@@ -7,7 +9,7 @@ The rules live in `behavior.py` (plain words at the top). The clip is listened t
 | Moment | What the reactor does |
 |---|---|
 | All the time | Eyes and head on the clip (down and to the left). Blinks and tiny eye movements. |
-| Every 6 to 13 seconds | Looks UP at the camera for about a second, says nothing, gives a LOOK: side eye, skeptical, deadpan, smirk, unimpressed or eye roll. The face fits the mood of what just happened. |
+| Every 9 to 17 seconds | Looks UP at the camera for about a second, says nothing, gives a LOOK: side eye, skeptical, deadpan, smirk, unimpressed or eye roll. The face fits the mood of what just happened. |
 | After a big moment | Often a quick look at the camera ("did you see that?"). |
 | A joke or laughter in the clip | Laughs (shoulders bounce, eyes squeeze shut). |
 | A shock, "wow", "no way", shouting | Gasp: face of shock, leans back, hands up a little. |
@@ -30,6 +32,8 @@ Reactions: proud, happy, cringe, disgusted, unimpressed, worried, laugh, giggle,
 Camera looks: side eye, skeptical, eye roll, deadpan, smirk, unimpressed, shocked, sad.
 
 ## Controls (in script.json)
+- `"cues": [ { "at": 4.4, "kind": "glance", "face": "skeptical" } ]` meaning-aware reactions (see `REACTOR_VOICE.md`). With cues, the word-list guesses are off (`"auto_words": true` brings them back).
+- `"sound_reactions": true` also reacts to sudden loud sounds (off by default).
 - `"auto": false` turns all automatic behavior off (only the script's reactions happen).
 - `"glances": false` keeps the reactions but removes the silent looks at the camera.
 - `"seed": 7` changes the random choices (a different "personality" of timing). Same seed = same result.

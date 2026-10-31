@@ -7,19 +7,19 @@
 #     nod at something true, tilt the head at a question, look sympathetic at something sad.
 #  3. TIMING: a person reacts a moment AFTER the thing (0.2 to 0.45 s), at the end of a sentence, not exactly on it.
 #  4. VARIETY: never the same reaction twice in a row; at least 2.8 s between reactions; the repeat of a mood gets a little bigger.
-#  5. CAMERA LOOKS: now and then (every 6 to 13 s) the reactor looks up at the camera for about a second without saying anything,
+#  5. CAMERA LOOKS: now and then (every 9 to 17 s) the reactor looks up at the camera for about a second without saying anything,
 #     with a face that fits the mood (side eye, skeptical, deadpan, smirk, eye roll). After a big moment there is often a look to the camera.
 #  6. THE REACTOR TALKS: no reactions or looks while talking; at the start of talking the head turns to the camera.
 #  7. A SCRIPT can force a reaction at an exact time; automatic ones stay out of its way (1.2 s).
 import random
 
 DUR = {'nod': 1.7, 'shake': 1.6, 'laugh': 2.3, 'gasp': 1.5, 'tilt': 1.6, 'sympathy': 2.2, 'startle': 1.2, 'lean': 1.3, 'cut': 1.0, 'facepalm': 2.0, 'hop': 1.2}
-FACE = {'nod': ['proud', 'happy'], 'shake': ['cringe', 'disgusted', 'unimpressed', 'worried'], 'laugh': ['laugh', 'giggle'], 'gasp': ['gasp', 'shocked', 'surprised'],
+FACE = {'nod': ['neutral', 'happy'], 'shake': ['cringe', 'disgusted', 'unimpressed', 'worried'], 'laugh': ['laugh', 'giggle'], 'gasp': ['gasp', 'shocked', 'surprised'],
         'tilt': ['confused', 'thinking', 'skeptical'], 'sympathy': ['sad', 'hurt', 'worried'], 'startle': ['surprised', 'gasp'], 'lean': ['surprised'], 'cut': ['surprised'],
         'facepalm': ['cringe'], 'hop': ['excited']}
-GLANCE_FACE = {'shake': ['side eye', 'skeptical', 'eye roll'], 'gasp': ['shocked', 'side eye'], 'startle': ['surprised', 'side eye'], 'laugh': ['smirk', 'laugh'],
-               'nod': ['smirk', 'proud'], 'tilt': ['skeptical'], 'sympathy': ['sad', 'unimpressed'], 'facepalm': ['eye roll', 'cringe'],
-               None: ['deadpan', 'skeptical', 'unimpressed', 'smirk', 'side eye']}
+GLANCE_FACE = {'shake': ['side eye', 'skeptical', 'eye roll'], 'gasp': ['shocked', 'side eye'], 'startle': ['surprised', 'side eye'], 'laugh': ['smirk'],
+               'nod': ['smirk', 'unimpressed'], 'tilt': ['skeptical'], 'sympathy': ['unimpressed', 'worried'], 'facepalm': ['eye roll', 'cringe'],
+               None: ['deadpan', 'skeptical', 'unimpressed']}      # a plain look with nothing special behind it stays flat and dry
 EMO_FACE = {'happy': 'happy', 'excited': 'excited', 'sweet': 'happy', 'deadpan': 'deadpan', 'stern': 'annoyed', 'tired': 'tired', 'dramatic': 'shocked', 'shock': 'shocked',
             'worried': 'worried', 'smug': 'smug', 'laugh': 'laugh', 'neutral': 'neutral', 'sad': 'sad'}
 ACT_KIND = {'nod': 'nod', 'shake': 'shake', 'gasp': 'gasp', 'laugh': 'laugh', 'facepalm': 'facepalm', 'lean': 'lean', 'hop': 'hop', 'tilt': 'tilt'}
@@ -56,14 +56,14 @@ def plan_reactions(events, segs, talks, forced, total, seed=7, glances=True):
         mood.append((t0, kind)); last_end = t0 + d; last_kind = kind
     out = list(chosen)
     if glances:                                                                              # rule 5: silent looks at the camera
-        t = rng.uniform(3.0, 5.0)
+        t = rng.uniform(5.0, 8.0)
         while t < total - 1.5:
             d = rng.uniform(0.75, 1.3); prev = [c for c in chosen if c['t1'] <= t and t - c['t1'] < 4]
             ok = free(t, t + d) and not any(c['t0'] - 0.3 < t + d and c['t1'] + 0.1 > t for c in chosen)
             if ok:
                 k = prev[-1]['kind'] if prev else None
                 out.append(dict(t0=round(t, 3), t1=round(t + d, 3), kind='glance', face=rng.choice(GLANCE_FACE.get(k, GLANCE_FACE[None])), amp=1.0, why='looks at the camera', auto=True))
-                t += d + rng.uniform(6, 13)
+                t += d + rng.uniform(9, 17)
             else: t += 0.7
         for c in chosen:                                                                     # after a big moment, often a look to the camera
             if c['kind'] in ('gasp', 'shake', 'startle', 'laugh') and c['amp'] > 0.8 and rng.random() < 0.7:
@@ -75,3 +75,18 @@ def plan_reactions(events, segs, talks, forced, total, seed=7, glances=True):
 def forced_from_script(act, emo, t0, dur):
     kind = ACT_KIND.get(act, 'nod'); face = EMO_FACE.get(emo) or FACE.get(kind, ['neutral'])[0]
     return dict(t0=round(t0, 3), t1=round(t0 + dur, 3), kind=kind, face=face, amp=1.0, why='script', auto=False)
+
+def cues_to_reacts(cues, segs, rng_seed=3):
+    """Cues are written by the director (Claude) AFTER reading the clip's transcript, so they fit the meaning.
+    cue = { "at": clip second, "kind": nod|shake|laugh|gasp|tilt|sympathy|facepalm|lean|glance, "face": optional face name, "dur": optional seconds }"""
+    rng = random.Random(rng_seed); out = []
+    for c in cues:
+        ot = out_time(segs, c['at'])
+        if ot is None:                                    # the clip is paused at that moment: use the start of that pause
+            ot = next((o for k, a, b, o in segs if k == 'freeze' and abs(a - c['at']) < 0.05), None)
+            if ot is None: continue
+        kind = c['kind']; d = c.get('dur') or (rng.uniform(0.8, 1.3) if kind == 'glance' else DUR.get(kind, 1.5))
+        face = c.get('face') or rng.choice((GLANCE_FACE.get(None) if kind == 'glance' else FACE.get(kind, ['neutral'])))
+        t0 = ot + c.get('delay', rng.uniform(0.2, 0.4))
+        out.append(dict(t0=round(t0, 3), t1=round(t0 + d, 3), kind=kind, face=face, amp=c.get('amp', 1.0), why=c.get('why', 'cue'), auto=False))
+    return out
