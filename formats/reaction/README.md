@@ -32,7 +32,8 @@ Tools: ffmpeg + numpy + Pillow (video and audio), the same three.js characters r
 Layout (576x1024): clip window bottom left (max 300x420, rounded corners, white border), reactor top right, captions in the middle band, pastel background.
 
 ## The character has a full body (legs too)
-The reactor sits at a little desk, so the frame shows face, shoulders and chest only. The legs are hidden behind the desk. Never leave a torso floating in empty space with its bottom edge visible. Change the desk with `"desk": {"top": 0xf6e6f2, "front": 0xd69bd0, "y": 2.5}` in `reaction.json` or the framing with `"frame"` in script.json.
+The reactor sits at a little desk, so the frame shows face, shoulders and chest only. The legs are hidden behind the desk. Never leave a torso floating in empty space with its bottom edge visible. **Desk rule (why a body can look like it is merging into the desk):** the emotional robots have a deep body, the torso reaches about 1 unit forward. If the desk top starts inside the torso, the torso looks cut off and stuck in the desk. So for the emotional robots (the default look) the desk is moved 1.5 units in front of the body (`"desk": {"z": 1.5}`; the old people and robots keep `z` 0). If it ever looks wrong again, raise `z` (more gap) and check one frame: the desk edge must be a clean straight line in front of the body, and the hands must rest on or above it.
+Change the desk with `"desk": {"top": 0xf6e6f2, "front": 0xd69bd0, "y": 2.5}` in `reaction.json` or the framing with `"frame"` in script.json.
 
 ## Making an animated clip to react to
 Use the story or skit format with the camera in `camera/`, render it to an mp4, and use that as `source`.

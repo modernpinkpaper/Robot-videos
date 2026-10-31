@@ -1,0 +1,7 @@
+{ "source": "clip_source.mp4", "reactor": "dalia", "style": "expressive", "voice_who": "DALIA", "mode": "pause", "start": 0, "end": 34,
+  "beats": [
+   { "at": 18.4, "say": "Wait. Something is *weird* about the startup fund?", "emo": "worried", "act": "lean" },
+   { "at": 24.6, "say": "He never saw the papers? Okay. That is suspicious.", "emo": "deadpan", "act": "shake" },
+   { "at": 34.0, "say": "WAIT. It was *HIS* fund?!", "emo": "shock", "act": "gasp" },
+   { "at": 34.0, "act": "facepalm", "emo": "deadpan", "dur": 1.6 },
+   { "at": 34.0, "say": "A whole fund. Hidden in plain sight. I *cannot*.", "emo": "laugh", "act": "laugh" } ] }

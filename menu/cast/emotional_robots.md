@@ -37,3 +37,23 @@ xk.animateExpressive(dalia, t, { face: EXPR['smirk'], pose: 'hips', talk: ampOfV
 5. Body: poses idle, hips, shrug, facepalm, wave, armsUp, crossed, point, think. Blend with `pose: [a, b, k]`. Extras: `laugh`, `shake` (rage), `quiver` (crying), `slump`, `lean`, `tilt`.
 6. Show real feeling: use a close-up on the face for the beat that matters (eye roll, smirk, shock).
 7. Sets and props: free, same soft pastel toy look (`kit.mkProp`, rounded boxes).
+
+## ANY FORMAT: story, skit, talk to camera, reaction, explainer (the emotional robots are not only for reactions)
+Use the helper `characters/expressive/actor.js`. It has the same shape as the old characters, so a pipeline copied from `videos/no_lies/` or `videos/disagree/` only changes two lines and keeps its camera, sets, shots, voices and render.js.
+```js
+import { createExpressiveKit } from '../../characters/expressive/body.js';
+import { createActorKit } from '../../characters/expressive/actor.js';
+const xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), ak = createActorKit(THREE, xk);
+//  was: kit.mkHuman(...) / kit.mkBot('MICA', ...)      now: ak.mkActor('dalia', { parent: scene, x, y, z, ry, scale })
+//  was: kit.animateBot(b, t, { speaking, amp, emo, walk, wave })      now: ak.animateActor(b, t, { speaking, amp, emo, walk, wave })
+```
+- Same options as before: `speaking`, `amp` (voice loudness), `emo` (the script words, or any of the 50 face names like `'eye roll'`), `look [x,y]`, `walk`, `sit`, `wave`, `b.g` (position and turn).
+- Extras: `act` (`nod shake gasp laugh facepalm lean hop`) with `actU` (0 to 1 progress), `pose` (any body pose), `turn` (head left or right).
+- Smooth face change: `emo: [fromEmo, toEmo, k]` with k from 0 to 1 (about 0.25 s). It keeps no state, so parallel rendering is safe.
+- Working example to copy: `characters/expressive/actor_demo.html`.
+- Per format: story and skit = several actors on a set with the usual camera. Talk to camera = one actor, close-ups. Explainer = one actor plus info cards. Reaction = the reaction tool already uses them by default (see `formats/reaction/README.md`).
+- Voices do not change: use `voices/speak.py` with the character's own name (MARA, THEO, ...).
+- **Podcast is the one exception for now.** `formats/podcast/anim/index_pod3.html` has its own separate robot studio code and its own old voice step. Do the emotional-robots podcast as its own job (it needs a swap in that page and in `pod/mk.py`).
+
+## Furniture rule: the body must sit BEHIND a desk or counter, not inside it
+The emotional robots are deep: the torso reaches about 1 unit in front of the character's middle, and the hands reach out further. Any desk, table or counter must start IN FRONT of that (its back edge at least 1.3 units in front of the character), or push the character back by the same amount. If a desk top cuts through the torso, the body looks cut off or merged into the desk. Reaction tool: this is set for you (`desk.z`, default 1.5 for this style). In your own sets: look at one frame before rendering. The desk edge should be a clean straight line in front of the body, with nothing of the torso showing in front of it.

@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Emotional robots as actors (copy this to start any format)</title>
+<style>html,body{margin:0;background:#1d1730}canvas{display:block}</style></head><body><div id="wrap"></div>
+<script type="importmap">{"imports":{"three":"../three.module.js"}}</script>
+<script type="module">
+// START HERE for ANY format with the emotional robots (story, skit, talk to camera, reaction, explainer).
+// It is the same shape as the old robots: mkActor(name, opts) = kit.mkHuman, animateActor(actor, t, state) = kit.animateBot.
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from '../RoundedBoxGeometry.js';
+import { createRobotKit } from '../robots.js';
+import { createExpressiveKit } from './body.js';
+import { createActorKit } from './actor.js';
+const kit = createRobotKit(THREE, RoundedBoxGeometry), xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), ak = createActorKit(THREE, xk);
+const W = 576, H = 1024;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(1); renderer.setSize(W, H);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.getElementById('wrap').appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xdde4f6);
+scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0));
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-6, 16, 14); sun.target.position.set(0, 5, 0); sun.castShadow = true; scene.add(sun, sun.target);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 120), new THREE.MeshStandardMaterial({ color: 0xf2ecfb, roughness: 0.8 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const cast = { mara: ak.mkActor('mara', { parent: scene, x: -4, ry: 0.4 }), theo: ak.mkActor('theo', { parent: scene, x: 0, ry: 0 }), kai: ak.mkActor('kai', { parent: scene, x: 4, ry: -0.4 }) };
+const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 200); camera.position.set(0, 6, 36); camera.lookAt(0, 3.6, 0);
+// the same options as the old kit.animateBot: speaking, amp, emo, look, walk, sit, wave  (+ act, pose, turn)
+window.renderFrame = t => {
+  ak.animateActor(cast.mara, t, { speaking: true, amp: 0.7, emo: 'excited' });
+  ak.animateActor(cast.theo, t, { emo: 'eye roll', look: [0.3, 0] , act: 'shake', actU: (t % 1) });
+  ak.animateActor(cast.kai, t, { emo: 'shock', wave: true, sit: false });
+  renderer.render(scene, camera);
+};
+window.renderFrame(0); window.ready = true;
+</script></body></html>
