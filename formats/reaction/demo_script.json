@@ -1,5 +1,10 @@
-{ "source": "../../videos/disagree/disagree.mp4", "reactor": "dalia", "voice_who": "DALIA", "mode": "pause", "start": 0, "end": 14,
+{ "source": "../../videos/disagree/disagree.mp4", "reactor": "dalia", "voice_who": "DALIA", "mode": "pause", "look": "emotional",
+  "cues": [
+    { "at": 4.4,  "kind": "glance", "face": "skeptical", "why": "stay kind during an argument?" },
+    { "at": 16.6, "kind": "nod", "why": "ask what made them think that: true" },
+    { "at": 23.3, "kind": "tilt", "face": "thinking", "why": "an argument is not a fight" },
+    { "at": 31.6, "kind": "glance", "face": "side eye", "why": "you will be surprised" } ],
   "beats": [
-   { "at": 4.0, "say": "Okay, that is a *really* good point.", "emo": "happy", "act": "nod" },
-   { "at": 9.0, "act": "laugh", "emo": "laugh", "dur": 1.5 },
-   { "at": 12.0, "say": "Wait. She said *WHAT*?! I did not see that coming!", "emo": "shock", "act": "gasp" } ] }
+    { "at": 13.5, "say": "Yeah. I'm... not great at that one.", "emo": "tired" },
+    { "at": 26.0, "say": "Okay. That's annoyingly right.", "emo": "smug" },
+    { "at": 34.0, "say": "Fine. I'll try it. Once.", "emo": "deadpan" } ] }

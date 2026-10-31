@@ -51,7 +51,7 @@ const xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), ak = createActor
 - Extras: `act` (`nod shake gasp laugh facepalm lean hop`) with `actU` (0 to 1 progress), `pose` (any body pose), `turn` (head left or right).
 - Smooth face change: `emo: [fromEmo, toEmo, k]` with k from 0 to 1 (about 0.25 s). It keeps no state, so parallel rendering is safe.
 - Working example to copy: `characters/expressive/actor_demo.html`.
-- Per format: story and skit = several actors on a set with the usual camera. Talk to camera = one actor, close-ups. Explainer = one actor plus info cards. Reaction = set `"style": "expressive"` in script.json (see `formats/reaction/README.md`).
+- Per format: story and skit = several actors on a set with the usual camera. Talk to camera = one actor, close-ups. Explainer = one actor plus info cards. Reaction = the reaction tool already uses them by default (see `formats/reaction/README.md`).
 - Voices do not change: use `voices/speak.py` with the character's own name (MARA, THEO, ...).
 - **Podcast is the one exception for now.** `formats/podcast/anim/index_pod3.html` has its own separate robot studio code and its own old voice step. Do the emotional-robots podcast as its own job (it needs a swap in that page and in `pod/mk.py`).
 

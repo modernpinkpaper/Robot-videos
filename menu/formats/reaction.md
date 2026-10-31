@@ -6,3 +6,8 @@ Use the tool: `formats/reaction/` (read its README.md). Do not rebuild it.
 - 30 to 60 seconds. Rotate emotions: shock, laugh, worried, smug, deadpan. Last reaction is the biggest or funniest.
 - Human reactors use Chatterbox voices with pace, emotion and tone set per line (voices/README.md).
 - Real clips belong to someone else: use clips Dalia owns or has permission for, or short clips with real commentary.
+
+The reactor behaves like a person by itself (eyes on the clip, silent looks at the camera, laughs, gasps, head shakes, nods found from the clip). Read `formats/reaction/BEHAVIOR.md`. You only write what the reactor SAYS and any reaction you want forced.
+Default reactor: Dalia (Emotional Robots, real face).
+
+**Writing rules:** read `formats/reaction/REACTOR_VOICE.md` first (transcript first, specific short lines, faces that fit the moment, no corny praise).

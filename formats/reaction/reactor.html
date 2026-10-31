@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
 import { createRobotKit } from '../../characters/robots.js';
 import { createExpressiveKit } from '../../characters/expressive/body.js';
-import { createActorKit } from '../../characters/expressive/actor.js';
+import { EXPR, lerpFace, eyeRoll } from '../../characters/expressive/faces.js';
 const Q = new URLSearchParams(location.search), W = 576, H = 1024;
 const D = await (await fetch(Q.get('json') || 'work/reaction.json')).json();
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(1); renderer.setSize(W, H); renderer.setClearColor(0x000000, 0);
@@ -22,56 +22,85 @@ scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.1));
 const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-6, 14, 14); sun.target.position.set(0, 4, 0); scene.add(sun, sun.target);
 const pk = new THREE.PointLight(0xff8fc8, 26, 40, 2); pk.position.set(-9, 8, 6); scene.add(pk); const bl = new THREE.PointLight(0x8fb8ff, 26, 40, 2); bl.position.set(9, 8, 6); scene.add(bl);
 const kit = createRobotKit(THREE, RoundedBoxGeometry);
-const who = (D.reactor.who || 'dalia'); const P = kit.PEOPLE.find(p => p.name === who.toLowerCase());
-// style "expressive" = the EMOTIONAL ROBOTS (real faces). Anything else = the old robots / dot-eyed people.
-const XS = D.reactor.style === 'expressive', ak = XS ? createActorKit(THREE, createExpressiveKit(THREE, RoundedBoxGeometry, kit)) : null;
-const bot = XS ? ak.mkActor(who, { parent: scene }) : P ? kit.mkHuman(Object.assign({}, P, { parent: scene })) : kit.mkBot(who.toUpperCase(), { parent: scene }); bot.idx = 3;
+const who = (D.reactor.who || 'dalia'); const xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit);
+const RX = xk.ROSTER.find(p => p.name === who.toLowerCase()); const EXPRESSIVE = D.look !== 'old' && !!RX;   // real faces (Emotional Robots) unless asked for the old dot-eyed people
+const P = kit.PEOPLE.find(p => p.name === who.toLowerCase());
+const bot = EXPRESSIVE ? xk.mkExpressive(Object.assign({ parent: scene }, RX)) : (P ? kit.mkHuman(Object.assign({}, P, { parent: scene })) : kit.mkBot(who.toUpperCase(), { parent: scene })); bot.idx = 3;
+window.__bot = bot;
 // The reactor sits at a little desk: it hides the legs (the character still has a full body) and avoids a floating torso.
 { const bx = kit.box, DK = D.desk || {}, top = DK.top || 0xf6e6f2, front = DK.front || 0xd69bd0, y = DK.y || 2.5;
-  // dz = how far the desk sits IN FRONT of the character. The emotional robots have a deeper body (the torso reaches about 1 unit forward), so the desk
+  // dz = how far the desk sits IN FRONT of the character. The emotional robots have a deep body (the torso reaches about 1 unit forward), so the desk
   // must start in front of it. If the desk top cuts through the torso, the body looks like it is merging into the desk instead of sitting behind it.
-  const dz = DK.z ?? (XS ? 1.5 : 0);
+  const dz = DK.z ?? (EXPRESSIVE ? 1.5 : 0);
   bx(scene, 10, 0.28, 2.6, top, 0, y, 1.25 + dz, { round: 0.1 }); bx(scene, 9.6, y - 0.1, 0.3, front, 0, (y - 0.1) / 2, 2.45 + dz, { round: 0.1 }); bx(scene, 9.4, 0.14, 0.1, 0xff8fc8, 0, y - 0.45, 2.64 + dz, { noShadow: true });
   kit.mkProp('mug', { parent: scene, x: 2.6, y: y + 0.14, z: 1.6 + dz, scale: 0.9 }); kit.mkProp('laptop', { parent: scene, x: -2.4, y: y + 0.14, z: 1.5 + dz, ry: 0.5, scale: 1.0 }); }
 // Framing: head and shoulders large, pushed to the top right of the 9:16 frame (set in work/reaction.json "frame" to adjust)
-const F = Object.assign(XS ? { pos: [0, 5.2, 21], look: [0, 3.9, 0], fov: 30, offx: -120, offy: 70 } : { pos: [0, 5.6, 14], look: [0, 3.6, 0], fov: 30, offx: -120, offy: 90 }, D.frame || {});
+const F = Object.assign({ pos: [0, 6.2, 18], look: [0, 3.9, 0], fov: 30, offx: -105, offy: 90 }, D.frame || {});
 camera.fov = F.fov; camera.position.set(...F.pos); camera.lookAt(...F.look); camera.setViewOffset(W, H, F.offx, F.offy, W, H); camera.updateProjectionMatrix();
 const lerp = (a, b, t) => a + (b - a) * t, clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), sm = t => { t = clamp(t); return t * t * (3 - 2 * t); };
 const cap = document.getElementById('cap'), capt = document.getElementById('capt');
 let wasTalk = 0;
 function envAt(b, t) { const k = (t - b.start) * 48, i = Math.floor(k); if (i < 0 || i >= b.env.length - 1) return 0; return lerp(b.env[i], b.env[i + 1], k - i); }
-window.renderFrame = t => {
+function frameOld(t) {
   const talk = D.talks.find(b => t >= b.v0 && t <= b.v1 + 0.05), react = D.reacts.find(r => t >= r.t0 && t <= r.t1);
   // 0 = watching the clip (bottom left), 1 = talking to the viewer; blends smoothly
   const target = talk ? 1 : 0; wasTalk = target; const near = D.talks.reduce((m, b) => Math.min(m, t >= b.v0 - 0.25 && t <= b.v1 + 0.45 ? 0 : 9), 9);
   let toCam = 0; for (const b of D.talks) { const a = sm((t - (b.v0 - 0.25)) / 0.25), z = 1 - sm((t - (b.v1 + 0.2)) / 0.3); toCam = Math.max(toCam, Math.min(a, z)); }
   const emo = talk ? talk.emo : (react ? react.emo : 'neutral'); const amp = talk ? envAt(talk, t) : 0;
-  if (XS) {
-    // emotional robots: face and body from the same words. The face blends in over 0.25 s when a new line or reaction starts.
-    const src = talk || react, t0 = talk ? talk.v0 : react ? react.t0 : 0, emoNow = src ? ak.faceFor([ 'neutral', emo, clamp((t - (t0 - 0.2)) / 0.25) ]) : ak.faceFor('neutral');
-    const w = 1 - toCam;
-    ak.animateActor(bot, t, { speaking: !!talk, amp, emo: emoNow, look: [lerp(-0.9, 0, toCam), lerp(0.7, 0, toCam)], turn: -0.5 * w, nod: 0.17 * w,
-      act: react ? react.act : undefined, actU: react ? (t - react.t0) / Math.max(0.1, react.t1 - react.t0) : 0 });
-    bot.g.rotation.y = -0.22 * w;
-  } else {
-    kit.animateBot(bot, t, { speaking: !!talk, amp, emo, look: [lerp(-0.9, 0, toCam), lerp(0.7, 0, toCam)] });
-    bot.body.position.z = 0; const w = 1 - toCam;                                   // watching weight
-    bot.head.rotation.y += -0.5 * w; bot.head.rotation.x += 0.17 * w; bot.g.rotation.y = -0.22 * w;
-    bot.head.rotation.z += Math.sin(t * 0.9) * 0.012;
-    if (react) {
-      const u = (t - react.t0) / Math.max(0.1, react.t1 - react.t0), e = Math.sin(clamp(u) * Math.PI);
-      if (react.act === 'nod') bot.head.rotation.x += Math.sin(t * 9) * 0.12 * e;
-      if (react.act === 'shake') bot.head.rotation.y += Math.sin(t * 11) * 0.18 * e;
-      if (react.act === 'gasp') { bot.body.position.z = -0.5 * e; bot.head.rotation.x -= 0.1 * e; bot.arms.forEach((a, i) => { a.rotation.x = -1.2 * e; a.rotation.z = (i ? -0.5 : 0.5) * e; }); }
-      if (react.act === 'laugh') { bot.body.position.y += Math.abs(Math.sin(t * 16)) * 0.1 * e; bot.head.rotation.x -= 0.12 * e; bot.head.rotation.z += Math.sin(t * 18) * 0.05 * e; }
-      if (react.act === 'facepalm') { bot.arms[1].rotation.x = -2.5 * e; bot.arms[1].rotation.z = -0.5 * e; bot.head.rotation.x += 0.25 * e; }
-      if (react.act === 'lean') { bot.body.position.z = 0.5 * e; bot.head.rotation.y -= 0.1 * e; }
-      if (react.act === 'hop') bot.body.position.y += Math.abs(Math.sin(u * Math.PI * 2)) * 0.35 * e;
-    }
+  kit.animateBot(bot, t, { speaking: !!talk, amp, emo, look: [lerp(-0.9, 0, toCam), lerp(0.7, 0, toCam)] });
+  bot.body.position.z = 0; const w = 1 - toCam;                                   // watching weight
+  bot.head.rotation.y += -0.5 * w; bot.head.rotation.x += 0.17 * w; bot.g.rotation.y = -0.22 * w;
+  bot.head.rotation.z += Math.sin(t * 0.9) * 0.012;
+  if (react) {
+    const u = (t - react.t0) / Math.max(0.1, react.t1 - react.t0), e = Math.sin(clamp(u) * Math.PI);
+    if (react.act === 'nod') bot.head.rotation.x += Math.sin(t * 9) * 0.12 * e;
+    if (react.act === 'shake') bot.head.rotation.y += Math.sin(t * 11) * 0.18 * e;
+    if (react.act === 'gasp') { bot.body.position.z = -0.5 * e; bot.head.rotation.x -= 0.1 * e; bot.arms.forEach((a, i) => { a.rotation.x = -1.2 * e; a.rotation.z = (i ? -0.5 : 0.5) * e; }); }
+    if (react.act === 'laugh') { bot.body.position.y += Math.abs(Math.sin(t * 16)) * 0.1 * e; bot.head.rotation.x -= 0.12 * e; bot.head.rotation.z += Math.sin(t * 18) * 0.05 * e; }
+    if (react.act === 'facepalm') { bot.arms[1].rotation.x = -2.5 * e; bot.arms[1].rotation.z = -0.5 * e; bot.head.rotation.x += 0.25 * e; }
+    if (react.act === 'lean') { bot.body.position.z = 0.5 * e; bot.head.rotation.y -= 0.1 * e; }
+    if (react.act === 'hop') bot.body.position.y += Math.abs(Math.sin(u * Math.PI * 2)) * 0.35 * e;
   }
   const c = D.caps.find(c => t >= c.t0 && t <= c.t1);
   if (c) { cap.hidden = false; capt.innerHTML = c.text.replace(/\*([^*]+)\*/g, '<em>$1</em>'); } else cap.hidden = true;
   renderer.render(scene, camera);
-};
+}
+
+// ---------------- real faces (Emotional Robots): a person watching a clip ----------------
+const EMO_FACE = { happy: 'happy', excited: 'excited', sweet: 'happy', deadpan: 'deadpan', stern: 'annoyed', tired: 'tired', dramatic: 'shocked', shock: 'shocked', worried: 'worried', smug: 'smug', laugh: 'laugh', neutral: 'neutral', sad: 'sad' };
+const GAZE = { x: -0.85, y: 0.72 };                         // where the eyes look while watching the clip (down and to the left)
+const env = (u, a = 0.14, b = 0.3) => Math.min(sm(u / a), sm((1 - u) / b));
+function frameExpressive(t) {
+  const talk = D.talks.find(b => t >= b.v0 && t <= b.v1 + 0.05);
+  let toCam = 0; for (const b of D.talks) { const a = sm((t - (b.v0 - 0.25)) / 0.25), z = 1 - sm((t - (b.v1 + 0.2)) / 0.3); toCam = Math.max(toCam, Math.min(a, z)); }
+  const r = talk ? null : D.reacts.find(r => t >= r.t0 && t <= r.t1);
+  const u = r ? (t - r.t0) / Math.max(0.1, r.t1 - r.t0) : 0, e = r ? env(u) * (r.amp ?? 1) : 0, ee = r ? env(u) : 0;
+  const o = { pose: 'idle', alive: true }; let target = null, camAmt = toCam, nodAdd = 0, turnAdd = 0;
+  let face = Object.assign({}, EXPR.neutral);
+  if (talk) { const nm = EMO_FACE[talk.emo] || 'neutral'; face = Object.assign({}, EXPR[nm]); o.talk = envAt(talk, t); o.pose = ['idle', 'shrug', 0.35 * Math.max(0, Math.sin(t * 1.7))]; }
+  if (r) {
+    target = EXPR[r.face] || EXPR.neutral; face = lerpFace(face, target, Math.min(1, e));
+    if (r.kind === 'glance') camAmt = Math.max(camAmt, ee);                         // look up at the camera, say nothing, give a look
+    if (r.kind === 'nod') nodAdd = Math.sin((t - r.t0) * 9.5) * 0.13 * e;
+    if (r.kind === 'shake') { turnAdd = Math.sin((t - r.t0) * 10) * 0.24 * e; o.pose = ['idle', 'shrug', 0.6 * e]; }
+    if (r.kind === 'laugh') { o.laugh = e; o.nod = 0; nodAdd = -0.1 * e; }
+    if (r.kind === 'gasp' || r.kind === 'startle') { o.slump = -0.09 * e; o.pose = ['idle', 'armsUp', 0.6 * e]; nodAdd = -0.08 * e; }
+    if (r.kind === 'tilt') o.tilt = 0.17 * e;
+    if (r.kind === 'sympathy') { nodAdd = 0.06 * e + Math.sin((t - r.t0) * 3) * 0.04 * e; o.tilt = 0.12 * e; }
+    if (r.kind === 'lean') o.lean = 0.08 * e;
+    if (r.kind === 'facepalm') o.pose = ['idle', 'facepalm', ee];
+    if (r.kind === 'hop') o.laugh = 0.6 * e;
+    if (r.kind === 'cut') nodAdd = -0.05 * e;
+  }
+  // eyes: on the clip, or on the camera (a face like "side eye" keeps its own sideways look; "eye roll" rolls)
+  let camLook = { lookX: 0, lookY: 0 };
+  if (r && r.kind === 'glance') { if (r.face === 'eye roll') camLook = eyeRoll(Math.min(1, u * 1.15)); else if (r.face === 'side eye') camLook = { lookX: target.lookX, lookY: target.lookY }; }
+  face.lookX = lerp(GAZE.x, camLook.lookX, camAmt); face.lookY = lerp(GAZE.y, camLook.lookY, camAmt);
+  o.face = face; o.turn = lerp(-0.5, 0, camAmt) + turnAdd; o.nod = (o.nod ?? 0) + lerp(0.16, 0, camAmt) + nodAdd;
+  xk.animateExpressive(bot, t, o);
+  setCap(t); renderer.render(scene, camera);
+}
+function setCap(t) { const c = D.caps.find(c => t >= c.t0 && t <= c.t1); if (c) { cap.hidden = false; capt.innerHTML = c.text.replace(/\*([^*]+)\*/g, '<em>$1</em>'); } else cap.hidden = true; }
+window.renderFrame = t => (EXPRESSIVE ? frameExpressive(t) : frameOld(t));
 window.renderFrame(0); window.ready = true;
 </script></body></html>

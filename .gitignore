@@ -13,3 +13,4 @@ formats/reaction/work/
 voices/cbenv/
 voices/_r.wav
 videos/*/clip_source.mp4
+__pycache__/
