@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Robot characters demo</title>
+<style>html,body{margin:0;background:#1d1730}canvas{display:block}</style></head><body><div id="wrap"></div>
+<script type="importmap">{"imports":{"three":"./three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from './RoundedBoxGeometry.js';
+import { createRobotKit } from './robots.js';
+const W = 576, H = 1024;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+document.getElementById('wrap').appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xc2d8f2);
+const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 200); camera.position.set(0, 12, 62); camera.lookAt(0, 2.5, 0);
+// the standard light rig for the robot look
+scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0));
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-6, 16, 14); sun.target.position.set(0, 5, 0); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); { const c = sun.shadow.camera; c.left = -16; c.right = 16; c.top = 20; c.bottom = -6; c.near = 1; c.far = 60; } sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; scene.add(sun, sun.target);
+const pk = new THREE.PointLight(0xff8fc8, 26, 40, 2); pk.position.set(-9, 10, 4); scene.add(pk);
+const bl = new THREE.PointLight(0x8fb8ff, 26, 40, 2); bl.position.set(9, 10, 4); scene.add(bl);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 60), new THREE.MeshStandardMaterial({ color: 0xe8e0f8, roughness: 0.7 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const kit = createRobotKit(THREE, RoundedBoxGeometry);
+const people = kit.PEOPLE.map((p, i) => { const col = i % 4, row = Math.floor(i / 4); const b = kit.mkHuman(Object.assign({}, p, { parent: scene, x: -7.5 + col * 5, z: row ? -3 : 3, ry: (col - 1.5) * -0.08 })); b.idx = i; b.emo = ['happy','sweet','smug','happy','excited','sweet','excited','happy'][i]; return b; });
+const pets = ['dog','cat','bunny','cow','sheep','chicken','bird','pig'].map((k, i) => kit.mkPet(k, { parent: scene, x: -8 + i * 2.3, z: 8, ry: 0.3, scale: k === 'cow' ? 0.7 : 0.9 }));
+['tree','house','car','balloon','gift','cake','sofa','sign'].forEach((n, i) => kit.mkProp(n, { parent: scene, x: -8.5 + i * 2.5, z: -9, scale: n === 'house' || n === 'sofa' ? 0.8 : 1, text: 'HI!' }));
+window.renderFrame = t => { people.forEach((b, i) => kit.animateBot(b, t, { speaking: Math.floor(t / 2) % 3 === i, amp: 0.5 + 0.5 * Math.sin(t * 9), emo: b.emo, wave: i === 2 && Math.floor(t / 2) % 3 === 2 })); pets.forEach(p => kit.animatePet(p, t, { happy: true })); renderer.render(scene, camera); };
+window.renderFrame(1); window.ready = true;
+</script></body></html>

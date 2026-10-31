@@ -22,3 +22,15 @@ New characters: copy a POOL entry (acc, eye, col, s) and add a prop block in mkB
 ## You choose the world
 The set, story, props and camera are free: a street, a courtroom, a kitchen, anything.
 Only the characters have to look like this. Build the set with simple rounded boxes in soft pastel colors so it matches.
+
+## Humans, pets and props (added)
+Same toy look, so any story can have a full cast. See `people.html` for a showcase of all of them.
+- `kit.mkHuman({ skin, hair, hairStyle, top, bottom, kid, glasses, beard, hijab, legs })` makes a cute person.
+  hairStyle: long, short, bob, bun, curly, ponytail, bald, hijab. `kit.PEOPLE` has 8 ready-made people of different skin tones and ages (kids and a grandpa included).
+  Animate with `kit.animateBot(person, t, { speaking, amp, emo, wave, walk })` (same as robots).
+- `kit.mkPet('dog'|'cat'|'bunny'|'cow'|'sheep'|'chicken'|'bird'|'pig', { x, z, scale, color })`. Animate with `kit.animatePet(pet, t, { walk, happy, sniff })`.
+- `kit.mkProp(name, { x, y, z, scale, color, text })`. Names: tree bush flower bench table chair sofa bed mug laptop phone books balloon gift cake lamp ball heart star sign house car cloud sun bone fish door window mailbox fence.
+- Need something that is not listed? Build it from rounded boxes and balls in soft pastel colors, same as the existing ones, and add it as a new entry. Do not use a different art style.
+
+## Full bodies
+Every character (robots and humans) now has legs and shoes. Walk with `animateBot(c, t, { walk: true })`, sit with `{ sit: true }`. For a torso-only look behind a desk pass `{ legs: false }`.
