@@ -54,3 +54,6 @@ const xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), ak = createActor
 - Per format: story and skit = several actors on a set with the usual camera. Talk to camera = one actor, close-ups. Explainer = one actor plus info cards. Reaction = set `"style": "expressive"` in script.json (see `formats/reaction/README.md`).
 - Voices do not change: use `voices/speak.py` with the character's own name (MARA, THEO, ...).
 - **Podcast is the one exception for now.** `formats/podcast/anim/index_pod3.html` has its own separate robot studio code and its own old voice step. Do the emotional-robots podcast as its own job (it needs a swap in that page and in `pod/mk.py`).
+
+## Furniture rule: the body must sit BEHIND a desk or counter, not inside it
+The emotional robots are deep: the torso reaches about 1 unit in front of the character's middle, and the hands reach out further. Any desk, table or counter must start IN FRONT of that (its back edge at least 1.3 units in front of the character), or push the character back by the same amount. If a desk top cuts through the torso, the body looks cut off or merged into the desk. Reaction tool: this is set for you (`desk.z`, default 1.5 for this style). In your own sets: look at one frame before rendering. The desk edge should be a clean straight line in front of the body, with nothing of the torso showing in front of it.

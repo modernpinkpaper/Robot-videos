@@ -28,8 +28,11 @@ const XS = D.reactor.style === 'expressive', ak = XS ? createActorKit(THREE, cre
 const bot = XS ? ak.mkActor(who, { parent: scene }) : P ? kit.mkHuman(Object.assign({}, P, { parent: scene })) : kit.mkBot(who.toUpperCase(), { parent: scene }); bot.idx = 3;
 // The reactor sits at a little desk: it hides the legs (the character still has a full body) and avoids a floating torso.
 { const bx = kit.box, DK = D.desk || {}, top = DK.top || 0xf6e6f2, front = DK.front || 0xd69bd0, y = DK.y || 2.5;
-  bx(scene, 10, 0.28, 2.6, top, 0, y, 1.25, { round: 0.1 }); bx(scene, 9.6, y - 0.1, 0.3, front, 0, (y - 0.1) / 2, 2.45, { round: 0.1 }); bx(scene, 9.4, 0.14, 0.1, 0xff8fc8, 0, y - 0.45, 2.64, { noShadow: true });
-  kit.mkProp('mug', { parent: scene, x: 2.6, y: y + 0.14, z: 1.6, scale: 0.9 }); kit.mkProp('laptop', { parent: scene, x: -2.4, y: y + 0.14, z: 1.5, ry: 0.5, scale: 1.0 }); }
+  // dz = how far the desk sits IN FRONT of the character. The emotional robots have a deeper body (the torso reaches about 1 unit forward), so the desk
+  // must start in front of it. If the desk top cuts through the torso, the body looks like it is merging into the desk instead of sitting behind it.
+  const dz = DK.z ?? (XS ? 1.5 : 0);
+  bx(scene, 10, 0.28, 2.6, top, 0, y, 1.25 + dz, { round: 0.1 }); bx(scene, 9.6, y - 0.1, 0.3, front, 0, (y - 0.1) / 2, 2.45 + dz, { round: 0.1 }); bx(scene, 9.4, 0.14, 0.1, 0xff8fc8, 0, y - 0.45, 2.64 + dz, { noShadow: true });
+  kit.mkProp('mug', { parent: scene, x: 2.6, y: y + 0.14, z: 1.6 + dz, scale: 0.9 }); kit.mkProp('laptop', { parent: scene, x: -2.4, y: y + 0.14, z: 1.5 + dz, ry: 0.5, scale: 1.0 }); }
 // Framing: head and shoulders large, pushed to the top right of the 9:16 frame (set in work/reaction.json "frame" to adjust)
 const F = Object.assign(XS ? { pos: [0, 5.2, 21], look: [0, 3.9, 0], fov: 30, offx: -120, offy: 70 } : { pos: [0, 5.6, 14], look: [0, 3.6, 0], fov: 30, offx: -120, offy: 90 }, D.frame || {});
 camera.fov = F.fov; camera.position.set(...F.pos); camera.lookAt(...F.look); camera.setViewOffset(W, H, F.offx, F.offy, W, H); camera.updateProjectionMatrix();
