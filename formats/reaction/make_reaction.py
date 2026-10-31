@@ -17,7 +17,8 @@
 import sys, os, re, json, wave, subprocess, shutil, time
 import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE)); WORK = HERE + '/work'
-sys.path.insert(0, ROOT + '/voices')
+sys.path.insert(0, ROOT + '/voices'); sys.path.insert(0, HERE)
+from behavior import plan_reactions, forced_from_script, cues_to_reacts
 W, H, FPS, SR = 576, 1024, 24, 44100
 BOX_W, BOX_H, MARGIN = 300, 420, 18          # the clip's window, bottom left
 
@@ -69,11 +70,27 @@ def main(script_path, out_path):
             ref = np.percentile(env[env > 0.01], 90) if (env > 0.01).any() else 1; env = np.convolve(np.clip(env / ref, 0, 1), [0.25, 0.5, 0.25], 'same')
             talks.append(dict(start=round(start, 3), v0=round(v0, 3), v1=round(v1, 3), emo=b.get('emo', 'neutral'), env=[round(float(e), 2) for e in env]))
             caps += chunks(b['say'], v0, v1); mix.append((start, x))
-            if b.get('act'): reacts.append(dict(t0=round(start - 0.15, 3), t1=round(start + min(1.4, line), 3), act=b['act'], emo=b.get('emo', 'neutral')))
+            if b.get('act'): reacts.append(forced_from_script(b['act'], b.get('emo', 'neutral'), start - 0.15, min(1.4, line)))
         else:
-            d = b.get('dur', 1.2); reacts.append(dict(t0=round(out_t, 3), t1=round(out_t + d, 3), act=b.get('act', 'nod'), emo=b.get('emo', 'neutral')))
+            d = b.get('dur', 1.2); reacts.append(forced_from_script(b.get('act', 'nod'), b.get('emo', 'neutral'), out_t, d))
     if s1 > cur: segs.append(('play', cur, s1, out_t)); out_t += s1 - cur
     total = out_t + 1.0
+    # ---- 2b. automatic human behavior: reactions found in the clip, looks at the camera (formats/reaction/behavior.py)
+    if S.get('cues'): reacts = reacts + cues_to_reacts(S['cues'], segs)           # written by the director from the transcript: they fit the meaning
+    if S.get('auto', True):
+        events = []
+        if not S.get('cues') or S.get('auto_words'):                              # word-list guesses are only a fallback when there are no cues
+            try:
+                py = os.environ.get('CHATTERBOX_PY') if (os.environ.get('CHATTERBOX_PY') and os.path.exists(os.environ.get('CHATTERBOX_PY'))) else sys.executable
+                env = {k: v for k, v in os.environ.items() if k not in ('PYTHONPATH', 'PYTHONHOME')}
+                cmd = [py, HERE + '/analyze_clip.py', src, str(s0), str(s1)] + (['--sound'] if S.get('sound_reactions') else [])
+                res = subprocess.run(cmd, capture_output=True, text=True, env=env)
+                events = json.loads(res.stdout.strip().splitlines()[-1]) if res.stdout.strip() else []
+                if res.stderr.strip(): print(res.stderr.strip()[-300:], file=sys.stderr)
+            except Exception as ex: print('clip analysis skipped:', ex, file=sys.stderr)
+        auto = plan_reactions(events, segs, talks, reacts, total, seed=S.get('seed', 7), glances=S.get('glances', True))
+        print(f'clip events: {len(events)}; cues: {len(S.get("cues", []))}; automatic reactions: {sum(1 for a in auto if a["kind"] != "glance")}; silent looks at the camera: {sum(1 for a in auto if a["kind"] == "glance")}')
+        reacts = reacts + auto
     # ---- 3. the clip's video (fit in the bottom-left window) and its audio
     sw = min(BOX_W, int(BOX_H * (probe(src, 'stream=width') / probe(src, 'stream=height')))); sh = int(round(sw * probe(src, 'stream=height') / probe(src, 'stream=width')))
     if sh > BOX_H: sh = BOX_H; sw = int(round(sh * probe(src, 'stream=width') / probe(src, 'stream=height')))
@@ -99,7 +116,7 @@ def main(script_path, out_path):
     final = audio * 0.9 + voice * 1.0; final = np.clip(final / max(1.0, np.abs(final).max() / 0.95), -1, 1)
     with wave.open(WORK + '/audio.wav', 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((final * 32767).astype('<i2').tobytes())
     # ---- 4. the reactor layer (transparent frames with captions)
-    json.dump(dict(reactor=dict(who=reactor), talks=talks, reacts=reacts, caps=caps, total=round(total, 3), frame=S.get('frame')), open(WORK + '/reaction.json', 'w'))
+    json.dump(dict(reactor=dict(who=reactor), look=S.get('look', 'emotional'), talks=talks, reacts=reacts, caps=caps, total=round(total, 3), frame=S.get('frame')), open(WORK + '/reaction.json', 'w'))
     nfr = int(total * FPS); Q = (nfr + 3) // 4; port = '8772'
     srv = subprocess.Popen(['python3', '-m', 'http.server', port, '--directory', ROOT], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1.5)
     try:

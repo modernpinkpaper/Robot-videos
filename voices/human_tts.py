@@ -19,10 +19,10 @@ EMO = {
     'excited':  dict(exag=0.68, cfg=0.45, speed=1.04, pitch=0.6),
     'sweet':    dict(exag=0.52, cfg=0.50, speed=0.97, pitch=0.3),
     'laugh':    dict(exag=0.68, cfg=0.42, speed=1.03, pitch=0.5),
-    'deadpan':  dict(exag=0.25, cfg=0.60, speed=0.95, pitch=-0.4),
+    'deadpan':  dict(exag=0.38, cfg=0.55, speed=0.96, pitch=-0.4),
     'stern':    dict(exag=0.45, cfg=0.55, speed=0.96, pitch=-0.6),
-    'tired':    dict(exag=0.30, cfg=0.60, speed=0.88, pitch=-0.8),
-    'sad':      dict(exag=0.38, cfg=0.55, speed=0.88, pitch=-0.6),
+    'tired':    dict(exag=0.40, cfg=0.55, speed=0.94, pitch=-0.6),
+    'sad':      dict(exag=0.42, cfg=0.55, speed=0.94, pitch=-0.5),
     'worried':  dict(exag=0.62, cfg=0.45, speed=1.03, pitch=0.3),
     'shock':    dict(exag=0.70, cfg=0.42, speed=1.05, pitch=0.9),
     'smug':     dict(exag=0.50, cfg=0.50, speed=0.94, pitch=-0.2),
@@ -66,8 +66,8 @@ def style_for(who, text, emo='neutral', pace=None, tone=None, energy=None):
     elif n > 120: s['speed'] += 0.03
     if q: s['speed'] -= 0.02
     if energy is not None: s['exag'] = 0.3 + 0.7 * energy
-    s['exag'] = max(0.25, min(0.75, s['exag']))   # above about 0.8 speech gets rushed, slurred or garbled; s['cfg'] = max(0.38, min(0.8, s['cfg']))   # low values rush the words
-    s['speed'] = (s['speed'] if pace is None else pace) * P['speed']
+    s['exag'] = max(0.35, min(0.75, s['exag']))   # above about 0.8 speech gets rushed, slurred or garbled; s['cfg'] = max(0.38, min(0.8, s['cfg']))   # low values rush the words
+    s['speed'] = (max(0.93, s['speed']) if pace is None else pace) * P['speed']   # never drag: slow lines still need to sound like a person talking
     s['pitch'] = s['pitch'] + P['pitch'] + (tone or 0)
     s['ref'] = os.path.join(REFS, P['ref'] + '.wav')
     return s
