@@ -7,7 +7,9 @@
 import sys, os, json, wave, subprocess, tempfile
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE); sys.path.insert(0, ROOT + '/formats/podcast/pod')
-HUMANS = {'DALIA', 'AMINA', 'MARCUS', 'LILY', 'SOFIA', 'GRANDPA', 'KID_BOY', 'KID_GIRL', 'NARRATOR'}
+HUMANS = {'DALIA', 'AMINA', 'MARCUS', 'LILY', 'SOFIA', 'GRANDPA', 'KID_BOY', 'KID_GIRL', 'NARRATOR',
+          'MARA', 'THEO', 'PRIYA', 'JUNE', 'KAI', 'GUS', 'ZOE', 'FINN', 'HANA', 'NINA'}   # incl. the Emotional Robots characters
+# Any line may carry "voice": "MARCUS" to speak with another character's voice (mix and match).
 
 def _piper(rows):
     from piper import PiperVoice
@@ -16,7 +18,7 @@ def _piper(rows):
     from voices_cfg import VOICE
     vd = os.environ.get('VOICES_DIR', ROOT + '/formats/podcast/voices/'); cache = {}
     for r in rows:
-        vn, pitch, ls = VOICE[r['who'].upper()]
+        vn, pitch, ls = VOICE[r.get('voice', r['who']).upper()]
         if vn not in cache: cache[vn] = PiperVoice.load(vd + vn + '.onnx')
         v = cache[vn]; raw = tempfile.mktemp(suffix='.wav')
         with wave.open(raw, 'wb') as w:
@@ -26,7 +28,8 @@ def _piper(rows):
         subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-af', f'asetrate={int(sr*pitch)},aresample=44100,atempo={1/pitch:.4f},highpass=f=90,aecho=0.8:0.9:5:0.18,loudnorm=I=-18:TP=-2', '-ar', '44100', '-ac', '1', r['out']], check=True); os.remove(raw)
 
 def synth_lines(rows):
-    humans = [r for r in rows if r['who'].upper() in HUMANS]; robots = [r for r in rows if r['who'].upper() not in HUMANS]
+    vw = lambda r: r.get('voice', r['who']).upper()
+    humans = [r for r in rows if vw(r) in HUMANS]; robots = [r for r in rows if vw(r) not in HUMANS]
     if robots: _piper(robots)
     if humans:
         py = os.environ.get('CHATTERBOX_PY')

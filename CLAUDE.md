@@ -5,7 +5,7 @@ Every format, camera move and voice has a REFERENCE in `examples/INDEX.md` (real
 
 Dalia picks a CAST (humans / robots / both / pets), a FORMAT (story / skit / talking to the camera / reaction / podcast / explainer) and voices in plain words.
 Example: "Make an animation using humans only in a skit style about a hard day at work with a coworker."
-Parse it, use defaults for anything she leaves out (say which), and follow the matching files in `menu/`. Do not ask her questions you can answer yourself.
+Parse it, then follow **`menu/BRIEF.md`**: BEFORE building, make sure you know the 8 required things (topic, look, characters, format, voices, length, the clip for a reaction video, anything to include or leave out). If any are missing, ask ONE short message listing only the missing ones with your suggested picks (she can reply "yes"). Do not ask for what she already said or for what is fixed (camera, size, look of the toy world). If she says "just do it" or "you pick", use your picks and tell her what you chose. Then follow the matching files in `menu/`.
 
 Owner: Dalia (modern pink paper). Reply to her in **simple English**. She likes "just do it".
 
@@ -34,7 +34,7 @@ Never use a static or single fixed camera. Never invent a different camera syste
 ## Rules
 - Do not edit `characters/robots.js` unless she asks. If something must change, add an option.
 - Keep staff names, kids' names, exact money, medical details and passwords off screen.
-- Voices: ALWAYS use `voices/speak.py`. Humans (DALIA, AMINA, MARCUS, LILY, SOFIA, GRANDPA, KID_BOY, KID_GIRL, NARRATOR) use Chatterbox with pace, emotion and tone set per line; robots use Piper. Read `voices/README.md`. Do not use Piper for a human.
+- Voices: ALWAYS use `voices/speak.py`. Humans (DALIA, AMINA, MARCUS, LILY, SOFIA, GRANDPA, KID_BOY, KID_GIRL, NARRATOR, and the Emotional Robots characters MARA, THEO, PRIYA, JUNE, KAI, GUS, ZOE, FINN, HANA, NINA) use Chatterbox with pace, emotion and tone set per line; robots use Piper. Read `voices/README.md`. Do not use Piper for a human. Mix and match is allowed: a line can carry `"voice": "AMINA"` to use another character's voice.
 - Reaction videos: use `formats/reaction/` (top-right reactor, bottom-left clip). Do not rebuild it.
 - Before sending a video: look at at least 4 frames, then say honestly what you checked and what you could not (you cannot hear audio).
 - Rendering is slow. Run it in the background and tell her.

@@ -5,20 +5,21 @@ Everything lives in `characters/expressive/`. Full guide: `characters/EXPRESSION
 Do not use the old dot-eyed people (`mkHuman`) or the robots in an emotional-robots video unless she asks for a mix.
 
 ## The 12 characters (ROSTER in `characters/expressive/body.js`)
-| Name | Look | Voice to use (voices_cfg.py) |
-|---|---|---|
-| mara | calm, hair bun, work badge, navy cardigan | SOFIA |
-| theo | broad head, buzz cut, trimmed beard, yellow hoodie | MARCUS |
-| priya | slim, long straight hair, long lashes, pink top | LILY |
-| june | grandma, silver bun, gold round glasses, teal cardigan | GRANDPA, set pitch higher (no grandma voice yet) |
-| kai | kid, curly hair, freckles, overalls | KID_BOY |
-| gus | round, bald, big mustache, bushy brows, red top + overalls | GRANDPA |
-| zoe | big sparkly eyes, lavender space buns, polka-dot top | LILY |
-| finn | tall, ginger spikes, square glasses, striped top | MARCUS, set pitch higher |
-| hana | soft face, black bob with bangs, coral top | SOFIA |
-| dalia | long dark hair, bold brows, big smile, navy ribbed top. Dalia herself. | DALIA |
-| nina | 6 years old, curly pigtails, floral dress | KID_GIRL |
-| amina | brown hijab, cream cardigan, freckles, big smile | AMINA |
+Each character has a REAL voice name in `voices/` (Chatterbox, natural, with pace, emotion and tone per line). Use the character's name as `who` in the script (`MARA`, `THEO`, ...). **Mix and match:** any line can carry `"voice": "AMINA"` to speak with another character's voice (any voice from `menu/voices/VOICES.md`).
+| Name | Look | Voice (`who`) | Sounds like |
+|---|---|---|---|
+| mara | calm, hair bun, work badge, navy cardigan | MARA | clear, calm woman |
+| theo | broad head, buzz cut, trimmed beard, yellow hoodie | THEO | deep, friendly man |
+| priya | slim, long straight hair, long lashes, pink top | PRIYA | bright young woman |
+| june | grandma, silver bun, gold round glasses, teal cardigan | JUNE | slow, warm older woman |
+| kai | kid, curly hair, freckles, overalls | KAI | boy |
+| gus | round, bald, big mustache, bushy brows, red top + overalls | GUS | slow, deep older man |
+| zoe | big sparkly eyes, lavender space buns, polka-dot top | ZOE | higher, bubbly young woman |
+| finn | tall, ginger spikes, square glasses, striped top | FINN | lighter young man |
+| hana | soft face, black bob with bangs, coral top | HANA | soft, gentle woman |
+| dalia | long dark hair, bold brows, big smile, navy ribbed top. Dalia herself. | DALIA | warm woman |
+| nina | 6 years old, curly pigtails, floral dress | NINA | little girl |
+| amina | brown hijab, cream cardigan, freckles, big smile | AMINA | calm, warm woman |
 Dalia, Amina and Nina are based on Dalia's family. Never put real family or kids' names on screen; the character names are fine.
 Pick the characters the story needs. If she names them ("Dalia and Nina"), use those. Otherwise choose at least 2 that look clearly different.
 

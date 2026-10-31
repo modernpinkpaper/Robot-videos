@@ -26,3 +26,12 @@ VOICE.update({
  'NARRATOR': ('en_US-lessac-medium', 0.96, 1.0),
 })
 NAMES.update({'AMINA': 'Amina', 'MARCUS': 'Marcus', 'LILY': 'Lily', 'SOFIA': 'Sofia', 'GRANDPA': 'Grandpa', 'KID_BOY': 'Sam', 'KID_GIRL': 'Zoe', 'NARRATOR': 'Narrator'})
+
+# ---- Emotional Robots characters: Piper fallback (used only if Chatterbox is not set up). Real voices: voices/human_tts.py
+VOICE.update({
+ 'MARA':  ('en_US-hfc_female-medium', 0.98, 1.0), 'THEO': ('en_US-ryan-medium', 0.90, 1.0), 'PRIYA': ('en_US-amy-medium', 1.10, 0.97),
+ 'JUNE':  ('en_US-kristin-medium', 0.90, 1.08),   'KAI':  ('en_US-joe-medium', 1.35, 0.95),  'GUS':   ('en_US-lessac-medium', 0.80, 1.12),
+ 'ZOE':   ('en_US-amy-medium', 1.22, 0.97),       'FINN': ('en_US-ryan-medium', 1.08, 1.0), 'HANA':  ('en_US-hfc_female-medium', 1.06, 1.0),
+ 'NINA':  ('en_GB-alba-medium', 1.25, 0.95),
+})
+NAMES.update({k: k.capitalize() for k in ['MARA', 'THEO', 'PRIYA', 'JUNE', 'KAI', 'GUS', 'ZOE', 'FINN', 'HANA', 'NINA']})
