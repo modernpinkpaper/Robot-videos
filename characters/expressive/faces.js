@@ -182,6 +182,14 @@ export function life(p, t, seed = 0, amt = 1) {
 export const LOOK = {
   W: 1024, H: 860,
   skin: '#e3b88d', brow: '#4a3b52', iris: '#5a3a30', rim: '#bba5cc', mouthLine: '#5e2438',
+  // per-character face design (see body.js PEOPLE_X): every character can look different
+  eyeScale: 1, eyeGap: 1,        // bigger or smaller eyes, wider or closer set
+  lashes: 0,                     // 0 none .. 1 long lashes
+  freckles: 0, wrinkles: 0,      // 0..1
+  noseSize: 1, browThick: 1,
+  mustache: null,                // { color, size, style: 'classic'|'handlebar' }
+  beard: null,                   // { color, style: 'full'|'goatee'|'stubble' }
+  lipColor: null,                // color of the mouth line (pink lips)
 };
 const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); const r = clamp(((n >> 16) & 255) * f, 0, 255) | 0, g = clamp(((n >> 8) & 255) * f, 0, 255) | 0, b = clamp((n & 255) * f, 0, 255) | 0; return `rgb(${r},${g},${b})`; };
 export const CX = 512, CY = 420, EX = 182, RX = 122, RY = 128, MY = 665;
@@ -192,14 +200,15 @@ function star(x, cx, cy, r, col) { x.fillStyle = col; x.beginPath(); for (let i 
 function drawEye(x, p, side, o) {
   const L = side === 0, sgn = L ? -1 : 1;           // -1 = viewer's left
   const open = clamp(L ? p.lOpen : p.rOpen, 0, 1.3), low = clamp(L ? p.lLow : p.rLow), slant = L ? p.lSlant : p.rSlant;
-  const sz = p.eyeSize, rx = RX * sz * (1 + Math.max(0, open - 1) * 0.25), ry = RY * sz * (1 + Math.max(0, open - 1) * 0.55);
-  const cx = CX + sgn * EX, cy = CY;
+  const sz = p.eyeSize * o.eyeScale, rx = RX * sz * (1 + Math.max(0, open - 1) * 0.25), ry = RY * sz * (1 + Math.max(0, open - 1) * 0.55);
+  const cx = CX + sgn * EX * o.eyeGap, cy = CY;
   const lidCol = shade(o.skin, 0.975), crease = shade(o.skin, 0.55);
   if (open < 0.1) {   // closed eye: a soft curved line
     const c = p.curve, w = rx * 0.95, y0 = cy + 8;
     x.strokeStyle = o.brow; x.lineWidth = 16; x.lineCap = 'round'; x.beginPath();
     x.moveTo(cx - w, y0); x.quadraticCurveTo(cx, y0 - c * 100, cx + w, y0); x.stroke();
     if (p.tear > 0.05) { x.fillStyle = 'rgba(150,205,255,0.7)'; x.beginPath(); x.ellipse(cx, y0 + 6, w * 0.8, 10 + 12 * p.tear, 0, 0, 7); x.fill(); }
+    if (o.lashes > 0.05) { x.lineWidth = 11; for (let j = 0; j < 2; j++) { x.beginPath(); x.moveTo(cx + sgn * w, y0 - j * 6); x.lineTo(cx + sgn * (w + 30 * o.lashes), y0 - 16 - j * 18 * o.lashes); x.stroke(); } }
     return { cx, cy, rx, ry, closed: true, tearX: cx - sgn * w * 0.5, tearY: y0 };
   }
   // lid edges (computed first, used for the lids and for the rim)
@@ -239,13 +248,21 @@ function drawEye(x, p, side, o) {
   x.strokeStyle = crease; x.lineCap = 'round'; x.lineWidth = 7;
   if (cover > 1 || Math.abs(slant) > 0.02) { x.save(); x.beginPath(); x.ellipse(cx, cy, rx + 4, ry + 4, 0, 0, 7); x.clip(); x.beginPath(); upperEdge(); x.stroke(); x.restore(); }
   if (low > 0.02) { x.save(); x.beginPath(); x.ellipse(cx, cy, rx + 4, ry + 4, 0, 0, 7); x.clip(); x.lineWidth = 6; x.beginPath(); x.moveTo(cx - rx - 16, yl + 6); x.quadraticCurveTo(cx, yl - bulgeL, cx + rx + 16, yl + 6); x.stroke(); x.restore(); }
+  if (o.lashes > 0.25) {   // lashes: three curved flicks fanning out from the outer corner of the eye
+    x.strokeStyle = o.brow; x.lineCap = 'round'; x.lineWidth = 9 + 3 * o.lashes;
+    for (let j = 0; j < 3; j++) {
+      const a = sgn < 0 ? Math.PI * (1.03 + j * 0.07) : Math.PI * (1.97 - j * 0.07), px = cx + rx * Math.cos(a), py = cy + ry * Math.sin(a), ph = 0.12 + 0.34 * j, L = (34 + 10 * j) * o.lashes;
+      const dx = sgn * Math.cos(ph), dy = -Math.sin(ph);
+      x.beginPath(); x.moveTo(px, py); x.quadraticCurveTo(px + dx * L * 0.5, py + dy * L * 0.5 - 8 * o.lashes, px + dx * L, py + dy * L); x.stroke();
+    }
+  }
   return { cx, cy, rx, ry, tearX: cx - sgn * rx * 0.45, tearY: cy + ry - 4 };
 }
 
 function drawBrow(x, p, side, o, e) {
   const L = side === 0, sgn = L ? -1 : 1, inner = -sgn;
   const by = L ? p.lBy : p.rBy, ba = L ? p.lBa : p.rBa, bc = L ? p.lBc : p.rBc, bx = L ? p.lBx : p.rBx;
-  const len = 128, cx = e.cx + inner * (bx * 34), cy = Math.max(176, CY - e.ry - 36 - by * 40);
+  const len = 128 * (0.85 + 0.15 * o.eyeScale), cx = e.cx + inner * (bx * 34), cy = Math.max(176, CY - e.ry - 36 - by * 40);
   const ang = ba * 0.5;               // radians; + inner end down
   const dir = { x: Math.cos(ang), y: Math.sin(ang) * (inner > 0 ? 1 : -1) };
   // the line runs from the outer end to the inner end
@@ -254,7 +271,7 @@ function drawBrow(x, p, side, o, e) {
   const outerEnd = { x: cx - inner * len * Math.cos(ang) * 0.9, y: cy - len * Math.sin(Math.abs(ang)) * Math.sign(ba) * 0.9 };
   const mid = { x: cx, y: cy - bc * 34 };
   const ctrl = { x: mid.x * 2 - (innerEnd.x + outerEnd.x) / 2, y: mid.y * 2 - (innerEnd.y + outerEnd.y) / 2 };
-  x.strokeStyle = o.brow; x.lineCap = 'round'; x.lineWidth = 31;
+  x.strokeStyle = o.brow; x.lineCap = 'round'; x.lineWidth = 31 * o.browThick;
   x.beginPath(); x.moveTo(outerEnd.x, outerEnd.y); x.quadraticCurveTo(ctrl.x, ctrl.y, innerEnd.x, innerEnd.y); x.stroke();
 }
 
@@ -303,7 +320,7 @@ function drawMouth(x, p, o) {
 function chinMark(x, cx, y, p, o) { x.strokeStyle = shade(o.skin, 0.8); x.lineWidth = 8; x.lineCap = 'round'; const k = p.chin; x.beginPath(); x.moveTo(cx - 44 * k, y + 2); x.quadraticCurveTo(cx, y - 24 * k, cx + 44 * k, y + 2); x.stroke(); }
 
 function drawNose(x, p, o) {
-  const s = p.scrunch, fl = p.flare, y = CY + 150 - s * 14, w = 30 + fl * 16 + s * 6;
+  const s = p.scrunch, fl = p.flare, y = CY + 150 - s * 14, w = (30 + fl * 16 + s * 6) * o.noseSize;
   x.fillStyle = shade(o.skin, 0.9); x.beginPath(); x.ellipse(CX, y, w, 18 + s * 3, 0, 0, 7); x.fill();
   x.fillStyle = shade(o.skin, 1.08); x.beginPath(); x.ellipse(CX - 6, y - 7, w * 0.42, 7, -0.1, 0, 7); x.fill();
   x.strokeStyle = shade(o.skin, 0.7); x.lineWidth = 6; x.lineCap = 'round';
@@ -325,6 +342,48 @@ function drawCheeks(x, p, o) {
   }
   if (p.flush > 0.02) { const g = x.createRadialGradient(CX, CY + 60, 60, CX, CY + 60, 420); g.addColorStop(0, `rgba(255,70,70,${0.38 * p.flush})`); g.addColorStop(1, 'rgba(255,70,70,0)'); x.fillStyle = g; x.beginPath(); x.ellipse(CX, CY + 60, 420, 330, 0, 0, 7); x.fill(); }
 }
+
+const FRECK = [[-110, 178], [-70, 200], [-150, 206], [-40, 168], [-95, 232], [-185, 176], [-205, 214], [-45, 214], [-130, 252], [-20, 140], [-75, 150]];
+function drawFreckles(x, p, o) {
+  const f = o.freckles; if (!f) return; x.fillStyle = shade(o.skin, 0.6); x.globalAlpha = 0.7 * clamp(f);
+  for (const sg of [-1, 1]) FRECK.forEach(([dx, dy], i) => { const px = CX + sg * (-dx) * (sg < 0 ? 1 : 0.96) + (sg > 0 ? 6 : 0), py = CY + dy; x.beginPath(); x.ellipse(px, py, 6 + (i % 3) * 1.6, 5 + (i % 2) * 1.5, 0, 0, 7); x.fill(); });
+  x.globalAlpha = 1;
+}
+function drawWrinkles(x, p, o) {
+  const w = o.wrinkles; if (!w) return; x.strokeStyle = shade(o.skin, 0.6); x.lineCap = 'round'; x.lineWidth = 6; x.globalAlpha = 0.5 * clamp(w);
+  for (const sg of [-1, 1]) {
+    const ex = CX + sg * (EX * o.eyeGap + RX * o.eyeScale * 1.08);
+    for (const [dy, dx2, dy2] of [[-12, 34, -26], [6, 40, 8], [24, 32, 38]]) { x.beginPath(); x.moveTo(ex, CY + dy); x.lineTo(ex + sg * dx2, CY + dy2); x.stroke(); }
+    x.beginPath(); x.moveTo(CX + sg * 98, CY + 178); x.quadraticCurveTo(CX + sg * 168, CY + 250, CX + sg * 138, MY + 4); x.stroke();   // smile line
+  }
+  x.lineWidth = 5; x.globalAlpha = 0.32 * clamp(w);
+  for (const yy of [214, 238]) { x.beginPath(); x.moveTo(CX - 180, yy + 4); x.quadraticCurveTo(CX, yy - 12, CX + 180, yy + 4); x.stroke(); }
+  x.globalAlpha = 1;
+}
+function mouthInfo(p) { const hw = 82 * p.mW * (1 - 0.42 * p.round), H = p.mOpen * 170; return { mcx: CX + p.mX * 90, my: MY + p.mY * 40, hw, H }; }
+function drawBeard(x, p, o) {
+  const b = o.beard; if (!b) return; const style = b.style || 'full';
+  const ymin = style === 'goatee' ? MY + 6 : style === 'full' ? 520 : 570, pts = [];
+  for (let i = 0; i <= 160; i++) { const a = (i / 160) * Math.PI, c = Math.cos(a), sn = Math.sin(a), k = 1 / Math.pow(Math.pow(Math.abs(c), 3) + Math.pow(Math.abs(sn), 3), 1 / 3); const px = 512 + c * k * 447, py = 450 + sn * k * 382; if (py >= ymin && (style !== 'goatee' || Math.abs(px - 512) < 175)) pts.push([px, py]); }
+  if (pts.length < 3) return;
+  x.save(); x.beginPath(); x.moveTo(pts[0][0], pts[0][1]); for (const q of pts) x.lineTo(q[0], q[1]);
+  const L = pts[pts.length - 1], R = pts[0];
+  if (style === 'goatee') x.quadraticCurveTo(CX, MY + 58, R[0], R[1]);
+  else if (style === 'full') { x.bezierCurveTo(L[0] + 70, L[1] + 70, CX - 250, MY + 30, CX, MY + 80); x.bezierCurveTo(CX + 250, MY + 30, R[0] - 70, R[1] + 70, R[0], R[1]); }   // a trimmed band along the jaw
+  else { x.bezierCurveTo(L[0] + 10, L[1] - 90, CX - 200, MY - 78, CX, MY - 56); x.bezierCurveTo(CX + 200, MY - 78, R[0] - 10, R[1] - 90, R[0], R[1]); }
+  x.closePath(); x.fillStyle = b.color; x.globalAlpha = style === 'stubble' ? 0.34 : 1; x.fill(); x.globalAlpha = 1;
+  x.restore();
+}
+function drawMustache(x, p, o) {
+  const mu = o.mustache; if (!mu) return; const m = mouthInfo(p), s = mu.size || 1, base = m.my - 40, hb = mu.style === 'handlebar';
+  x.fillStyle = mu.color;
+  for (const sg of [-1, 1]) {
+    x.beginPath(); x.moveTo(m.mcx, base - 14 * s);
+    x.bezierCurveTo(m.mcx + sg * 80 * s, base - 34 * s, m.mcx + sg * 150 * s, base - 18 * s, m.mcx + sg * 172 * s, base + (hb ? -10 : 14) * s);
+    x.bezierCurveTo(m.mcx + sg * 120 * s, base + 36 * s, m.mcx + sg * 44 * s, base + 40 * s, m.mcx, base + 22 * s); x.closePath(); x.fill();
+    if (hb) { x.beginPath(); x.arc(m.mcx + sg * 184 * s, base - 22 * s, 20 * s, 0, 7); x.fill(); }
+  }
+}
 function drawExtras(x, p) {
   if (p.sweat > 0.05) { const cx = CX + 358, cy = CY - 140, s = 30 * (0.7 + p.sweat * 0.4); x.fillStyle = 'rgba(135,200,255,0.9)'; x.strokeStyle = 'rgba(90,150,220,0.9)'; x.lineWidth = 5; x.beginPath(); x.moveTo(cx, cy - s * 1.9); x.bezierCurveTo(cx + s * 1.3, cy - s * 0.1, cx + s * 1.1, cy + s * 1.1, cx, cy + s * 1.1); x.bezierCurveTo(cx - s * 1.1, cy + s * 1.1, cx - s * 1.3, cy - s * 0.1, cx, cy - s * 1.9); x.fill(); x.stroke(); x.fillStyle = 'rgba(255,255,255,0.8)'; x.beginPath(); x.ellipse(cx - s * 0.4, cy + s * 0.1, s * 0.18, s * 0.38, 0.2, 0, 7); x.fill(); }
   if (p.vein > 0.05) { const cx = CX - 360, cy = CY - 205, r = 36; x.strokeStyle = '#e83a4a'; x.lineWidth = 11; x.lineCap = 'round'; for (let i = 0; i < 4; i++) { const sx = i < 2 ? -1 : 1, sy = i % 2 ? -1 : 1; x.beginPath(); x.arc(cx + sx * r, cy + sy * r, r * 0.95, sx < 0 ? (sy < 0 ? 0.0 : 1.57 * 3) : (sy < 0 ? 1.57 : 1.57 * 2), (sx < 0 ? (sy < 0 ? 1.57 : 1.57 * 4) : (sy < 0 ? 1.57 * 2 : 1.57 * 3)), false); x.stroke(); } }
@@ -335,9 +394,14 @@ export function drawFace(x, p, opt = {}) {
   const o = Object.assign({}, LOOK, opt);
   x.save(); x.clearRect(0, 0, o.W, o.H);
   if (o.W !== 1024) x.scale(o.W / 1024, o.W / 1024);
+  if (o.lipColor) o.mouthLine = o.lipColor;
   drawCheeks(x, p, o);
+  drawBeard(x, p, o);
+  drawWrinkles(x, p, o);
   drawNose(x, p, o);
+  drawFreckles(x, p, o);
   const e0 = drawEye(x, p, 0, o), e1 = drawEye(x, p, 1, o);
+  drawMustache(x, p, o);
   drawMouth(x, p, o);
   drawBrow(x, p, 0, o, e0); drawBrow(x, p, 1, o, e1);
   if (p.tear > 0.3) for (const e of [e0, e1]) { const len = 150 * p.tear, sx = e.tearX, sy = e.tearY; x.strokeStyle = 'rgba(150,208,255,0.6)'; x.lineWidth = 26; x.lineCap = 'round'; x.beginPath(); x.moveTo(sx, sy); x.quadraticCurveTo(sx + (sx < CX ? -10 : 10), sy + len * 0.5, sx + (sx < CX ? -6 : 6), sy + len); x.stroke(); x.fillStyle = 'rgba(190,230,255,0.9)'; x.beginPath(); x.arc(sx + (sx < CX ? -6 : 6), sy + len + 6, 17, 0, 7); x.fill(); }

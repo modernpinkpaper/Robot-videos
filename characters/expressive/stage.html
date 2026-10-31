@@ -34,6 +34,8 @@ window.draw = (W, H, views, t = 0, states) => {
   }
 };
 const lab = document.createElement('div'); lab.style.cssText = 'position:absolute;left:0;right:0;top:46px;text-align:center;font:bold 46px Arial,sans-serif;color:#3a2c4e;display:flex;justify-content:center'; document.body.appendChild(lab); window.label = t => { lab.innerHTML = t ? '<span style="background:#fff;padding:8px 30px;border-radius:40px;box-shadow:0 6px 18px rgba(80,60,120,.25)">' + t + '</span>' : ''; };
+window.info = () => cast.map(c => { const sc = (c.O.kid ? 0.8 : 1) * (c.O.scale || 1); return { name: c.O.name, sc, headY: c.headY * sc, topY: c.topY * sc, height: c.height * sc, head: c.B.head * sc }; });
+window.roster = () => xk.ROSTER.map(r => ({ name: r.name, bio: r.bio, tags: r.tags }));
 window.api = { EXPR, mix, lerpFace, eyeRoll, E };
 window.ready = true;
 </script></body></html>

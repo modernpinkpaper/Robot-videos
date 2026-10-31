@@ -7,7 +7,8 @@ The robots and `robots.js` are NOT changed. Everything lives in `characters/expr
 ## Look at the pictures first (`characters/expressive/preview/`)
 - `01_hero_mara.png` full body + close up of the hero (Mara)
 - `02_hero_turnaround.png` front, three-quarter, side, back
-- `03_cast.png` the 5 starter characters (different skin tones, hair, ages, glasses, a kid)
+- `03_cast_all.png` all 10 characters side by side
+- `cast_<name>.png` one card per character: full body + 6 expressions (happy, laugh, smirk, annoyed, shocked, sad): `cast_mara`, `cast_theo`, `cast_priya`, `cast_june`, `cast_kai`, `cast_gus`, `cast_zoe`, `cast_finn`, `cast_hana`, `cast_amina`
 - `04_poses.png` 9 body poses (idle, hips, shrug, facepalm, wave, armsUp, crossed, point, think), all with the new noodle arms
 - `faces_1_calm.png` ... `faces_7_shy_and_awkward.png` all 50 faces, grouped
 - `parts_1_eyes.png`, `parts_2_brows.png`, `parts_3_mouths.png`, `parts_4_nose_cheeks_extras.png` each part on its own
@@ -19,6 +20,16 @@ The robots and `robots.js` are NOT changed. Everything lives in `characters/expr
 - Arms are single smooth tubes that start inside the side of the torso and bend like noodles, ending in a round mitten. No joints, no gaps.
 - Short stubby legs ending in big round shoes.
 - Poses are written as where the elbow and the hand go (`POSES` in `body.js`), so a new pose is just two points per arm.
+
+## The cast (10 characters, `ROSTER` in `body.js`)
+Each character keeps ONE look (same clothes every time). Each recipe sets:
+- **head**: size and how boxy (round, soft box, square)
+- **build**: body width, torso height, leg length, head size, arm length
+- **hair**: bun, buzz, short, bob, bangs, long, ponytail, curly, afro, spikes, space buns, balding, hijab
+- **face design**: eye size and spacing, eye color, lashes, brow thickness, nose size, freckles, age lines, mustache, beard, lip color
+- **clothes**: top color, pattern (stripes, dots), hoodie, overalls, badge, glasses (round or square)
+To add a character, copy a ROSTER entry and change the numbers.
+Arms: every arm has the same fixed length (`ARM_LEN` in `body.js`, 2.05). A pose that reaches too far is pulled in automatically. `build.arm` makes a character's arms longer or shorter.
 
 ## How a face works (`faces.js`)
 A face is a set of numbers. Each part of the face has its own numbers, so a character can mix parts.
@@ -38,7 +49,7 @@ Honest limit: the head is one solid shape, so the "jaw" is drawn (mouth opens, l
 import { EXPR, mix, lerpFace, eyeRoll } from './characters/expressive/faces.js';
 import { createExpressiveKit } from './characters/expressive/body.js';
 const xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit);   // kit = createRobotKit(...) from robots.js
-const c  = xk.mkExpressive({ parent: scene, ...xk.PEOPLE_X[0] });  // mara, theo, priya, june, kai
+const c  = xk.mkExpressive({ parent: scene, ...xk.ROSTER.find(p => p.name === 'theo') });  // mara theo priya june kai gus zoe finn hana amina
 // every frame (t = seconds):
 xk.animateExpressive(c, t, { face: EXPR['smirk'], pose: 'hips', talk: 0.6 });
 ```
@@ -53,12 +64,13 @@ xk.animateExpressive(c, t, { face: EXPR['smirk'], pose: 'hips', talk: 0.6 });
 ```
 python3 -m http.server 8766        # from the repo root, leave it running
 node characters/expressive/make_previews.js faces     # the face sheets
-node characters/expressive/make_previews.js stills    # hero, turnaround, cast, poses
+node characters/expressive/make_previews.js stills    # hero, turnaround, poses
+node characters/expressive/make_previews.js cast      # the 10 character cards and the lineup
 node characters/expressive/make_previews.js video     # the motion clip (slow)
 ```
 `sheet.html` (2D faces) and `stage.html` (3D stage) are the pages those scripts open.
 
 ## Next steps (after Dalia approves)
-1. Build out the rest of the cast with all faces (the engine already takes skin, hair and eye color).
+1. Pick which characters to keep, change any look Dalia does not like, and add more.
 2. Add voices and lip sync (`talk`) using the piper pipeline.
 3. Add a "reaction" example video and mark it in `examples/INDEX.md`.
