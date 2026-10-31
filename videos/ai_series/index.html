@@ -1,0 +1,79 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Mica at Work</title>
+<style>
+html,body{margin:0;background:#1d1730;overflow:hidden}
+#wrap{position:relative;width:576px;height:1024px;overflow:hidden;font-family:"Liberation Sans",Arial,sans-serif}
+canvas{display:block}.ov{position:absolute;left:0;right:0;pointer-events:none;text-align:center}
+#vig{top:0;bottom:0;background:radial-gradient(ellipse at 50% 46%,rgba(60,30,100,0) 58%,rgba(60,30,100,.28) 100%)}
+#flash{top:0;bottom:0;background:#fff;opacity:0}#fade{top:0;bottom:0;background:#1d1730;opacity:0}
+#cap{bottom:96px;opacity:0}#cap .who{display:inline-block;font:800 20px/1 "Liberation Sans",Arial,sans-serif;color:#fff;padding:6px 14px;border-radius:14px 14px 0 0;letter-spacing:1px;text-transform:uppercase}
+#cap .txt{display:block;margin:0 26px;font:800 33px/1.18 "Liberation Sans",Arial,sans-serif;color:#fff;background:rgba(36,28,66,.84);padding:12px 18px 14px;border-radius:22px;box-shadow:0 6px 0 rgba(0,0,0,.18)}
+#title{top:92px;opacity:0}#title div{font:900 84px/0.98 "Liberation Sans",Arial,sans-serif;color:#fff;text-transform:uppercase;text-shadow:0 7px 0 #ff6fae,0 10px 0 rgba(60,20,90,.55),0 0 28px rgba(255,255,255,.7);opacity:0}#title div.b{color:#fff6a8;text-shadow:0 7px 0 #4a8bff,0 10px 0 rgba(60,20,90,.55),0 0 28px rgba(255,255,255,.7)}
+#tag{top:44px;font:900 26px/1 "Liberation Sans",Arial,sans-serif;color:#fff;letter-spacing:3px;text-shadow:0 3px 0 rgba(60,20,90,.7);opacity:0}#step{top:70px;opacity:0}#step span{display:inline-block;background:#ff6fae;color:#fff;font:900 44px/1 "Liberation Sans",Arial,sans-serif;padding:12px 28px 14px;border-radius:40px;box-shadow:0 6px 0 #c23d82;text-transform:uppercase}
+#card{top:170px;opacity:0}#card .pill{display:inline-block;margin:0 34px;padding:26px 30px 30px;border-radius:44px;background:rgba(255,246,238,.96);box-shadow:0 10px 0 rgba(255,111,174,.9),0 0 50px rgba(255,200,230,.7)}
+#card .l1{font:900 48px/1.05 "Liberation Sans",Arial,sans-serif;color:#2a2147;text-transform:uppercase}#card .l2{font:900 58px/1.05 "Liberation Sans",Arial,sans-serif;color:#ff6fae;text-transform:uppercase;margin-top:6px}#card .h{font:900 40px/1 "Liberation Sans",Arial,sans-serif;color:#ff6fae;margin-top:8px}
+</style></head><body><div id="wrap"><div id="cv"></div><div class="ov" id="vig"></div><div class="ov" id="flash"></div>
+<div class="ov" id="tag"></div><div class="ov" id="title"><div></div><div class="b"></div><div></div></div><div class="ov" id="step"><span id="steptxt"></span></div>
+<div class="ov" id="card"><div class="pill"><div class="l1" id="cl1"></div><div class="l2" id="cl2"></div><div class="h" id="ch"></div></div></div>
+<div class="ov" id="cap"><span class="who" id="capwho"></span><span class="txt" id="captxt"></span></div><div class="ov" id="fade"></div></div>
+<script type="importmap">{"imports":{"three":"../../characters/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
+import { createRobotKit } from '../../characters/robots.js';
+import { evalCam, applyCam, shotAt, whipPan } from '../../camera/camera.js';
+import { buildSets } from './sets.js';
+const EPN = new URLSearchParams(location.search).get('ep') || '2';
+const EP = await import(`./eps/ep${EPN}.js`);
+const { SC, CAMS } = EP;
+const W = 576, H = 1024, TL = await (await fetch(`work/ep${EPN}/timeline.json`)).json(), TOTAL = TL.total, $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, t) => a + (b - a) * t, smooth = t => { t = clamp(t); return t * t * (3 - 2 * t); };
+const backOut = u => { const c = 1.9; return 1 + (c + 1) * Math.pow(u - 1, 3) + c * Math.pow(u - 1, 2); };
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; $('cv').appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xf6e3d2); const camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 400);
+// the standard light rig for the robot look (see characters/demo.html)
+scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0));
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-10, 30, 36); sun.target.position.set(0, 5, 2); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+{ const c = sun.shadow.camera; c.left = -30; c.right = 30; c.top = 36; c.bottom = -14; c.near = 1; c.far = 110; } sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; scene.add(sun, sun.target);
+const pk = new THREE.PointLight(0xff8fc8, 26, 40, 2); pk.position.set(-9, 10, 4); scene.add(pk); const bl = new THREE.PointLight(0x8fb8ff, 26, 40, 2); bl.position.set(9, 10, 4); scene.add(bl);
+const kit = createRobotKit(THREE, RoundedBoxGeometry), sets = buildSets(THREE, kit, scene, RoundedBoxGeometry);
+const dalia = kit.mkHuman(Object.assign({}, kit.PEOPLE[0], { parent: scene })); dalia.idx = 0; dalia.blinkPhase = 0.4;
+const mica = kit.mkBot('MICA', { parent: scene }); mica.idx = 1; mica.blinkPhase = 1.3; const bots = { DALIA: dalia, MICA: mica };
+const accCss = k => '#' + kit.POOL[k].acc.toString(16).padStart(6, '0'), NAMES = { DALIA: 'Dalia', MICA: 'Mica' };
+const scn = id => TL.scenes.find(s => s.id === id), ln = (id, i) => TL.lines[scn(id).lines[i]];
+const EPB = EP.build(TL, ln);
+function evalKf(spec, lt) {
+  const n = a => ({ t: a[0], x: a[1], z: a[2], y: a[3] || 0, ry: a[4] !== undefined ? a[4] : spec.ry }), kf = spec.kf.map(n), f = kf[0];
+  if (kf.length === 1 || lt <= f.t) return { x: f.x, z: f.z, y: f.y, ry: f.ry, walk: false };
+  for (let i = 0; i < kf.length - 1; i++) { const a = kf[i], b = kf[i + 1]; if (lt < b.t) { const raw = (lt - a.t) / (b.t - a.t), dx = b.x - a.x, dz = b.z - a.z, mv = Math.hypot(dx, dz) > 0.3; let ry;
+    if (mv) { const tr = Math.atan2(dx, dz); let d = b.ry - tr; d = ((d + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI; ry = tr + d * smooth((raw - 0.7) / 0.3); } else ry = lerp(a.ry, b.ry, smooth(raw));
+    return { x: lerp(a.x, b.x, raw), z: lerp(a.z, b.z, raw), y: lerp(a.y, b.y, smooth(raw)), ry, walk: mv }; } }
+  const l = kf[kf.length - 1]; return { x: l.x, z: l.z, y: l.y, ry: l.ry, walk: false };
+}
+const cv = renderer.domElement;
+window.renderFrame = t => {
+  t = clamp(t, 0, TOTAL - 1e-3);
+  let si = TL.scenes.findIndex(s => t >= s.start && t < s.end); if (si < 0) si = TL.scenes.length - 1;
+  const S = TL.scenes[si], def = SC[S.id], lt = t - S.start, sh = shotAt(S, t), lines = S.lines.map(i => TL.lines[i]);
+  const cur = TL.lines.find(l => l.scene === si && t >= l.v0 - 0.05 && t <= l.v1 + 0.12), c = { L: i => lines[i].v0 - S.start, line: cur };
+  sets.upd(t, EPB);
+  for (const [who, b] of Object.entries(bots)) { const spec = def.cast[who]; b.g.visible = !!spec; if (!spec) continue;
+    const p = evalKf(spec, lt), patch = def.act(who, lt, c) || {}, speaking = !!(cur && cur.who === who); let amp = 0;
+    if (speaking) { const e = cur.env, ix = Math.floor((t - cur.start) * 48); amp = e[clamp(ix, 0, e.length - 1)] ?? 0; }
+    const emo = speaking ? cur.emo : (patch.emo || spec.emo), hop = patch.hop ? Math.abs(Math.sin(t * 9 + b.idx * 1.7)) * 0.45 : 0;
+    b.g.position.set(p.x, p.y + hop, p.z); b.g.rotation.y = p.ry; kit.animateBot(b, t, { speaking, amp, emo, walk: p.walk, wave: !!patch.wave }); }
+  const wp = whipPan(t, TL.scenes.slice(1).map(s => s.start));
+  applyCam(camera, evalCam(CAMS[sh.name], sh.u, t, sh.st, sh.i === 0), W / H, wp.yaw); renderer.setViewport(0, 0, W, H); renderer.render(scene, camera);
+  cv.style.filter = wp.blur > 0.3 ? `blur(${wp.blur.toFixed(1)}px)` : 'none'; $('flash').style.opacity = wp.flash.toFixed(3);
+  const card0 = TL.lines[TL.lines.length - 1].v1 - 0.8;
+  if (cur && t < card0 + 0.4) { $('capwho').textContent = NAMES[cur.who]; $('capwho').style.background = accCss(cur.who); $('captxt').textContent = cur.text; $('cap').style.opacity = clamp(Math.min((t - cur.v0 + 0.08) / 0.1, (cur.v1 + 0.3 - t) / 0.12)).toFixed(2); } else $('cap').style.opacity = 0;
+  const ti = $('title'); ti.style.opacity = t < 2.5 ? 1 : clamp(1 - (t - 2.5) / 0.18); [...ti.children].forEach((d, i) => d.textContent = EP.title[i] || ''); $('tag').textContent = EP.tag; $('tag').style.opacity = t < 2.5 ? clamp(t / 0.3) : clamp(1 - (t - 2.5) / 0.18); $('cl1').textContent = EP.card.l1; $('cl2').textContent = EP.card.l2; $('ch').textContent = EP.card.h;
+  [...ti.children].forEach((d, i) => { const u = clamp((t - 0.2 - i * 0.35) / 0.42); d.style.opacity = u > 0 ? 1 : 0; d.style.transform = `scale(${(0.2 + 0.8 * backOut(u)).toFixed(3)}) rotate(${((1 - u) * (i % 2 ? 6 : -6)).toFixed(2)}deg)`; });
+  const STEP = EP.steps.map(([sc, i, label]) => [ln(sc, i), label]); let stp = null; for (const [l, s] of STEP) if (t >= l.v0 - 0.05 && t <= l.v1 + 0.3) stp = [l, s];
+  $('step').style.opacity = stp ? clamp((t - stp[0].v0 + 0.05) / 0.2) : 0; if (stp) $('steptxt').textContent = stp[1];
+  const cu = clamp((t - card0) / 0.55), cd = $('card'); cd.style.opacity = cu > 0 ? 1 : 0; cd.style.transform = `scale(${(0.3 + 0.7 * backOut(cu)).toFixed(3)}) translateY(${(Math.sin(t * 2.2) * 4).toFixed(1)}px)`;
+  $('fade').style.opacity = clamp((t - (TOTAL - 0.7)) / 0.6).toFixed(3);
+};
+window.renderFrame(0.5); window.ready = true;
+</script></body></html>
