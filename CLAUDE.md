@@ -1,5 +1,10 @@
 # Robot videos repo
 
+## FIRST: read `menu/START_HERE.md`
+Dalia picks a CAST (humans / robots / both / pets), a FORMAT (story / skit / talking to the camera / reaction / podcast / explainer) and voices in plain words.
+Example: "Make an animation using humans only in a skit style about a hard day at work with a coworker."
+Parse it, use defaults for anything she leaves out (say which), and follow the matching files in `menu/`. Do not ask her questions you can answer yourself.
+
 Owner: Dalia (modern pink paper). Reply to her in **simple English**. She likes "just do it".
 
 ## Two separate pieces. Keep them separate.
