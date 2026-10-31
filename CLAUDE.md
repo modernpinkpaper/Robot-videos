@@ -16,6 +16,11 @@ Owner: Dalia (modern pink paper). Reply to her in **simple English**. She likes 
 If she shares another creator's video as a reference: copy its structure, pacing and story style,
 but draw it with these characters.
 
+## Camera (same for every video)
+Use the camera style in `camera/` (read `camera/CAMERA.md`). It is the look of "What if nobody lied?" and Dalia loves it:
+moving shots, cuts every 1.5 to 3 seconds, pans, zooms, orbits, close-ups, low angles, cranes, dolly zoom, whip-pan between scenes, split screen for calls.
+Never use a static or single fixed camera. Never invent a different camera system.
+
 ## Rules
 - Do not edit `characters/robots.js` unless she asks. If something must change, add an option.
 - Keep staff names, kids' names, exact money, medical details and passwords off screen.
