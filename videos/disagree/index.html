@@ -1,0 +1,85 @@
+<!doctype html><html><head><meta charset="utf-8"><title>How the smartest people disagree</title>
+<style>
+html,body{margin:0;background:#1d1730;overflow:hidden}
+#wrap{position:relative;width:576px;height:1024px;overflow:hidden;font-family:"Liberation Sans",Arial,sans-serif}
+canvas{display:block}.ov{position:absolute;left:0;right:0;pointer-events:none;text-align:center}
+#vig{top:0;bottom:0;background:radial-gradient(ellipse at 50% 46%,rgba(60,30,100,0) 60%,rgba(60,30,100,.25) 100%)}
+#hook{top:46px;font:900 46px/1.05 "Liberation Sans",Arial,sans-serif;color:#fff;text-shadow:0 3px 0 rgba(60,20,90,.7),0 0 14px rgba(60,20,90,.55);padding:0 30px}
+#cap{top:455px;font:900 62px/1.05 "Liberation Sans",Arial,sans-serif;color:#fff;text-transform:lowercase;padding:0 24px;text-shadow:0 4px 0 #2a2147,3px 3px 0 #2a2147,-3px 3px 0 #2a2147,0 0 18px rgba(42,33,71,.8)}
+#cap b{color:#ffe36a}
+#step{top:150px;opacity:0}#step span{display:inline-block;background:#ff6fae;color:#fff;font:900 40px/1 "Liberation Sans",Arial,sans-serif;padding:12px 26px 14px;border-radius:40px;box-shadow:0 6px 0 #c23d82;text-transform:uppercase}
+#fade{top:0;bottom:0;background:#1d1730;opacity:0}
+</style></head><body><div id="wrap"><div id="cv"></div><div class="ov" id="vig"></div>
+<div class="ov" id="hook">the smartest people know how to disagree</div><div class="ov" id="step"><span id="steptxt"></span></div><div class="ov" id="cap"></div><div class="ov" id="fade"></div></div>
+<script type="importmap">{"imports":{"three":"../../characters/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
+import { createRobotKit } from '../../characters/robots.js';
+const W = 576, H = 1024, TL = await (await fetch('work/timeline.json')).json(), TOTAL = TL.total, $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, t) => a + (b - a) * t, smooth = t => { t = clamp(t); return t * t * (3 - 2 * t); };
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; $('cv').appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xe9d9c8);
+const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 200);
+// the standard light rig (see characters/demo.html), warm and cozy
+scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0));
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-6, 16, 14); sun.target.position.set(0, 5, 0); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+{ const c = sun.shadow.camera; c.left = -16; c.right = 16; c.top = 20; c.bottom = -6; c.near = 1; c.far = 60; } sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; scene.add(sun, sun.target);
+const pk = new THREE.PointLight(0xff8fc8, 26, 40, 2); pk.position.set(-9, 10, 4); scene.add(pk); const bl = new THREE.PointLight(0x8fb8ff, 26, 40, 2); bl.position.set(9, 10, 4); scene.add(bl);
+const kit = createRobotKit(THREE, RoundedBoxGeometry), { box, cyl, ball, textPlane, mat } = kit;
+const B = (g, w, h, d, c, x, y, z, r = 0.3, o = {}) => box(g, w, h, d, c, x, y, z, Object.assign({ round: r }, o));
+// ---- cozy room (soft pastel toy look)
+const room = new THREE.Group(); scene.add(room);
+B(room, 80, 0.5, 60, 0xefd9c0, 0, -0.25, 0, 0, { noShadow: true });
+B(room, 80, 30, 1, 0xf6e6d8, 0, 15, -9, 0, { noShadow: true }); B(room, 80, 5, 1.2, 0xe9c9b0, 0, 2.5, -8.8, 0, { noShadow: true });
+B(room, 1, 30, 60, 0xf2e0d0, -22, 15, 0, 0, { noShadow: true }); B(room, 1, 30, 60, 0xf2e0d0, 22, 15, 0, 0, { noShadow: true });
+cyl(room, 11, 0.12, 0xffd1e0, 0, 0.05, 2, { seg: 40, noShadow: true });
+B(room, 6.4, 7.6, 0.6, 0xffffff, 3.4, 8.2, -8.4, 0.3); B(room, 5.4, 6.6, 0.3, 0xcfe8ff, 3.4, 8.2, -8.1, 0.2, { noShadow: true, mat: new THREE.MeshBasicMaterial({ color: 0xcfe8ff }) });
+B(room, 0.3, 6.6, 0.4, 0xffffff, 3.4, 8.2, -8, 0.05, { noShadow: true }); B(room, 5.4, 0.3, 0.4, 0xffffff, 3.4, 8.2, -8, 0.05, { noShadow: true });
+for (let i = 0; i < 3; i++) ball(room, 0.9 - i * 0.15, 0xffffff, 2.2 + i * 1.3, 9.4 - i * 0.5, -7.9, { mat: new THREE.MeshBasicMaterial({ color: 0xffffff }), noShadow: true }).scale.y = 0.6;
+// clothes rack (like the reference room)
+cyl(room, 0.12, 10, 0x9a90b8, -6.8, 5, -6, { seg: 8 }); cyl(room, 0.12, 6, 0x9a90b8, -4, 9.8, -6, { seg: 8 }).rotation.z = Math.PI / 2;
+for (let i = 0; i < 5; i++) B(room, 1.1, 3.8 + (i % 2), 0.5, [0x3a3350, 0xffb3d1, 0xcfe8ff, 0x3a3350, 0xe2d4ff][i], -6 + i * 1.2, 7.6 - (i % 2) * 0.4, -6, 0.25);
+
+cyl(room, 1.1, 1.8, 0xffb3a0, -5.8, 0.9, -3, { seg: 20, r2: 0.9 }); for (let i = 0; i < 6; i++) ball(room, 1.0, 0x8fdcae, -5.8 + Math.cos(i * 1.1) * 1.0, 3.0 + (i % 3) * 0.9, -3 + Math.sin(i * 1.1) * 0.8, { noShadow: true }).scale.y = 1.3;
+B(room, 3.4, 4.2, 0.3, 0xffffff, -1.6, 9.6, -8.3, 0.1); B(room, 2.9, 3.7, 0.2, 0xffd1e0, -1.6, 9.6, -8.1, 0.1, { noShadow: true }); ball(room, 0.9, 0xff6fae, -1.6, 9.7, -7.95, { noShadow: true }).scale.z = 0.2;
+const lampMat = new THREE.MeshBasicMaterial({ color: 0xffe9b0 }); cyl(room, 0.2, 7, 0x9a90b8, 5.4, 3.5, -5, { seg: 8 }); ball(room, 1.1, 0xffe9b0, 5.4, 7.4, -5, { mat: lampMat, noShadow: true });
+const bot = kit.mkBot('DALIA', { parent: scene, x: 0, z: 0 }); bot.idx = 0; bot.blinkPhase = 0.4;
+// ---- cameras: gentle talking-head moves with jump cuts
+const CAMS = {
+  med:    { p: [[0, 4.3, 14], [0, 4.3, 12.8]], l: [[0, 3.7, 0], [0, 3.7, 0]], f: [32, 31] },
+  med2:   { p: [[0.8, 4.2, 13], [-0.2, 4.2, 14]], l: [[0, 3.6, 0], [0, 3.7, 0]], f: [31, 33], r: [0, 1.5] },
+  close:  { p: [[0.6, 4.6, 11.5], [0.2, 4.6, 10.6]], l: [[0, 4.0, 0], [0, 4.0, 0]], f: [31, 29] },
+  close2: { p: [[-0.8, 4.5, 11.2], [-0.2, 4.6, 12]], l: [[0, 3.9, 0], [0, 3.9, 0]], f: [30, 32], r: [-1.5, 0] },
+  side:   { p: [[-4.6, 4.2, 12.5], [-3.2, 4.2, 12]], l: [[0, 3.8, 0], [0, 3.8, 0]], f: [31, 30] },
+  side2:  { p: [[4.4, 4.2, 12.5], [3, 4.3, 12.2]], l: [[0, 3.8, 0], [0, 3.9, 0]], f: [31, 29] },
+  wide:   { p: [[0, 4.8, 19], [0, 4.5, 17]], l: [[0, 3.3, 0], [0, 3.3, 0]], f: [34, 34] },
+};
+const S = TL.scenes[0], lines = TL.lines;
+const STEPS = { 3: 'Step 1', 4: 'Step 2', 5: 'Step 3' };
+const KEY = new Set(['smartest', 'disagree', 'kind', 'listened', 'agree', 'reasons', 'fight', 'person']);
+const chunks = lines.map(l => { const w = l.text.split(/\s+/), out = []; for (let i = 0; i < w.length;) { const n = (w[i].length + (w[i + 1] || '').length > 11 || /[.,!?]$/.test(w[i])) ? 1 : 2; out.push(w.slice(i, i + n).join(' ')); i += n; }
+  const tot = out.reduce((a, c) => a + c.length + 2, 0); let acc = 0; return out.map(c => { const a = l.v0 + (l.v1 - l.v0) * acc / tot; acc += c.length + 2; return { a, b: l.v0 + (l.v1 - l.v0) * acc / tot, c }; }); });
+window.renderFrame = t => {
+  t = clamp(t, 0, TOTAL - 1e-3);
+  let si = 0; for (let k = 0; k < S.shots.length; k++) if (t >= S.shots[k].t - 1e-6) si = k;
+  const st = S.shots[si].t, en = si + 1 < S.shots.length ? S.shots[si + 1].t : S.end, u = smooth((t - st) / (en - st)), cd = CAMS[S.shots[si].name];
+  const ln = lines.find(l => t >= l.v0 - 0.05 && t <= l.v1 + 0.12);
+  let amp = 0; if (ln) { const e = ln.env, ix = Math.floor((t - ln.start) * 48); amp = e[clamp(ix, 0, e.length - 1)] ?? 0; }
+  kit.animateBot(bot, t, { speaking: !!ln, amp, emo: ln ? ln.emo : 'sweet' });
+  bot.g.position.y = 0;
+  const p = [0, 1, 2].map(i => lerp(cd.p[0][i], cd.p[1][i], u)), l = [0, 1, 2].map(i => lerp(cd.l[0][i], cd.l[1][i], u)); let fov = lerp(cd.f[0], cd.f[1], u);
+  if (si > 0) fov *= 1 - 0.06 * Math.exp(-(t - st) * 16);   // small punch-in on every cut
+  p[0] += Math.sin(t * 1.3) * 0.05; p[1] += Math.sin(t * 1.7) * 0.03;  // handheld drift
+  camera.fov = fov; camera.updateProjectionMatrix(); camera.position.set(...p); camera.up.set(0, 1, 0); camera.lookAt(...l); if (cd.r) camera.rotateZ(lerp(cd.r[0], cd.r[1], u) * Math.PI / 180);
+  renderer.render(scene, camera);
+  // captions: 2-3 words at a time, key words in yellow
+  let txt = ''; for (const L of chunks) for (const k of L) if (t >= k.a && t < k.b + 0.04) txt = k.c;
+  $('cap').innerHTML = txt.split(' ').map(w => KEY.has(w.toLowerCase().replace(/[^a-z]/g, '')) ? `<b>${w}</b>` : w).join(' ');
+  const lineIdx = ln ? ln.i : -1; const stp = STEPS[lineIdx]; $('step').style.opacity = stp ? clamp((t - ln.v0) / 0.2) : 0; if (stp) { $('steptxt').textContent = stp; $('step').style.transform = `scale(${(0.8 + 0.2 * smooth((t - ln.v0) / 0.25)).toFixed(3)})`; }
+  $('fade').style.opacity = clamp((t - (TOTAL - 0.6)) / 0.5).toFixed(3);
+};
+window.renderFrame(0.5); window.ready = true;
+</script></body></html>
