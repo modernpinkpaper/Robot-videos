@@ -1,0 +1,41 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Expressive stage</title>
+<style>html,body{margin:0;background:#1d1730}canvas{display:block}</style></head><body><div id="wrap"></div>
+<script type="importmap">{"imports":{"three":"../three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from '../RoundedBoxGeometry.js';
+import { createRobotKit } from '../robots.js';
+import { createExpressiveKit } from './body.js';
+import { EXPR, mix, lerpFace, eyeRoll, E } from './faces.js';
+const kit = createRobotKit(THREE, RoundedBoxGeometry), xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit);
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+document.getElementById('wrap').appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xdde4f6);
+scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0));
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-6, 16, 14); sun.target.position.set(0, 5, 0); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); { const c = sun.shadow.camera; c.left = -18; c.right = 18; c.top = 20; c.bottom = -6; c.near = 1; c.far = 60; } sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; scene.add(sun, sun.target);
+const pk = new THREE.PointLight(0xff8fc8, 26, 40, 2); pk.position.set(-9, 10, 4); scene.add(pk);
+const bl = new THREE.PointLight(0x8fb8ff, 26, 40, 2); bl.position.set(9, 10, 4); scene.add(bl);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 120), new THREE.MeshStandardMaterial({ color: 0xf2ecfb, roughness: 0.8 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+scene.fog = new THREE.Fog(0xdde4f6, 40, 90);
+const cast = [];
+// spec: [{ person: 'mara' | {..opts}, x, z, ry, scale }]
+window.build = specs => { cast.splice(0).forEach(c => scene.remove(c.g)); specs.forEach(s => { const base = typeof s.person === 'string' ? xk.PEOPLE_X.find(p => p.name === s.person) : s.person; const c = xk.mkExpressive(Object.assign({}, base, { parent: scene, x: s.x || 0, z: s.z || 0, ry: s.ry || 0, scale: s.scale || 1 })); c.st = s.state || {}; cast.push(c); }); };
+// views: [{ x,y,w,h (pixels in the output), cam:{pos:[..], look:[..], fov} }]
+window.draw = (W, H, views, t = 0, states) => {
+  renderer.setSize(W, H); renderer.setScissorTest(true);
+  cast.forEach((c, i) => { const s = Object.assign({}, c.st, states && states[i] || {}); if (typeof s.face === 'string') s.face = EXPR[s.face]; xk.animateExpressive(c, t, s); });
+  for (const v of views) {
+    const cam = new THREE.PerspectiveCamera(v.cam.fov || 35, v.w / v.h, 0.1, 200); cam.position.set(...v.cam.pos); cam.lookAt(...v.cam.look);
+    renderer.setViewport(v.x, H - v.y - v.h, v.w, v.h); renderer.setScissor(v.x, H - v.y - v.h, v.w, v.h);
+    scene.background = new THREE.Color(v.bg ?? 0xdde4f6); renderer.render(scene, cam);
+  }
+};
+const lab = document.createElement('div'); lab.style.cssText = 'position:absolute;left:0;right:0;top:46px;text-align:center;font:bold 46px Arial,sans-serif;color:#3a2c4e;display:flex;justify-content:center'; document.body.appendChild(lab); window.label = t => { lab.innerHTML = t ? '<span style="background:#fff;padding:8px 30px;border-radius:40px;box-shadow:0 6px 18px rgba(80,60,120,.25)">' + t + '</span>' : ''; };
+window.info = () => cast.map(c => { const sc = (c.O.kid ? 0.8 : 1) * (c.O.scale || 1); return { name: c.O.name, sc, headY: c.headY * sc, topY: c.topY * sc, height: c.height * sc, head: c.B.head * sc }; });
+window.roster = () => xk.ROSTER.map(r => ({ name: r.name, bio: r.bio, tags: r.tags }));
+window.api = { EXPR, mix, lerpFace, eyeRoll, E };
+window.ready = true;
+</script></body></html>

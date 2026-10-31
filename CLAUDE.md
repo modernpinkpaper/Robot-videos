@@ -1,6 +1,16 @@
 # Robot videos repo
 
+## FIRST: read `menu/START_HERE.md`, then `examples/INDEX.md`
+Every format, camera move and voice has a REFERENCE in `examples/INDEX.md` (real videos, a camera reel, voice samples). Open the reference for each choice, read its source files, extract a few frames, and match it. Never guess how something should look or sound.
+
+Dalia picks a CAST (humans / robots / both / pets), a FORMAT (story / skit / talking to the camera / reaction / podcast / explainer) and voices in plain words.
+Example: "Make an animation using humans only in a skit style about a hard day at work with a coworker."
+Parse it, use defaults for anything she leaves out (say which), and follow the matching files in `menu/`. Do not ask her questions you can answer yourself.
+
 Owner: Dalia (modern pink paper). Reply to her in **simple English**. She likes "just do it".
+
+## Character styles. Keep them separate.
+There are 3 looks: the robots/people (piece 1), the podcast format (piece 2), and **EMOTIONAL ROBOTS** (piece 3, below). Dalia picks the look by name. If she says "emotional robots" (or "emotional robot style", "expressive characters"), read `menu/cast/emotional_robots.md` and use `characters/expressive/`. Otherwise use the default robots/people.
 
 ## Two separate pieces. Keep them separate.
 1. **The animation style = the characters.** Folder `characters/`. Read `characters/STYLE.md`.
@@ -27,3 +37,6 @@ Never use a static or single fixed camera. Never invent a different camera syste
 - Voices: piper TTS pipeline is in `formats/podcast/pod/mk.py` (needs `formats/podcast/setup.sh`). Reuse it for any video that needs spoken lines.
 - Before sending a video: look at at least 4 frames, then say honestly what you checked and what you could not (you cannot hear audio).
 - Rendering is slow. Run it in the background and tell her.
+
+## 3. Emotional robots style (approved)
+Folder `characters/expressive/`. 12 named characters with real faces (eyes, brows, nose, mouth, teeth) and 50 facial expressions, made for reaction videos. Only use it when she asks for "emotional robots". Read `menu/cast/emotional_robots.md` and `characters/EXPRESSIONS.md`; look at the pictures in `characters/expressive/preview/` first. Do not edit the character files unless she asks; to change a look, change that character's entry in `ROSTER` (`body.js`). Dalia, Amina and Nina are based on her family: never show real names of family or kids on screen.
