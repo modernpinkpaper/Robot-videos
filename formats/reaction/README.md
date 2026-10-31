@@ -17,6 +17,7 @@ Same tool for both.
 - `"mode": "over"`: the clip keeps playing quietly and the reactor talks over it.
 
 ## Choices
+- **Emotional robots as the reactor:** add `"style": "expressive"` to script.json and set `"reactor"` to any of `mara theo priya june kai gus zoe finn hana dalia nina amina`. Real face, 50 expressions, same layout. Without `style` you get the old dot-eyed people and robots.
 - Reactor: `dalia amina marcus lily sofia grandpa kid_boy kid_girl` or a robot name (`MICA`...). Set `"voice_who"` to change the voice.
 - Acts: `nod shake gasp laugh facepalm lean hop`. Emotions: `happy excited sweet laugh deadpan stern tired sad worried shock smug dramatic`.
 - Per line you can also set `"pace"` (0.9 to 1.2), `"tone"` (-2 to +2 semitones) and `"energy"` (0 to 1) to override the automatic voice style.

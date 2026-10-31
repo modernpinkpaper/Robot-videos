@@ -37,3 +37,20 @@ xk.animateExpressive(dalia, t, { face: EXPR['smirk'], pose: 'hips', talk: ampOfV
 5. Body: poses idle, hips, shrug, facepalm, wave, armsUp, crossed, point, think. Blend with `pose: [a, b, k]`. Extras: `laugh`, `shake` (rage), `quiver` (crying), `slump`, `lean`, `tilt`.
 6. Show real feeling: use a close-up on the face for the beat that matters (eye roll, smirk, shock).
 7. Sets and props: free, same soft pastel toy look (`kit.mkProp`, rounded boxes).
+
+## ANY FORMAT: story, skit, talk to camera, reaction, explainer (the emotional robots are not only for reactions)
+Use the helper `characters/expressive/actor.js`. It has the same shape as the old characters, so a pipeline copied from `videos/no_lies/` or `videos/disagree/` only changes two lines and keeps its camera, sets, shots, voices and render.js.
+```js
+import { createExpressiveKit } from '../../characters/expressive/body.js';
+import { createActorKit } from '../../characters/expressive/actor.js';
+const xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), ak = createActorKit(THREE, xk);
+//  was: kit.mkHuman(...) / kit.mkBot('MICA', ...)      now: ak.mkActor('dalia', { parent: scene, x, y, z, ry, scale })
+//  was: kit.animateBot(b, t, { speaking, amp, emo, walk, wave })      now: ak.animateActor(b, t, { speaking, amp, emo, walk, wave })
+```
+- Same options as before: `speaking`, `amp` (voice loudness), `emo` (the script words, or any of the 50 face names like `'eye roll'`), `look [x,y]`, `walk`, `sit`, `wave`, `b.g` (position and turn).
+- Extras: `act` (`nod shake gasp laugh facepalm lean hop`) with `actU` (0 to 1 progress), `pose` (any body pose), `turn` (head left or right).
+- Smooth face change: `emo: [fromEmo, toEmo, k]` with k from 0 to 1 (about 0.25 s). It keeps no state, so parallel rendering is safe.
+- Working example to copy: `characters/expressive/actor_demo.html`.
+- Per format: story and skit = several actors on a set with the usual camera. Talk to camera = one actor, close-ups. Explainer = one actor plus info cards. Reaction = set `"style": "expressive"` in script.json (see `formats/reaction/README.md`).
+- Voices do not change: use `voices/speak.py` with the character's own name (MARA, THEO, ...).
+- **Podcast is the one exception for now.** `formats/podcast/anim/index_pod3.html` has its own separate robot studio code and its own old voice step. Do the emotional-robots podcast as its own job (it needs a swap in that page and in `pod/mk.py`).

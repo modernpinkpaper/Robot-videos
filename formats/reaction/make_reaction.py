@@ -99,7 +99,7 @@ def main(script_path, out_path):
     final = audio * 0.9 + voice * 1.0; final = np.clip(final / max(1.0, np.abs(final).max() / 0.95), -1, 1)
     with wave.open(WORK + '/audio.wav', 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((final * 32767).astype('<i2').tobytes())
     # ---- 4. the reactor layer (transparent frames with captions)
-    json.dump(dict(reactor=dict(who=reactor), talks=talks, reacts=reacts, caps=caps, total=round(total, 3), frame=S.get('frame')), open(WORK + '/reaction.json', 'w'))
+    json.dump(dict(reactor=dict(who=reactor, style=S.get('style')), talks=talks, reacts=reacts, caps=caps, total=round(total, 3), frame=S.get('frame')), open(WORK + '/reaction.json', 'w'))
     nfr = int(total * FPS); Q = (nfr + 3) // 4; port = '8772'
     srv = subprocess.Popen(['python3', '-m', 'http.server', port, '--directory', ROOT], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1.5)
     try:

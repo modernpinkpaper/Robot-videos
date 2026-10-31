@@ -12,6 +12,7 @@ Dalia can ask for a video by mixing choices from four lists. Claude reads this m
 | "animals", "pets" | add pets (any cast) | `cast/pets.md` |
 | "emotional robots" / "expressive characters" | the real-face characters (12 named people) | `cast/emotional_robots.md` |
 Default: humans for stories about people or work or life, robots for business tool or tech topics.
+**The emotional robots work in every format except podcast (for now):** story, skit, talk to camera, reaction, explainer. See the "ANY FORMAT" section in `cast/emotional_robots.md` (helper: `characters/expressive/actor.js`).
 
 ## 2. FORMAT  (how it is told)  -> `formats/`
 | Say | Meaning | File |
