@@ -59,6 +59,8 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     if (type === 'stripes') for (let i = 0; i < 128; i += 32) x.fillRect(0, i, 128, 16);
     if (type === 'weave') { for (let i = 0; i < 128; i += 16) { x.fillRect(0, i, 128, 3); x.fillRect(i, 0, 3, 128); } }
     if (type === 'ribs') for (let i = 0; i < 128; i += 8) x.fillRect(i, 0, 3, 128);
+    if (type === 'floral') { const fl = (cx, cy, c) => { x.fillStyle = c; for (let k = 0; k < 5; k++) { const a = k * Math.PI * 2 / 5; x.beginPath(); x.arc(cx + Math.cos(a) * 5, cy + Math.sin(a) * 5, 4.2, 0, 7); x.fill(); } x.fillStyle = '#f3d36a'; x.beginPath(); x.arc(cx, cy, 2.6, 0, 7); x.fill(); };
+      fl(24, 26, c2); fl(88, 66, c2); fl(52, 108, c2); x.fillStyle = '#a9c9a0'; for (const [px, py] of [[70, 20], [18, 78], [104, 112], [100, 22], [46, 62]]) { x.beginPath(); x.ellipse(px, py, 6, 3.2, 0.6, 0, 7); x.fill(); } }
     if (type === 'dots') for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { x.beginPath(); x.arc(16 + i * 32 + (j % 2) * 16, 16 + j * 32, 7, 0, 7); x.fill(); }
     const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(type === 'stripes' ? 1 : type === 'ribs' ? 2 : 3, type === 'stripes' ? 4 : type === 'ribs' ? 1 : 3); return t;
   }
@@ -108,6 +110,11 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     // torso: ONE soft egg, no neck
     const tmat = O.pattern ? new THREE.MeshStandardMaterial({ map: patternTex(O.pattern.type, O.top, O.pattern.color2), roughness: 0.6, metalness: 0.05 }) : mat(top, { roughness: 0.6 });
     const torso = new THREE.Mesh(egg(D.sx, D.sy, D.sz), tmat); torso.position.set(0, tc, 0); torso.castShadow = true; torso.receiveShadow = true; bodyG.add(torso);
+    if (O.dress) {   // a flared skirt (same fabric as the top) and a small white collar
+      const prof = [[0.0, 0.5], [1.15 * B.w, 0.25], [1.4 * B.w, -0.2], [1.72 * B.w, -0.95], [1.82 * B.w, -1.32], [1.74 * B.w, -1.45], [1.5 * B.w, -1.38]].map(([r, y]) => new THREE.Vector2(r, y));
+      const skm = tmat.clone(); skm.side = THREE.DoubleSide; const sk = new THREE.Mesh(new THREE.LatheGeometry(prof, 40), skm); sk.scale.z = 0.86; sk.position.set(0, tc - 0.4 * B.h + 0.2, 0); sk.castShadow = true; sk.receiveShadow = true; bodyG.add(sk);
+      for (const s of [-1, 1]) { const cl = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), mat(0xfffaf0, { roughness: 0.6 })); cl.scale.set(0.5, 0.2, 0.12); cl.position.set(s * 0.46, topY - 0.6, eggZ(s * 0.46, topY - 0.6, D) + 0.08); cl.rotation.set(0.15, 0, -s * 0.45); bodyG.add(cl); }
+    }
     if (O.hood) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.78 * B.w, 0.3, 14, 32), mat(hexn(O.hood), { roughness: 0.65 })); ring.rotation.x = Math.PI / 2; ring.scale.set(1.05, 0.9, 1); ring.position.set(0, topY - 0.22, -0.05); ring.castShadow = true; bodyG.add(ring); }
     if (O.overalls) {   // a bib on the front of the egg, two straps and two buttons
       const ob = mat(hexn(O.overalls), { roughness: 0.65 });
@@ -125,7 +132,7 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
       const badge = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.62, 0.08, 3, 0.08), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 })); badge.position.set(0, y0 - 1.35, eggZ(0, y0 - 1.35, D) + 0.06); badge.rotation.x = -0.12; bodyG.add(badge);
     }
     if (O.buttons) {   // a row of buttons down the middle of the front
-      for (let i = 0; i < 4; i++) { const y = topY - 1.25 - i * 0.62 * B.h; const bt = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), new THREE.MeshStandardMaterial({ color: hexn(O.buttons), roughness: 0.3, metalness: 0.5 })); bt.scale.z = 0.6; bt.position.set(0, y, eggZ(0, y, D) + 0.04); bodyG.add(bt); }
+      for (let i = 0; i < (O.dress ? 3 : 4); i++) { const y = topY - 1.25 - i * (O.dress ? 0.5 : 0.62) * B.h; const bt = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), new THREE.MeshStandardMaterial({ color: hexn(O.buttons), roughness: 0.3, metalness: 0.5 })); bt.scale.z = 0.6; bt.position.set(0, y, eggZ(0, y, D) + 0.04); bodyG.add(bt); }
     }
     // head (its chin overlaps the top of the torso)
     const head = new THREE.Group(); head.position.set(0, headY, 0); head.scale.setScalar(B.head); bodyG.add(head);
@@ -150,6 +157,13 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     else if (st === 'long') { cap(); hb(rx * 2.15, 3.3, 0.9, 0, -1.4, -rz * 0.7, 0.45); for (const s of [-1, 1]) hb(0.55, 2.5, 1.5, s * rx * 0.98, -0.6, -0.25); }
     else if (st === 'ponytail') { cap(); const pt = box(head, 0.7, 2.0, 0.7, hair, 0, 0.2, -rz * 1.25, { round: 0.3 }); pt.rotation.x = 0.35; }
     else if (st === 'curly') { cap(1.05); for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; ball(head, 0.66, hair, Math.cos(a) * rx * 1.02, 0.35 + Math.sin(a) * ry * 0.8, -0.25, { m: { roughness: 0.5 } }); } }
+    else if (st === 'pigtails') {   // center part, two low curly pigtails with little ties
+      cap(1.06);
+      for (const s of [-1, 1]) {
+        for (let k = 0; k < 5; k++) { const r = 0.36 - k * 0.025, wob = Math.sin(k * 2.1 + s) * 0.1; ball(head, r, hair, s * (rx * 0.98 + 0.2 + wob), -0.1 - k * 0.42, 0.0 - (k % 2) * 0.12, { m: { roughness: 0.5 } }); }
+        ball(head, 0.2, 0xff8fb0, s * (rx * 1.02 + 0.2), 0.12, 0.1, { noShadow: true, m: { roughness: 0.4 } });
+      }
+    }
     else if (st === 'afro') { cap(1.05); const b = ball(head, 1.9, hair, 0, 0.55, -0.85, { m: { roughness: 0.5 } }); b.scale.set(1.22, 1.02, 1); }
     else if (st === 'spikes') {
       cap(); const rnd = i => { const v = Math.sin(i * 91.7) * 43758.5; return v - Math.floor(v); };
@@ -275,6 +289,9 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     { name: 'dalia', tags: 'Long straight dark hair, slicked back · big wide-set brown eyes · bold thick arched brows · big warm smile · beauty mark · navy ribbed top', bio: 'Big smile, bold brows, and a sharp eye for everything.', skin: '#dcaa82', hair: '#2a1a16', hairStyle: 'long', top: '#27356b', pattern: { type: 'ribs', color2: '#33427d' }, bottom: '#2f2a45', eye: '#3a2118', browColor: '#1f1410',
       build: { w: 0.98, h: 1.0, leg: 1.05, arm: 0.98 }, head: { rx: 1.42, ry: 1.33, rz: 1.18, n: 2.6 },
       look: { lashes: 0.5, eyeScale: 1.1, eyeGap: 1.02, browThick: 1.45, noseSize: 1.12, lipColor: '#c4746f', mole: { x: -262, y: 262 } } },
+    { name: 'nina', tags: 'Six years old · dark curly pigtails with pink ties · big brown eyes · rosy cheeks · cream flower dress with a white collar', bio: 'Six years old, full of questions, and never sits still.', skin: '#f0c9a6', hair: '#43291b', hairStyle: 'pigtails', top: '#f6efe2', pattern: { type: 'floral', color2: '#f0a9b4' }, dress: true, buttons: '#f4efe6', bottom: '#f4e8dc', shoe: '#7a5642', eye: '#3a2118', browColor: '#2a1a12', kid: true,
+      build: { w: 0.9, h: 0.8, leg: 0.8, head: 1.2, arm: 0.88 }, head: { rx: 1.5, ry: 1.3, rz: 1.2, n: 2.4 },
+      look: { lashes: 0.7, eyeScale: 1.2, eyeGap: 1.03, noseSize: 0.65, lipColor: '#d0707e', browThick: 0.85 } },
     { name: 'amina', tags: 'Dark chocolate hijab draped down the front · cream cardigan with gold buttons · freckles · thick brows · long lashes · big smile', bio: 'Warm, bright-eyed, with a smile that lights up the room.', skin: '#e8bc98', hair: '#4a2a1e', hairStyle: 'hijab', hijabDrape: true, pin: '#fffaf0', top: '#efe6d2', pattern: { type: 'weave', color2: '#ddd0b4' }, buttons: '#e0b24a', bottom: '#3f3350', eye: '#3a2218', browColor: '#2a1c16',
       build: { w: 1.0, h: 1.0, arm: 0.98 }, head: { rx: 1.44, ry: 1.28, rz: 1.18, n: 2.6 },
       look: { lashes: 1, freckles: 0.9, eyeScale: 1.06, noseSize: 0.8, lipColor: '#c4677b', browThick: 1.2 } },

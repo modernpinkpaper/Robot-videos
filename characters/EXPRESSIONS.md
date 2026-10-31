@@ -7,8 +7,8 @@ The robots and `robots.js` are NOT changed. Everything lives in `characters/expr
 ## Look at the pictures first (`characters/expressive/preview/`)
 - `01_hero_mara.png` full body + close up of the hero (Mara)
 - `02_hero_turnaround.png` front, three-quarter, side, back
-- `03_cast_all.png` all 11 characters side by side
-- `cast_<name>.png` one card per character: full body + 6 expressions (happy, laugh, smirk, annoyed, shocked, sad): `cast_mara`, `cast_theo`, `cast_priya`, `cast_june`, `cast_kai`, `cast_gus`, `cast_zoe`, `cast_finn`, `cast_hana`, `cast_dalia`, `cast_amina`
+- `03_cast_all.png` all 12 characters side by side
+- `cast_<name>.png` one card per character: full body + 6 expressions (happy, laugh, smirk, annoyed, shocked, sad): `cast_mara`, `cast_theo`, `cast_priya`, `cast_june`, `cast_kai`, `cast_gus`, `cast_zoe`, `cast_finn`, `cast_hana`, `cast_dalia`, `cast_nina`, `cast_amina`
 - `04_poses.png` 9 body poses (idle, hips, shrug, facepalm, wave, armsUp, crossed, point, think), all with the new noodle arms
 - `faces_1_calm.png` ... `faces_7_shy_and_awkward.png` all 50 faces, grouped
 - `parts_1_eyes.png`, `parts_2_brows.png`, `parts_3_mouths.png`, `parts_4_nose_cheeks_extras.png` each part on its own
@@ -21,13 +21,13 @@ The robots and `robots.js` are NOT changed. Everything lives in `characters/expr
 - Short stubby legs ending in big round shoes.
 - Poses are written as where the elbow and the hand go (`POSES` in `body.js`), so a new pose is just two points per arm.
 
-## The cast (11 characters, `ROSTER` in `body.js`)
+## The cast (12 characters, `ROSTER` in `body.js`)
 Each character keeps ONE look (same clothes every time). Each recipe sets:
 - **head**: size and how boxy (round, soft box, square)
 - **build**: body width, torso height, leg length, head size, arm length
-- **hair**: bun, buzz, short, bob, bangs, long, ponytail, curly, afro, spikes, space buns, balding, hijab
+- **hair**: bun, buzz, short, bob, bangs, long, ponytail, pigtails, curly, afro, spikes, space buns, balding, hijab
 - **face design**: eye size and spacing, eye color, lashes, brow thickness, nose size, freckles, age lines, mustache, beard, lip color
-- **clothes**: top color, pattern (stripes, dots), hoodie, overalls, badge, glasses (round or square)
+- **clothes**: top color, pattern (stripes, dots, ribs, weave, flowers), dress with a flared skirt, hoodie, overalls, buttons, badge, glasses (round or square)
 To add a character, copy a ROSTER entry and change the numbers.
 Arms: every arm has the same fixed length (`ARM_LEN` in `body.js`, 2.05). A pose that reaches too far is pulled in automatically. `build.arm` makes a character's arms longer or shorter.
 
