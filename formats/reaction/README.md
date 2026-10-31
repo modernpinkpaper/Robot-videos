@@ -12,12 +12,16 @@ Same tool for both.
    - **silent reaction**: `{ "at": 20, "act": "laugh", "emo": "laugh", "dur": 1.5 }`
 3. Run `python3 formats/reaction/make_reaction.py script.json out.mp4`
 
+## It behaves like a person (automatic)
+The reactor watches the clip with eyes down and to the left, looks UP at the camera now and then for a silent look, and reacts to what is in the clip: laughs at jokes, gasps at shocks, shakes the head at something absurd, nods at something true. Rules and limits: `BEHAVIOR.md`. Turn off with `"auto": false`.
+The default reactor uses the REAL-FACE characters (Emotional Robots), for example Dalia.
+
 ## Modes
 - `"mode": "pause"` (default): the clip freezes while the reactor talks, like real reaction videos.
 - `"mode": "over"`: the clip keeps playing quietly and the reactor talks over it.
 
 ## Choices
-- Reactor: `dalia amina marcus lily sofia grandpa kid_boy kid_girl` or a robot name (`MICA`...). Set `"voice_who"` to change the voice.
+- Reactor: any Emotional Robots character (`dalia mara theo priya june kai gus zoe finn hana nina amina`). With `"look": "old"` you can use the older people (`marcus lily sofia grandpa kid_boy kid_girl`) or a robot name (`MICA`...). Set `"voice_who"` to change the voice.
 - Acts: `nod shake gasp laugh facepalm lean hop`. Emotions: `happy excited sweet laugh deadpan stern tired sad worried shock smug dramatic`.
 - Per line you can also set `"pace"` (0.9 to 1.2), `"tone"` (-2 to +2 semitones) and `"energy"` (0 to 1) to override the automatic voice style.
 - `"start"` / `"end"` use only part of the clip. `"frame"` adjusts where the reactor sits (`pos`, `look`, `fov`, `offx`, `offy`).
