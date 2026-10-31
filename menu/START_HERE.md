@@ -43,6 +43,7 @@ Each character has a voice. She can say "deeper", "kid voices", "make the cowork
 - "Story, humans and pets, a day when everything goes right." -> `humans` + `pets` + `story`.
 
 ## Steps every time
+(Quality rules for ALL formats: `QUALITY.md`. Gate before rendering, fit sheet after.)
 -1. Run the brief (`BRIEF.md`): confirm the 8 required things, save them as `videos/<name>/BRIEF.md`.
 0. Open `examples/INDEX.md`: find the reference video, camera reel and voice samples for the choices, and match them.
 1. Parse her request into cast + format + voices + topic (use defaults for what she did not say).
