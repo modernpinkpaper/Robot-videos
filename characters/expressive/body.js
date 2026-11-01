@@ -87,6 +87,14 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     crossed:  { R: { e: [1.9, 2.95, 1.05], h: [-0.35, 3.3, 1.5] }, L: { e: [-1.9, 2.8, 0.85], h: [0.35, 3.05, 1.35] } },
     point:    { R: { e: [1.7, 3.6, 0.9], h: [1.9, 4.0, 2.0] }, L: IDLE_L },
     think:    { R: { e: [1.5, 3.7, 0.8], h: [0.55, 4.2, 1.45], hy: true }, L: { e: [-1.9, 2.8, 0.85], h: [0.35, 3.05, 1.35] } },
+    // talking and walking poses (used by human.js)
+    open:     { R: { e: [2.0, 3.35, 0.7], h: [2.5, 3.0, 1.45] } },                                  // both hands open, explaining
+    openR:    { R: { e: [2.0, 3.35, 0.7], h: [2.5, 3.0, 1.45] }, L: IDLE_L },                        // one hand open
+    count1:   { R: { e: [1.6, 3.6, 0.8], h: [1.25, 4.3, 1.35] }, L: IDLE_L },                        // one hand up, "number one"
+    beatUp:   { R: { e: [2.0, 3.7, 0.7], h: [2.3, 4.5, 1.2] }, L: IDLE_L },                          // a small emphasis beat
+    pointSide:{ R: { e: [1.9, 3.8, 0.3], h: [2.7, 4.0, 0.6] }, L: IDLE_L },                          // pointing off to the side
+    swingF:   { R: { e: [1.7, 3.2, 0.8], h: [1.8, 2.5, 1.4] }, L: { e: [-1.7, 3.0, -0.5], h: [-1.85, 2.2, -0.9] } },   // walking arm swing
+    swingB:   { R: { e: [1.7, 3.0, -0.5], h: [1.85, 2.2, -0.9] }, L: { e: [-1.7, 3.2, 0.8], h: [-1.8, 2.5, 1.4] } },
   };
 
   // ---------- one character ----------
@@ -212,7 +220,7 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
   // poseName: a name from POSES, or [nameA, nameB, k] to blend. t = seconds.
   function bezLen(S, C, H) { let L = 0; const prev = S.clone(), q = new THREE.Vector3(); for (let i = 1; i <= 14; i++) { const u = i / 14, a = (1 - u) * (1 - u), b = 2 * u * (1 - u), cc = u * u; q.set(a * S.x + b * C.x + cc * H.x, a * S.y + b * C.y + cc * H.y, a * S.z + b * C.z + cc * H.z); L += q.distanceTo(prev); prev.copy(q); } return L; }
   function applyPose(c, name, t, extra = {}) {
-    const get = n => POSES[n] || POSES.idle, B = c.B;
+    const get = n => (n && typeof n === 'object' && !Array.isArray(n)) ? n : (POSES[n] || POSES.idle), B = c.B;
     let A, Bp, k = 0; if (Array.isArray(name)) { A = get(name[0]); Bp = get(name[1]); k = SMOOTH(name[2]); } else { A = get(name); Bp = A; }
     const lift = lerp(A.lift || 0, Bp.lift || 0, k), dyT = c.tc - 2.95, dyH = c.headY - 5.5;
     const side = (P, s) => P[s < 0 ? 'L' : 'R'] || (() => { const r = P.R; return { e: [-r.e[0], r.e[1], r.e[2]], h: [-r.h[0], r.h[1], r.h[2]], hy: r.hy }; })();

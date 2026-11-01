@@ -14,3 +14,6 @@ voices/cbenv/
 voices/_r.wav
 videos/*/clip_source.mp4
 __pycache__/
+
+# temporary voice and timing files made while building a video
+videos/*/work/
