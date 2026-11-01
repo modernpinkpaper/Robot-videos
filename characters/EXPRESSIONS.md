@@ -61,6 +61,9 @@ xk.animateExpressive(c, t, { face: EXPR['smirk'], pose: 'hips', talk: 0.6 });
 - `animateExpressive` options: `pose` (name, or `[a, b, k]` to blend), `talk` (mouth moves for speech, 0 to 1), `laugh`, `shake` (rage), `quiver` (crying), `slump`, `lean`, `tilt`, `nod`, `turn`, `alive:false` (turn off automatic blinking).
 - Blinks and tiny eye movement are automatic.
 
+## Human motion
+For a real walk and natural mannerisms, use `human.js` (see `menu/cast/emotional_robots.md`, section Human motion).
+
 ## Remake the pictures
 ```
 python3 -m http.server 8766        # from the repo root, leave it running

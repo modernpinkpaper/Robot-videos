@@ -57,3 +57,17 @@ const xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), ak = createActor
 
 ## Furniture rule: the body must sit BEHIND a desk or counter, not inside it
 The emotional robots are deep: the torso reaches about 1 unit in front of the character's middle, and the hands reach out further. Any desk, table or counter must start IN FRONT of that (its back edge at least 1.3 units in front of the character), or push the character back by the same amount. If a desk top cuts through the torso, the body looks cut off or merged into the desk. Reaction tool: this is set for you (`desk.z`, default 1.5 for this style). In your own sets: look at one frame before rendering. The desk edge should be a clean straight line in front of the body, with nothing of the torso showing in front of it.
+
+## Human motion (walking, mannerisms): `characters/expressive/human.js`
+Use it when a character must move like a person: walk onto a stage, walk over to something and point, talk with their hands. It is stateless (safe for parallel rendering). Working example: `videos/brain_boost/index.html` (search for `animateHuman`).
+```js
+import { createHumanKit } from '../../characters/expressive/human.js';
+const hk = createHumanKit(THREE, xk);
+hk.animateHuman(c, t, { face, talk: amp, gesture: ['openR', 'idle', 0.4], beat: 0, s: walkedDistance, speed: unitsPerSecond, nod: 0, turn: 0 });
+c.g.position.set(x, 0, z); c.g.rotation.y = yaw;     // you place and turn the whole character
+```
+- **Walk:** give the distance walked so far (`s`) and the speed. The feet follow `s`, so steps match the ground (no ice skating). Legs swing, the foot lifts, arms swing the opposite way, the body bobs, rolls and leans forward. Turn the character to face the way it walks (about 0.8 rad, not a full 90 degrees, so the face still shows) and turn the head back toward the camera (`turn`).
+- **Standing:** breathing and slow weight shifts are automatic.
+- **Hands while talking:** `gesture` is a pose name or `[a, b, k]`. New poses: `open`, `openR`, `count1`, `beatUp`, `pointSide` (and `swingF`/`swingB` for walking). Move smoothly between two gestures during a line, and use `beat` (0 to 1) as a short pulse on the important word, together with a small `nod`.
+- **Eyes:** add glances to the face (`lookX`, `lookY`): up and away when thinking, toward the thing being talked about, back to the camera.
+- Keep furniture and other characters out of the line between the camera and what the cutaway is about (a character standing in front of the brain blocked it until the camera was moved).

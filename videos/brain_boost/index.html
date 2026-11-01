@@ -19,6 +19,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
 import { createRobotKit } from '../../characters/robots.js';
 import { createExpressiveKit } from '../../characters/expressive/body.js';
+import { createHumanKit } from '../../characters/expressive/human.js';
 import { EXPR, lerpFace, life, drawFace } from '../../characters/expressive/faces.js';
 import { evalCam, applyCam } from '../../camera/camera.js';
 import { SHOTS } from '../../camera/shots.js';
@@ -36,7 +37,7 @@ const sun = new THREE.DirectionalLight(0xfff0d8, 1.6); sun.position.set(-6, 16, 
 const rim = new THREE.DirectionalLight(0x7aa8ff, 1.1); rim.position.set(8, 12, -14); rim.target.position.set(0, 5, 0); scene.add(rim, rim.target);
 const pk = new THREE.PointLight(0xffb86b, 22, 40, 2); pk.position.set(-9, 10, 4); scene.add(pk); const bl = new THREE.PointLight(0x6fa0ff, 20, 40, 2); bl.position.set(9, 10, 4); scene.add(bl);
 const spot = new THREE.SpotLight(0xfff2dd, 260, 60, 0.42, 0.7, 2); spot.position.set(0, 24, 9); spot.target.position.set(0, 4, 0); scene.add(spot, spot.target);
-const kit = createRobotKit(THREE, RoundedBoxGeometry), xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), { box, cyl, ball, textPlane, mat } = kit;
+const kit = createRobotKit(THREE, RoundedBoxGeometry), xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), hk = createHumanKit(THREE, xk), { box, cyl, ball, textPlane, mat } = kit;
 const B = (g, w, h, d, c, x, y, z, r = 0.3, o = {}) => box(g, w, h, d, c, x, y, z, Object.assign({ round: r }, o));
 // ---- a serious keynote stage: dark navy backdrop with wood panels, a big screen of connected brain cells, a polished wood stage, warm spotlights
 const room = new THREE.Group(); scene.add(room);
@@ -103,8 +104,8 @@ const CAMS = {
   close2: SHOTS.closeUp(T, 11.5, { roll: -3 }),
   zoom: SHOTS.zoomLens(T, 17, 20),
   push2: SHOTS.pushIn([1, 5.6, 0], 22, 13, { side: -2 }),
-  brainOrbit: Object.assign(SHOTS.orbit([BRT[0], 3.9, BRT[2]], 13, 9, -42, 14), { shake: 0.03 }),
-  dollySide: SHOTS.dolly([7, 6, 19], [-2, 6, 17], [0, 5.6, 0], [0, 6, 0]),
+  brainOrbit: Object.assign(SHOTS.orbit([BRT[0], 3.9, BRT[2]], 14.5, 11, 40, -8), { shake: 0.03 }),
+  dollySide: SHOTS.dolly([8, 6, 19], [-1, 6, 17], [1.8, 5.6, 0], [1.2, 6, 0]),
   brainFlex: SHOTS.pushIn([5.6, 3.3, -1.2], 27, 20, { side: -1 }),
   low2: SHOTS.lowAngle(T, 14),
   pull: SHOTS.pullBack(T, 15, 34),
@@ -117,6 +118,20 @@ const STEPRANGE = [[2, 5, 'Number 1: right away'], [6, 8, 'Number 2: over time']
 const KEY = new Set(['best', 'brain', 'move', 'moving', 'body', 'focus', 'quicker', 'reactions', 'dopamine', 'serotonin', 'hours', 'memory', 'hippocampus', 'bigger', 'learn', 'remember', 'muscle', 'stronger', 'walk', 'ten', 'favorite']);
 const chunks = lines.map(l => { const w = l.text.split(/\s+/), out = []; for (let i = 0; i < w.length;) { const n = (w[i].length + (w[i + 1] || '').length > 11 || /[.,!?]$/.test(w[i])) ? 1 : 2; out.push(w.slice(i, i + n).join(' ')); i += n; }
   const tot = out.reduce((a, c) => a + c.length + 2, 0); let acc = 0; return out.map(c => { const a = l.v0 + (l.v1 - l.v0) * acc / tot; acc += c.length + 2; return { a, b: l.v0 + (l.v1 - l.v0) * acc / tot, c }; }); });
+// ---- Finn moves like a person: walks onto the stage, walks to the brain and back, talks with his hands, glances at things, nods on key words
+const WALK_IN = [0.15, 2.55], XB = 1.7, W1 = [L(7).v0 - 0.45, L(7).v0 + 1.0], W2 = [L(9).v0 - 0.3, L(9).v0 + 1.2];
+const xAt = t => t < WALK_IN[1] ? lerp(-9, 0, smooth((t - WALK_IN[0]) / (WALK_IN[1] - WALK_IN[0]))) : t < W1[1] ? lerp(0, XB, smooth((t - W1[0]) / (W1[1] - W1[0]))) : lerp(XB, 0, smooth((t - W2[0]) / (W2[1] - W2[0])));
+const pathS = t => { const x = xAt(t); return t < WALK_IN[1] ? x + 9 : t < W1[1] ? 9 + x : 9 + XB + (XB - x); };
+// hand gestures on each line: [start pose, end pose] (they drift smoothly between the two while he talks)
+const GP = [['openR', 'idle'], ['shrug', 'openR'], ['count1', 'count1'], ['open', 'openR'], ['openR', 'beatUp'], ['hips', 'idle'], ['beatUp', 'open'], ['pointSide', 'pointSide'], ['pointSide', 'open'], ['hips', 'openR'], ['hips', 'beatUp'], ['openR', 'idle'], ['open', 'idle']];
+const gAt = (i, t) => hk.mixPose(GP[i][0], GP[i][1], 0.5 + 0.5 * Math.sin((t - lines[i].v0) * 1.5 + i));
+// emphasis beats land on the key words
+const BEATS = []; chunks.forEach(Ln => Ln.forEach(c => { if (c.c.split(' ').some(w => KEY.has(w.toLowerCase().replace(/[^a-z]/g, '')))) BEATS.push(c.a + 0.05); }));
+const beatAt = t => BEATS.reduce((m, b) => Math.max(m, Math.exp(-(((t - b) / 0.17) ** 2))), 0);
+// where he looks: [from, to, [eyes x, eyes y], head turn]   (x + = toward the brain on the viewer's right, y - = up)
+const GL = [[L(1).v0 - 0.1, L(1).v0 + 0.55, [-0.3, -0.45], 0], [L(3).v0 + 0.9, L(3).v0 + 2.3, [0.55, 0.05], 0.3], [L(5).v0, L(5).v0 + 0.6, [-0.25, -0.4], 0],
+  [W1[1] - 0.3, L(7).v1 + 0.2, [0.55, 0.05], 0.3], [L(8).v0 + 0.1, L(8).v0 + 0.8, [-0.3, -0.35], 0], [L(10).v0 + 0.2, L(10).v0 + 1.0, [0.3, -0.2], 0.1]];
+const glance = t => GL.reduce((a, g) => { const w = smooth((t - g[0]) / 0.2) * (1 - smooth((t - g[1]) / 0.25)); return [a[0] + g[2][0] * w, a[1] + g[2][1] * w, a[2] + g[3] * w]; }, [0, 0, 0]);
 // the brain's own feelings over time: [time, face]
 const BF = [[0, 'happy'], [L(3).v0, 'excited'], [L(6).v0 - 0.2, 'happy'], [L(7).v0 + 0.4, 'thinking'], [L(7).v1 - 0.6, 'proud'], [L(9).v0 + 0.5, 'determined'], [L(10).v0 + 0.8, 'big smile'], [L(11).v0, 'happy'], [L(12).v0 + 0.3, 'wink']];
 const faceAt = (list, t, base = 0.3) => { let k = 0; for (let i = 0; i < list.length; i++) if (t >= list[i][0]) k = i; const a = EXPR[list[Math.max(0, k - 1)][1]], b = EXPR[list[k][1]]; return lerpFace(a, b, smooth((t - list[k][0]) / base)); };
@@ -129,12 +144,15 @@ window.renderFrame = t => {
   const st = S.shots[si].t, en = si + 1 < S.shots.length ? S.shots[si + 1].t : S.end, u = (t - st) / (en - st), cd = CAMS[S.shots[si].name];
   const ln = lines.find(l => t >= l.v0 - 0.05 && t <= l.v1 + 0.12);
   let amp = 0; if (ln) { const e = ln.env, ix = Math.floor((t - ln.start) * 48); amp = e[clamp(ix, 0, e.length - 1)] ?? 0; }
-  // Finn: face, pose, hop-in at the start
+  // Finn: face, hands, walk, glances
   let k = -1; for (let i = 0; i < lines.length; i++) if (t >= lines[i].v0 - 0.12) k = i;
-  const pa = k <= 0 ? 'idle' : POSE[k - 1], pb = k < 0 ? 'idle' : POSE[k], kb = k < 0 ? 1 : smooth((t - (lines[k].v0 - 0.12)) / 0.4);
-  const intro = clamp(t / 1.3), face = faceAt(finList, t);
-  xk.animateExpressive(fin, t, { face, pose: [pa, pb, kb], talk: ln ? amp : 0, wave: k >= 11, laugh: 0 });
-  fin.g.position.set(lerp(-7, 0, smooth(intro)), Math.abs(Math.sin(t * 10)) * 0.4 * (1 - smooth(intro)), 0); fin.g.rotation.y = lerp(Math.PI / 2, 0, smooth((t - 0.9) / 0.5));
+  const face0 = faceAt(finList, t), gz = glance(t);
+  const x = xAt(t), dx = xAt(t + 0.03) - xAt(t - 0.03), speed = Math.abs(dx) / 0.06, wk = smooth(speed);
+  const idleYaw = 0.45 * smooth((x - 0.5) / 2.2), yaw = lerp(idleYaw, Math.sign(dx) * 0.8, wk);
+  const gest = k < 0 ? gAt(0, t) : hk.mixPose(gAt(Math.max(0, k - 1), t), gAt(k, t), smooth((t - (lines[k].v0 - 0.1)) / 0.45));
+  const face = Object.assign({}, face0, { lookX: clamp(face0.lookX + gz[0], -1, 1), lookY: clamp(face0.lookY + gz[1], -1, 1) });
+  hk.animateHuman(fin, t, { face, talk: ln ? amp : 0, gesture: gest, beat: beatAt(t) * (ln ? 1 : 0), s: pathS(t), speed, nod: beatAt(t) * 0.1 * (ln ? 1 : 0) + (ln ? 0.02 : 0), turn: gz[2] - clamp(yaw, -0.7, 0.7) * 0.85 * wk + idleYaw * 0.5 * (1 - wk), slump: k >= 12 ? 0.06 : 0 });
+  fin.g.position.set(x, 0, 0.35 * smooth((x - 0.5) / 2.2)); fin.g.rotation.y = yaw;
   // the brain
   const chemK = smooth((t - L(3).v0) / 0.5) * (1 - smooth((t - L(5).v1) / 0.6));
   const flex = smooth((t - L(9).v0) / 0.6) * (1 - smooth((t - L(11).v0 + 0.2) / 0.5)), grow = smooth((t - L(7).v0 - 1.8) / 1.2) * (1 - smooth((t - L(9).v0 + 0.4) / 0.8));
