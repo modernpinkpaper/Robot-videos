@@ -1,0 +1,112 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Reading the comments</title>
+<style>
+html,body{margin:0;background:#1d1730;overflow:hidden}
+#wrap{position:relative;width:576px;height:1024px;overflow:hidden;font-family:"Liberation Sans",Arial,sans-serif}
+canvas{display:block}.ov{position:absolute;left:0;right:0;pointer-events:none;text-align:center}
+#vig{top:0;bottom:0;background:radial-gradient(ellipse at 50% 55%,rgba(60,30,100,0) 60%,rgba(60,30,100,.28) 100%)}
+#cap{top:880px;font:900 58px/1.05 "Liberation Sans",Arial,sans-serif;color:#fff;text-transform:lowercase;padding:0 24px;text-shadow:0 4px 0 #2a2147,3px 3px 0 #2a2147,-3px 3px 0 #2a2147,0 0 18px rgba(42,33,71,.8)}
+#cap b{color:#ffe36a}
+#cardbox{position:absolute;left:30px;right:30px;top:34px;pointer-events:none;transform-origin:50% 0}
+#card{background:#fff;border-radius:26px;padding:20px 24px 16px;box-shadow:0 10px 0 rgba(60,20,90,.35),0 18px 40px rgba(40,20,70,.35)}
+#ch{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+#av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#ffb3d1,#c9b6ff);position:relative;overflow:hidden;flex:none}
+#av:before{content:"";position:absolute;left:15px;top:8px;width:16px;height:16px;border-radius:50%;background:#fff}
+#av:after{content:"";position:absolute;left:8px;top:27px;width:30px;height:24px;border-radius:50% 50% 0 0;background:#fff}
+#who{font:700 18px "Liberation Sans",Arial,sans-serif;color:#7c7790}
+#ct{font:600 25px/1.25 "Liberation Sans",Arial,sans-serif;color:#161223;text-align:left;word-wrap:break-word}
+#cf{display:flex;align-items:center;gap:22px;margin-top:12px;font:700 17px "Liberation Sans",Arial,sans-serif;color:#8a859b}
+#cf .h{color:#ff3b6b;font-size:22px}
+#fade{top:0;bottom:0;background:#1d1730;opacity:0}
+</style></head><body><div id="wrap"><div id="cv"></div><div class="ov" id="vig"></div>
+<div id="cardbox"><div id="card"><div id="ch"><div id="av"></div><div id="who">commenter</div></div><div id="ct"></div><div id="cf"><span><span class="h">♥</span> <span id="lk"></span></span><span>Reply</span></div></div></div>
+<div class="ov" id="cap"></div><div class="ov" id="fade"></div></div>
+<script type="importmap">{"imports":{"three":"../../characters/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
+import { createRobotKit } from '../../characters/robots.js';
+import { createExpressiveKit } from '../../characters/expressive/body.js';
+import { createActorKit } from '../../characters/expressive/actor.js';
+import { evalCam, applyCam } from '../../camera/camera.js';
+import { SHOTS } from '../../camera/shots.js';
+const W = 576, H = 1024, TL = await (await fetch('work/timeline.json?' + Date.now())).json(), TOTAL = TL.total, $ = id => document.getElementById(id);
+const CARDS = await (await fetch('work/cards.json')).json();
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, t) => a + (b - a) * t, smooth = t => { t = clamp(t); return t * t * (3 - 2 * t); };
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; $('cv').appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xe9d9c8);
+const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 200);
+scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0));
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-6, 16, 14); sun.target.position.set(0, 5, 0); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+{ const c = sun.shadow.camera; c.left = -16; c.right = 16; c.top = 20; c.bottom = -6; c.near = 1; c.far = 60; } sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; scene.add(sun, sun.target);
+const pk = new THREE.PointLight(0xff8fc8, 26, 40, 2); pk.position.set(-9, 10, 4); scene.add(pk); const bl = new THREE.PointLight(0x8fb8ff, 26, 40, 2); bl.position.set(9, 10, 4); scene.add(bl);
+const kit = createRobotKit(THREE, RoundedBoxGeometry), { box, cyl, ball } = kit;
+const xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), ak = createActorKit(THREE, xk);
+const B = (g, w, h, d, c, x, y, z, r = 0.3, o = {}) => box(g, w, h, d, c, x, y, z, Object.assign({ round: r }, o));
+// ---- cozy room (same soft pastel toy look as the other videos)
+const room = new THREE.Group(); scene.add(room);
+B(room, 80, 0.5, 60, 0xefd9c0, 0, -0.25, 0, 0, { noShadow: true });
+B(room, 80, 30, 1, 0xf6e6d8, 0, 15, -9, 0, { noShadow: true }); B(room, 80, 5, 1.2, 0xe9c9b0, 0, 2.5, -8.8, 0, { noShadow: true });
+B(room, 1, 30, 60, 0xf2e0d0, -22, 15, 0, 0, { noShadow: true }); B(room, 1, 30, 60, 0xf2e0d0, 22, 15, 0, 0, { noShadow: true });
+cyl(room, 11, 0.12, 0xffd1e0, 0, 0.05, 2, { seg: 40, noShadow: true });
+B(room, 6.4, 7.6, 0.6, 0xffffff, 3.4, 8.2, -8.4, 0.3); B(room, 5.4, 6.6, 0.3, 0xcfe8ff, 3.4, 8.2, -8.1, 0.2, { noShadow: true, mat: new THREE.MeshBasicMaterial({ color: 0xcfe8ff }) });
+B(room, 0.3, 6.6, 0.4, 0xffffff, 3.4, 8.2, -8, 0.05, { noShadow: true }); B(room, 5.4, 0.3, 0.4, 0xffffff, 3.4, 8.2, -8, 0.05, { noShadow: true });
+cyl(room, 0.12, 10, 0x9a90b8, -6.8, 5, -6, { seg: 8 }); cyl(room, 0.12, 6, 0x9a90b8, -4, 9.8, -6, { seg: 8 }).rotation.z = Math.PI / 2;
+for (let i = 0; i < 5; i++) B(room, 1.1, 3.8 + (i % 2), 0.5, [0x3a3350, 0xffb3d1, 0xcfe8ff, 0x3a3350, 0xe2d4ff][i], -6 + i * 1.2, 7.6 - (i % 2) * 0.4, -6, 0.25);
+cyl(room, 1.1, 1.8, 0xffb3a0, -5.8, 0.9, -3, { seg: 20, r2: 0.9 }); for (let i = 0; i < 6; i++) ball(room, 1.0, 0x8fdcae, -5.8 + Math.cos(i * 1.1) * 1.0, 3.0 + (i % 3) * 0.9, -3 + Math.sin(i * 1.1) * 0.8, { noShadow: true }).scale.y = 1.3;
+B(room, 3.4, 4.2, 0.3, 0xffffff, -1.6, 9.6, -8.3, 0.1); B(room, 2.9, 3.7, 0.2, 0xffd1e0, -1.6, 9.6, -8.1, 0.1, { noShadow: true });
+const lampMat = new THREE.MeshBasicMaterial({ color: 0xffe9b0 }); cyl(room, 0.2, 7, 0x9a90b8, 5.4, 3.5, -5, { seg: 8 }); ball(room, 1.1, 0xffe9b0, 5.4, 7.4, -5, { mat: lampMat, noShadow: true });
+const dalia = ak.mkActor('dalia', { parent: scene, x: 0, ry: 0 });
+// ---- cameras: always moving, aimed a little ABOVE her head so she sits in the lower part of the frame and the comment card has room on top
+const T = [0, 6.0, 0];
+const CAMS = {
+  dollyWide: SHOTS.dolly([-9, 6.5, 30], [-3, 6.2, 26], [-1, 4.8, 0], [0, 5.4, 0]),
+  close1: SHOTS.closeUp(T, 14),
+  close2: SHOTS.closeUp(T, 12.5, { roll: -3 }),
+  close3: SHOTS.closeUp(T, 13.5, { roll: 3 }),
+  low: SHOTS.lowAngle([0, 5.6, 0], 16),
+  push: SHOTS.pushIn(T, 21, 13.5, { side: 2 }),
+  orbit: Object.assign(SHOTS.orbit([0, 5.2, 0], 20, 17, -42, 36), { shake: 0.03 }),
+  zoom: SHOTS.zoomLens(T, 18, 20),
+  dollySide: SHOTS.dolly([7, 5.8, 20], [-2, 5.8, 18], [0, 5.2, 0], [0, 5.5, 0]),
+  pull: SHOTS.pullBack([0, 5.4, 0], 16, 34),
+};
+const S = TL.scenes[0], lines = TL.lines, cards = TL.cards;
+// body language tied to the words (nothing moves without a reason). act starts `at` seconds after the line starts.
+const ACT = { 1: ['nod', 0.1], 3: ['shake', 0.5], 6: ['gasp', 0.0], 7: ['shake', 0.6], 8: ['gasp', 0.0], 12: ['nod', 0.1], 13: ['gasp', 0.2], 14: ['shake', 0.7], 16: ['gasp', 0.2], 17: ['shake', 0.6], 21: ['gasp', 0.0], 23: ['shake', 0.6] };
+const KEY = new Set(['shocked', 'quits', 'tips', 'wow', 'absolutely', 'walked', 'again', 'bully', 'win', 'quit', 'sentence', 'leaves', 'cruel', 'crime', 'done', 'pay', 'speech', 'warning']);
+const chunks = lines.map(l => { const w = l.text.split(/\s+/), out = []; for (let i = 0; i < w.length;) { const n = (w[i].length + (w[i + 1] || '').length > 11 || /[.,!?]$/.test(w[i])) ? 1 : 2; out.push(w.slice(i, i + n).join(' ')); i += n; }
+  const tot = out.reduce((a, c) => a + c.length + 2, 0); let acc = 0; return out.map(c => { const a = l.v0 + (l.v1 - l.v0) * acc / tot; acc += c.length + 2; return { a, b: l.v0 + (l.v1 - l.v0) * acc / tot, c }; }); });
+const faceAt = (l, t) => { const f = l.face; if (f.length < 2) return f[0]; return [f[0], f[1], clamp((t - (l.v0 + (l.v1 - l.v0) * 0.42)) / 0.3)]; };
+const endFace = l => l.face[l.face.length - 1];
+let shownCard = -1;
+function setCard(c) { if (c === shownCard) return; shownCard = c; const d = CARDS[c]; $('ct').textContent = d.text; $('lk').textContent = d.likes; $('ct').style.fontSize = d.text.length > 170 ? '21px' : d.text.length > 110 ? '24px' : '30px'; }
+window.renderFrame = t => {
+  t = clamp(t, 0, TOTAL - 1e-3);
+  let si = 0; for (let k = 0; k < S.shots.length; k++) if (t >= S.shots[k].t - 1e-6) si = k;
+  const st = S.shots[si].t, en = si + 1 < S.shots.length ? S.shots[si + 1].t : S.end, u = (t - st) / (en - st), cd = CAMS[S.shots[si].name];
+  // which line (and the one before it, so faces change smoothly)
+  let ci = -1; for (const l of lines) if (t >= l.v0 - 0.12) ci = l.i;
+  const ln = ci >= 0 ? lines[ci] : null, prev = ci > 0 ? lines[ci - 1] : null, speaking = !!ln && t <= ln.v1 + 0.1;
+  let amp = 0; if (ln && speaking) { const e = ln.env, ix = Math.floor((t - ln.start) * 48); amp = e[clamp(ix, 0, e.length - 1)] ?? 0; }
+  // face: blend from the last face to this line's face over 0.25 s (reading lines glance up at the comment, reaction lines look at us)
+  let emo = 'neutral', look = [0, 0];
+  if (ln) { const k = (t - (ln.v0 - 0.12)) / 0.25; emo = prev ? [endFace(prev), faceAt(ln, t), k] : faceAt(ln, t); look = ln.cap ? [0, 0] : [0.2, 0.35]; }
+  const st2 = { speaking, amp, emo, look };
+  if (ln && ACT[ln.i]) { const [a, at] = ACT[ln.i], x = (t - ln.v0 - at) / 0.9; if (x >= 0 && x <= 1) { st2.act = a; st2.actU = x; } }
+  ak.animateActor(dalia, t, st2);
+  const entering = t < 1.0; dalia.g.position.set(0, 0, 0);
+  applyCam(camera, evalCam(cd, u, t, st, si === 0), W / H);
+  renderer.render(scene, camera);
+  // comment card: pops in 0.3 s before she starts reading it, stays through her reaction, drops out when it ends
+  const cd2 = cards.find(c => t >= c.show - 1e-6 && t <= c.hide);
+  if (cd2) { setCard(cd2.i); const a = smooth((t - cd2.show) / 0.28), b = smooth((cd2.hide - t) / 0.2), s = 0.82 + 0.18 * a, o = Math.min(a, b);
+    $('cardbox').style.opacity = o.toFixed(3); $('cardbox').style.transform = `scale(${s.toFixed(3)}) translateY(${((1 - a) * -30).toFixed(1)}px)`; } else $('cardbox').style.opacity = 0;
+  // captions only on her reaction lines
+  let txt = ''; if (ln && ln.cap) for (const k of chunks[ln.i]) if (t >= k.a && t < k.b + 0.04) txt = k.c;
+  $('cap').innerHTML = txt.split(' ').map(w => KEY.has(w.toLowerCase().replace(/[^a-z]/g, '')) ? `<b>${w}</b>` : w).join(' ');
+  $('fade').style.opacity = clamp((t - (TOTAL - 0.7)) / 0.6).toFixed(3);
+};
+window.renderFrame(0.5); window.ready = true;
+</script></body></html>
