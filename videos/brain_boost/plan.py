@@ -1,7 +1,7 @@
 # THE BEST THING YOU CAN DO FOR YOUR BRAIN. One character (Finn) talks to camera, with a friendly brain character for cutaways.
 # Idea from Dr. Wendy Suzuki's TED talk on how exercise changes the brain. The script is our own words.
 # Emotional robots style (characters/expressive). Emotions are face names from EXPR (faces.js). Shots cut on lines (same syntax as no_lies/plan.py).
-TOTAL = 48.0
+TOTAL = 46.6
 SCENES = [
  dict(id='talk', pre=2.6, post=2.2, lines=[
    ('FINN', "Want to know the best thing you can do for your brain today?", 'excited', 0),
