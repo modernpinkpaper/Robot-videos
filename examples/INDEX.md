@@ -20,7 +20,7 @@ Status key: GOOD = Dalia picked it as the best example. DRAFT = a working exampl
 |---|---|---|---|
 | Emotional robots (real-face characters) | `characters/expressive/preview/` (`03_cast_all.png`, `cast_<name>.png`, `faces_*.png`, `05_motion_demo.mp4`) | GOOD (Dalia approved the look) | Faces, poses, motion. Recipe: `menu/cast/emotional_robots.md` |
 
-| Talking to the camera, explainer touches (emotional robots) | `videos/brain_boost/brain_boost.mp4` (40s, Finn + a brain character) | DRAFT: test voice (fast computer voice). Natural voice not done yet | Number cards, brain cutaways, captions. Source: `plan.py`, `index.html` |
+| Talking to the camera, explainer touches (emotional robots) | `videos/brain_boost/brain_boost.mp4` (47s, Finn + a brain character) | DRAFT: natural voice (Chatterbox), human walk and gestures, serious keynote stage | Number cards, brain cutaways, captions. Source: `plan.py`, `index.html` |
 
 ## 2. CAMERA references
 Watch `examples/camera/camera_reel.mp4` (38s). It shows every shot on the same stage with its name on screen:
