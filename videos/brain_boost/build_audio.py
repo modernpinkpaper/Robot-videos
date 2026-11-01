@@ -1,27 +1,14 @@
 # Makes the voices, the timeline (work/timeline.json) and the full audio (work/audio.wav).
-# Voices: piper TTS, same voice table as the podcast pipeline (formats/podcast/pod/voices_cfg.py).
+# Voices: voices/speak.py (Finn = Chatterbox human voice). Quality gate runs inside.
 import sys, os, re, wave, json, subprocess, numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
-sys.path.insert(0, ROOT + '/formats/podcast/pod'); sys.path.insert(0, HERE)
-from piper import PiperVoice
-try: from piper import SynthesisConfig
-except ImportError: SynthesisConfig = None
-from voices_cfg import VOICE
+sys.path.insert(0, ROOT + '/voices'); sys.path.insert(0, HERE)
+from speak import synth_lines   # humans (FINN) = Chatterbox, robots = Piper. Quality gate runs inside.
 from plan import SCENES, TOTAL
 WORK = HERE + '/work'; os.makedirs(WORK, exist_ok=True); SR = 44100
-vc = {}
-def voice(n):
-    if n not in vc: vc[n] = PiperVoice.load(ROOT + '/formats/podcast/voices/' + n + '.onnx')
-    return vc[n]
 flat = [(si, li, l) for si, s in enumerate(SCENES) for li, l in enumerate(s['lines'])]
 if '--notts' not in sys.argv:
-    for i, (si, li, l) in enumerate(flat):
-        who, text = l[0], l[1]; vn, pitch, ls = VOICE[who]; v = voice(vn); raw = f'{WORK}/r{i:02d}.wav'; fin = f'{WORK}/l{i:02d}.wav'
-        with wave.open(raw, 'wb') as w:
-            if SynthesisConfig: v.synthesize_wav(text, w, syn_config=SynthesisConfig(length_scale=ls))
-            else: v.synthesize_wav(text, w)
-        sr = v.config.sample_rate
-        subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-af', f'asetrate={int(sr*pitch)},aresample={SR},atempo={1/pitch:.4f},highpass=f=90,aecho=0.8:0.9:5:0.18,loudnorm=I=-18:TP=-2', '-ac', '1', '-ar', str(SR), fin], check=True)
+    synth_lines([dict(who=l[0], text=l[1], emo=l[2], out=f'{WORK}/l{i:02d}.wav') for i, (si, li, l) in enumerate(flat)], 'talk')
 def load(i):
     w = wave.open(f'{WORK}/l{i:02d}.wav'); return np.frombuffer(w.readframes(w.getnframes()), dtype='<i2').astype(np.float32) / 32768
 # ---- timeline

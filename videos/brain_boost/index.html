@@ -102,13 +102,15 @@ const S = TL.scenes[0], lines = TL.lines, L = i => lines[i];
 // what Finn does on each line
 const POSE = ['idle', 'shrug', 'point', 'hips', 'think', 'crossed', 'point', 'idle', 'hips', 'crossed', 'hips', 'wave', 'wave'];
 const STEPRANGE = [[2, 5, 'Number 1: right away'], [6, 8, 'Number 2: over time'], [9, 10, 'Think: brain = muscle']];
-const KEY = new Set(['best', 'brain', 'move', 'moving', 'body', 'focus', 'quicker', 'reactions', 'dopamine', 'serotonin', 'hours', 'memory', 'hippocampus', 'bigger', 'learn', 'remember', 'muscle', 'stronger', 'walk', 'thank', 'favorite']);
+const KEY = new Set(['best', 'brain', 'move', 'moving', 'body', 'focus', 'quicker', 'reactions', 'dopamine', 'serotonin', 'hours', 'memory', 'hippocampus', 'bigger', 'learn', 'remember', 'muscle', 'stronger', 'walk', 'ten', 'favorite']);
 const chunks = lines.map(l => { const w = l.text.split(/\s+/), out = []; for (let i = 0; i < w.length;) { const n = (w[i].length + (w[i + 1] || '').length > 11 || /[.,!?]$/.test(w[i])) ? 1 : 2; out.push(w.slice(i, i + n).join(' ')); i += n; }
   const tot = out.reduce((a, c) => a + c.length + 2, 0); let acc = 0; return out.map(c => { const a = l.v0 + (l.v1 - l.v0) * acc / tot; acc += c.length + 2; return { a, b: l.v0 + (l.v1 - l.v0) * acc / tot, c }; }); });
 // the brain's own feelings over time: [time, face]
 const BF = [[0, 'happy'], [L(3).v0, 'excited'], [L(6).v0 - 0.2, 'happy'], [L(7).v0 + 0.4, 'thinking'], [L(7).v1 - 0.6, 'proud'], [L(9).v0 + 0.5, 'determined'], [L(10).v0 + 0.8, 'big smile'], [L(11).v0, 'happy'], [L(12).v0 + 0.3, 'wink']];
 const faceAt = (list, t, base = 0.3) => { let k = 0; for (let i = 0; i < list.length; i++) if (t >= list[i][0]) k = i; const a = EXPR[list[Math.max(0, k - 1)][1]], b = EXPR[list[k][1]]; return lerpFace(a, b, smooth((t - list[k][0]) / base)); };
-const finList = lines.map(l => [l.v0 - 0.12, l.emo]); finList.unshift([0, 'happy']);
+// Finn's FACE on each line (a face name from EXPR; the plan's emo tag is only for the voice)
+const FACES = ['excited', 'smug', 'happy', 'excited', 'big smile', 'proud', 'happy', 'excited', 'happy', 'smug', 'big smile', 'proud', 'wink'];
+const finList = lines.map((l, i) => [l.v0 - 0.12, FACES[i]]); finList.unshift([0, 'happy']);
 window.renderFrame = t => {
   t = clamp(t, 0, TOTAL - 1e-3);
   let si = 0; for (let k = 0; k < S.shots.length; k++) if (t >= S.shots[k].t - 1e-6) si = k;
