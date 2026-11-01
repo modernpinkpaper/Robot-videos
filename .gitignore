@@ -14,3 +14,8 @@ voices/cbenv/
 voices/_r.wav
 videos/*/clip_source.mp4
 __pycache__/
+videos/comment_reading/work/frames/
+videos/comment_reading/work/*.wav
+videos/comment_reading/work/*.log
+videos/comment_reading/work/*.jpg
+videos/comment_reading/work/timeline*
