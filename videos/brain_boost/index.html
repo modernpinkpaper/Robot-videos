@@ -1,0 +1,153 @@
+<!doctype html><html><head><meta charset="utf-8"><title>The best thing for your brain</title>
+<style>
+html,body{margin:0;background:#1d1730;overflow:hidden}
+#wrap{position:relative;width:576px;height:1024px;overflow:hidden;font-family:"Liberation Sans",Arial,sans-serif}
+canvas{display:block}.ov{position:absolute;left:0;right:0;pointer-events:none;text-align:center}
+#vig{top:0;bottom:0;background:radial-gradient(ellipse at 50% 46%,rgba(60,30,100,0) 60%,rgba(60,30,100,.25) 100%)}
+#hook{top:46px;font:900 46px/1.05 "Liberation Sans",Arial,sans-serif;color:#fff;text-shadow:0 3px 0 rgba(60,20,90,.7),0 0 14px rgba(60,20,90,.55);padding:0 30px}
+#cap{top:790px;font:900 62px/1.05 "Liberation Sans",Arial,sans-serif;color:#fff;text-transform:lowercase;padding:0 24px;text-shadow:0 4px 0 #2a2147,3px 3px 0 #2a2147,-3px 3px 0 #2a2147,0 0 18px rgba(42,33,71,.8)}
+#cap b{color:#ffe36a}
+#step{top:46px;opacity:0}#step span{display:inline-block;background:#ff6fae;color:#fff;font:900 40px/1 "Liberation Sans",Arial,sans-serif;padding:12px 26px 14px;border-radius:40px;box-shadow:0 6px 0 #c23d82;text-transform:uppercase}
+#lab{position:absolute;left:0;top:0;opacity:0;pointer-events:none}#lab span{display:inline-block;background:#fff;color:#1f7f78;font:900 30px/1 "Liberation Sans",Arial,sans-serif;padding:8px 18px 10px;border-radius:30px;box-shadow:0 5px 0 #8fd6cf;white-space:nowrap}
+#credit{bottom:34px;padding:0 30px;font:700 22px/1.2 "Liberation Sans",Arial,sans-serif;color:#fff;text-shadow:0 2px 0 rgba(42,33,71,.8),0 0 10px rgba(42,33,71,.7);opacity:0}
+#fade{top:0;bottom:0;background:#1d1730;opacity:0}
+</style></head><body><div id="wrap"><div id="cv"></div><div class="ov" id="vig"></div>
+<div class="ov" id="hook">the best thing for your brain</div><div class="ov" id="step"><span id="steptxt"></span></div><div id="lab"><span>memory center</span></div><div class="ov" id="cap"></div><div class="ov" id="credit">Idea from Dr. Wendy Suzuki's TED talk on exercise and the brain</div><div class="ov" id="fade"></div></div>
+<script type="importmap">{"imports":{"three":"../../characters/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
+import { createRobotKit } from '../../characters/robots.js';
+import { createExpressiveKit } from '../../characters/expressive/body.js';
+import { EXPR, lerpFace, life, drawFace } from '../../characters/expressive/faces.js';
+import { evalCam, applyCam } from '../../camera/camera.js';
+import { SHOTS } from '../../camera/shots.js';
+const W = 576, H = 1024, TL = await (await fetch('work/timeline.json')).json(), TOTAL = TL.total, $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), lerp = (a, b, t) => a + (b - a) * t, smooth = t => { t = clamp(t); return t * t * (3 - 2 * t); };
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05; $('cv').appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xd9ecf2);
+const camera = new THREE.PerspectiveCamera(32, W / H, 0.1, 200);
+// the standard light rig (see characters/demo.html)
+scene.add(new THREE.HemisphereLight(0xfff0ff, 0xb59fd8, 1.0));
+const sun = new THREE.DirectionalLight(0xfff2e6, 1.7); sun.position.set(-6, 16, 14); sun.target.position.set(0, 5, 0); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+{ const c = sun.shadow.camera; c.left = -16; c.right = 16; c.top = 20; c.bottom = -6; c.near = 1; c.far = 60; } sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03; scene.add(sun, sun.target);
+const pk = new THREE.PointLight(0xff8fc8, 26, 40, 2); pk.position.set(-9, 10, 4); scene.add(pk); const bl = new THREE.PointLight(0x8fb8ff, 26, 40, 2); bl.position.set(9, 10, 4); scene.add(bl);
+const kit = createRobotKit(THREE, RoundedBoxGeometry), xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), { box, cyl, ball, textPlane, mat } = kit;
+const B = (g, w, h, d, c, x, y, z, r = 0.3, o = {}) => box(g, w, h, d, c, x, y, z, Object.assign({ round: r }, o));
+// ---- the brain lab / gym (soft pastel toy look)
+const room = new THREE.Group(); scene.add(room);
+B(room, 90, 0.5, 60, 0xeadff5, 0, -0.25, 0, 0, { noShadow: true });
+B(room, 90, 30, 1, 0xcdeee6, 0, 15, -10, 0, { noShadow: true }); B(room, 90, 5, 1.2, 0xb6e3d8, 0, 2.5, -9.8, 0, { noShadow: true });
+B(room, 1, 30, 60, 0xd8f0ea, -24, 15, 0, 0, { noShadow: true }); B(room, 1, 30, 60, 0xd8f0ea, 24, 15, 0, 0, { noShadow: true });
+cyl(room, 10, 0.12, 0xffd1e0, 0, 0.05, 1, { seg: 48, noShadow: true });
+textPlane(room, 'BRAIN LAB', 7, 1.7, '#ffffff', '#ff6fae', 'bold 90px Arial', 0, 13.2, -9.3);
+B(room, 7.6, 2.1, 0.4, 0xffffff, 0, 13.2, -9.55, 0.4);
+// window and clock
+B(room, 6.2, 7.2, 0.6, 0xffffff, -9, 9, -9.4, 0.3); B(room, 5.2, 6.2, 0.3, 0xcfe8ff, -9, 9, -9.1, 0.2, { noShadow: true, mat: new THREE.MeshBasicMaterial({ color: 0xcfe8ff }) });
+B(room, 0.3, 6.2, 0.4, 0xffffff, -9, 9, -9, 0.05, { noShadow: true }); B(room, 5.2, 0.3, 0.4, 0xffffff, -9, 9, -9, 0.05, { noShadow: true });
+cyl(room, 1.5, 0.3, 0xffffff, 10.5, 9.5, -9.2, { seg: 32 }).rotation.x = Math.PI / 2; cyl(room, 1.2, 0.2, 0xffe9b0, 10.5, 9.5, -9.0, { seg: 32, noShadow: true }).rotation.x = Math.PI / 2;
+B(room, 0.12, 0.9, 0.1, 0x3a3350, 10.5, 9.8, -8.85, 0.04, { noShadow: true }); B(room, 0.7, 0.12, 0.1, 0x3a3350, 10.8, 9.5, -8.85, 0.04, { noShadow: true });
+// treadmill (the gym part)
+B(room, 8, 0.7, 2.8, 0x6c6486, -8.5, 0.35, -5, 0.3); B(room, 7.2, 0.3, 2.3, 0x403a58, -8.5, 0.8, -5, 0.15);
+for (const s of [-1, 1]) cyl(room, 0.14, 5.2, 0xb8b0d0, -8.5 + s * 3.2, 3, -5.9, { seg: 8 });
+B(room, 7, 0.4, 0.4, 0xb8b0d0, -8.5, 5.4, -6.0, 0.15); B(room, 2.6, 1.3, 0.5, 0x2e2848, -8.5, 6.1, -6.1, 0.2); B(room, 2.2, 0.8, 0.1, 0x8fe0c8, -8.5, 6.1, -5.8, 0.1, { noShadow: true, mat: new THREE.MeshBasicMaterial({ color: 0x8fe0c8 }) });
+// bench with dumbbells, plant, shelf of beakers
+B(room, 4.4, 1.3, 1.8, 0xffb3a0, 15, 0.65, -3, 0.3); for (const s of [-1, 1]) { cyl(room, 0.18, 1.8, 0x4a4470, 15 + s * 0.6, 2, -3, { seg: 12 }).rotation.z = Math.PI / 2; ball(room, 0.55, 0x4a4470, 15 + s * 1.5, 2, -3, {}); ball(room, 0.55, 0x4a4470, 15 + s * -0.3, 2, -3, {}); }
+cyl(room, 1.1, 1.8, 0xffb3a0, 19, 0.9, -5, { seg: 20, r2: 0.9 }); for (let i = 0; i < 6; i++) ball(room, 1.0, 0x8fdcae, 19 + Math.cos(i * 1.1) * 1.0, 3.0 + (i % 3) * 0.9, -5 + Math.sin(i * 1.1) * 0.8, { noShadow: true }).scale.y = 1.3;
+B(room, 9, 0.4, 1.6, 0xffffff, 17, 8, -9, 0.15); for (let i = 0; i < 5; i++) { const c = [0xff8fb0, 0x8fd6ff, 0xffe36a, 0xb79af0, 0x8fe0b0][i]; cyl(room, 0.45, 1.6, c, 13.6 + i * 1.7, 9, -9, { seg: 16 }); ball(room, 0.45, c, 13.6 + i * 1.7, 9.8, -9, { noShadow: true }); }
+// pedestal for the brain
+const BR = [5.6, 0, -1.2], BRT = [5.6, 4.0, -1.2];
+cyl(room, 1.6, 2.2, 0xe2d4ff, BR[0], 1.1, BR[2], { seg: 32, r2: 1.4 }); cyl(room, 1.9, 0.3, 0xcbb6ff, BR[0], 0.15, BR[2], { seg: 32 });
+// ---- the brain character (a friendly lumpy brain with a face, noodle arms and a dumbbell)
+const brain = new THREE.Group(); brain.position.set(BR[0], 3.75, BR[2]); scene.add(brain);
+const pinkC = 0xf5a3be, rx = 2.0, ry = 1.6, rz = 1.7;
+const core = ball(brain, 1, pinkC, 0, 0, 0, {}); core.scale.set(rx * 0.93, ry * 0.93, rz * 0.93);
+for (let i = 0; i < 80; i++) { const phi = Math.acos(1 - 2 * (i + 0.5) / 80), th = Math.PI * (1 + Math.sqrt(5)) * i, d = [Math.sin(phi) * Math.cos(th), Math.cos(phi), Math.sin(phi) * Math.sin(th)]; if (d[2] > 0.5) continue; const r = 0.42 + 0.12 * Math.sin(i * 3.1); ball(brain, r, i % 3 ? 0xf5a3be : 0xf08fae, d[0] * rx * 0.86, d[1] * ry * 0.86, d[2] * rz * 0.86, { noShadow: i % 2 === 0 }); }
+ball(brain, 0.5, 0xf08fae, 0, ry * 0.9, -0.2, {}).scale.set(0.9, 0.5, 2.0);
+// face decal on the front
+const bfc = document.createElement('canvas'); bfc.width = 1024; bfc.height = 860; const bfx = bfc.getContext('2d'); const bft = new THREE.CanvasTexture(bfc); bft.colorSpace = THREE.SRGBColorSpace; bft.generateMipmaps = false; bft.minFilter = THREE.LinearFilter;
+{ const g = xk.blob(rx * 0.98, ry * 0.98, rz * 0.98, { n: 2, ws: 48, hs: 36 }), pos = g.attributes.position, uv = new Float32Array(pos.count * 2); const sx = 900 / (2 * rx) * 1.45, sy = 770 / (2 * ry) * 1.45;
+  for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i); if (z < 0.2) { uv[i * 2] = -10; uv[i * 2 + 1] = -10; continue; } uv[i * 2] = (512 + x * sx) / 1024; uv[i * 2 + 1] = 1 - (450 - (y - 0.1) * sy) / 860; }
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); const f = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: bft, transparent: true, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2 })); f.renderOrder = 2; brain.add(f); }
+const BLOOK = { skin: '#f5a3be', brow: '#a3476a', iris: '#5a2a46', mouthLine: '#a03a5a', lashes: 0.4, eyeScale: 1.05 };
+// noodle arms
+const armMat = mat(0xf08fae), arms = [-1, 1].map(s => { const t = new THREE.Mesh(new THREE.BufferGeometry(), armMat); t.castShadow = true; brain.add(t); const h = ball(brain, 0.4, 0xffc2d6, 0, 0, 0, {}); return { s, t, h }; });
+const dumb = new THREE.Group(); brain.add(dumb); cyl(dumb, 0.12, 1.5, 0x4a4470, 0, 0, 0, { seg: 10 }).rotation.z = Math.PI / 2; for (const s of [-1, 1]) ball(dumb, 0.42, 0x4a4470, s * 0.78, 0, 0, {});
+// hippocampus highlight and floating chemicals
+const hip = new THREE.Mesh(new THREE.CapsuleGeometry(0.26, 0.9, 6, 14), new THREE.MeshStandardMaterial({ color: 0x35d6c8, emissive: 0x1aa89c, emissiveIntensity: 0.9, roughness: 0.35 })); hip.position.set(-1.55, -0.55, 0.95); hip.rotation.set(0.3, 0.2, 0.9); hip.castShadow = true; brain.add(hip);
+const chem = [...Array(16)].map((_, i) => { const m = ball(scene, 0.22, [0xff6fae, 0xffd23f, 0x6fd3ff][i % 3], 0, 0, 0, { noShadow: true, mat: new THREE.MeshBasicMaterial({ color: [0xff6fae, 0xffd23f, 0x6fd3ff][i % 3] }) }); return m; });
+// ---- Finn (emotional robots style): the speaker
+const fin = xk.mkExpressive(Object.assign({ parent: scene }, xk.ROSTER.find(p => p.name === 'finn')));
+// ---- cameras: gentle talking-head moves with jump cuts (shared toolkit camera/shots.js)
+const T = [0, 6.1, 0];
+const CAMS = {
+  dollyWide: SHOTS.dolly([-14, 6.5, 31], [-4, 6, 27], [-1, 4.2, 0], [1.2, 4.6, 0]),
+  close1: SHOTS.closeUp(T, 13),
+  low: SHOTS.lowAngle(T, 15),
+  push: SHOTS.pushIn(T, 20, 12.5, { side: 2 }),
+  brainClose: SHOTS.closeUp(BRT, 12.5, { roll: -2 }),
+  close2: SHOTS.closeUp(T, 11.5, { roll: -3 }),
+  zoom: SHOTS.zoomLens(T, 17, 20),
+  push2: SHOTS.pushIn([1, 5.6, 0], 22, 13, { side: -2 }),
+  brainOrbit: Object.assign(SHOTS.orbit([BRT[0], 3.9, BRT[2]], 13, 9, -42, 14), { shake: 0.03 }),
+  dollySide: SHOTS.dolly([7, 6, 19], [-2, 6, 17], [0, 5.6, 0], [0, 6, 0]),
+  brainFlex: SHOTS.pushIn([5.6, 3.3, -1.2], 27, 20, { side: -1 }),
+  low2: SHOTS.lowAngle(T, 14),
+  pull: SHOTS.pullBack(T, 15, 34),
+  close3: SHOTS.closeUp(T, 12.5, { roll: 2 }),
+};
+const S = TL.scenes[0], lines = TL.lines, L = i => lines[i];
+// what Finn does on each line
+const POSE = ['idle', 'shrug', 'point', 'hips', 'think', 'crossed', 'point', 'idle', 'hips', 'crossed', 'hips', 'wave', 'wave'];
+const STEPRANGE = [[2, 5, 'Number 1: right away'], [6, 8, 'Number 2: over time'], [9, 10, 'Think: brain = muscle']];
+const KEY = new Set(['best', 'brain', 'move', 'moving', 'body', 'focus', 'quicker', 'reactions', 'dopamine', 'serotonin', 'hours', 'memory', 'hippocampus', 'bigger', 'learn', 'remember', 'muscle', 'stronger', 'walk', 'thank', 'favorite']);
+const chunks = lines.map(l => { const w = l.text.split(/\s+/), out = []; for (let i = 0; i < w.length;) { const n = (w[i].length + (w[i + 1] || '').length > 11 || /[.,!?]$/.test(w[i])) ? 1 : 2; out.push(w.slice(i, i + n).join(' ')); i += n; }
+  const tot = out.reduce((a, c) => a + c.length + 2, 0); let acc = 0; return out.map(c => { const a = l.v0 + (l.v1 - l.v0) * acc / tot; acc += c.length + 2; return { a, b: l.v0 + (l.v1 - l.v0) * acc / tot, c }; }); });
+// the brain's own feelings over time: [time, face]
+const BF = [[0, 'happy'], [L(3).v0, 'excited'], [L(6).v0 - 0.2, 'happy'], [L(7).v0 + 0.4, 'thinking'], [L(7).v1 - 0.6, 'proud'], [L(9).v0 + 0.5, 'determined'], [L(10).v0 + 0.8, 'big smile'], [L(11).v0, 'happy'], [L(12).v0 + 0.3, 'wink']];
+const faceAt = (list, t, base = 0.3) => { let k = 0; for (let i = 0; i < list.length; i++) if (t >= list[i][0]) k = i; const a = EXPR[list[Math.max(0, k - 1)][1]], b = EXPR[list[k][1]]; return lerpFace(a, b, smooth((t - list[k][0]) / base)); };
+const finList = lines.map(l => [l.v0 - 0.12, l.emo]); finList.unshift([0, 'happy']);
+window.renderFrame = t => {
+  t = clamp(t, 0, TOTAL - 1e-3);
+  let si = 0; for (let k = 0; k < S.shots.length; k++) if (t >= S.shots[k].t - 1e-6) si = k;
+  const st = S.shots[si].t, en = si + 1 < S.shots.length ? S.shots[si + 1].t : S.end, u = (t - st) / (en - st), cd = CAMS[S.shots[si].name];
+  const ln = lines.find(l => t >= l.v0 - 0.05 && t <= l.v1 + 0.12);
+  let amp = 0; if (ln) { const e = ln.env, ix = Math.floor((t - ln.start) * 48); amp = e[clamp(ix, 0, e.length - 1)] ?? 0; }
+  // Finn: face, pose, hop-in at the start
+  let k = -1; for (let i = 0; i < lines.length; i++) if (t >= lines[i].v0 - 0.12) k = i;
+  const pa = k <= 0 ? 'idle' : POSE[k - 1], pb = k < 0 ? 'idle' : POSE[k], kb = k < 0 ? 1 : smooth((t - (lines[k].v0 - 0.12)) / 0.4);
+  const intro = clamp(t / 1.3), face = faceAt(finList, t);
+  xk.animateExpressive(fin, t, { face, pose: [pa, pb, kb], talk: ln ? amp : 0, wave: k >= 11, laugh: 0 });
+  fin.g.position.set(lerp(-7, 0, smooth(intro)), Math.abs(Math.sin(t * 10)) * 0.4 * (1 - smooth(intro)), 0); fin.g.rotation.y = lerp(Math.PI / 2, 0, smooth((t - 0.9) / 0.5));
+  // the brain
+  const chemK = smooth((t - L(3).v0) / 0.5) * (1 - smooth((t - L(5).v1) / 0.6));
+  const flex = smooth((t - L(9).v0) / 0.6) * (1 - smooth((t - L(11).v0 + 0.2) / 0.5)), grow = smooth((t - L(7).v0 - 1.8) / 1.2) * (1 - smooth((t - L(9).v0 + 0.4) / 0.8));
+  drawFace(bfx, life(faceAt(BF, t), t, 3), BLOOK); bft.needsUpdate = true;
+  brain.position.y = 3.75 + Math.sin(t * 2) * 0.06 + flex * Math.abs(Math.sin(t * 5)) * 0.18; brain.rotation.y = -0.25 + Math.sin(t * 0.9) * 0.08; brain.rotation.z = Math.sin(t * 1.3) * 0.03 + flex * Math.sin(t * 5) * 0.04;
+  brain.scale.setScalar(1 + chemK * 0.04 + flex * 0.06);
+  hip.scale.setScalar(1 + grow * 0.8 + Math.sin(t * 6) * 0.05 * (grow + smooth((t - L(7).v0) / 0.4) * 0.5)); hip.material.emissiveIntensity = 0.5 + 0.7 * (0.5 + 0.5 * Math.sin(t * 6)) * smooth((t - L(7).v0) / 0.4);
+  const curl = 0.5 + 0.5 * Math.sin(t * 6);
+  arms.forEach(a => { const s = a.s, rest = [[s * 2.3, -0.3, 0.3], [s * 2.9, -1.4, 0.6]], up = [[s * 2.9, 0.1, 0.9], [s * (s > 0 ? 2.1 + 0.2 * curl : 2.6), 0.7 + 0.9 * (s > 0 ? curl : 1 - curl) , 1.4]];
+    const e = new THREE.Vector3(...rest[0]).lerp(new THREE.Vector3(...up[0]), flex), h = new THREE.Vector3(...rest[1]).lerp(new THREE.Vector3(...up[1]), flex); h.y += Math.sin(t * 1.5 + s) * 0.05;
+    const S0 = new THREE.Vector3(s * 1.7, -0.2, 0.2), C = e.clone().multiplyScalar(2).sub(S0.clone().add(h).multiplyScalar(0.5));
+    a.t.geometry.dispose(); a.t.geometry = new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(S0, C, h), 14, 0.24, 10, false); a.h.position.copy(h); a.last = h; });
+  dumb.position.copy(arms[1].last); dumb.scale.setScalar(flex); dumb.rotation.z = 0.1;
+  chem.forEach((m, i) => { const a = t * (0.9 + (i % 4) * 0.15) + i * 0.4, r = 2.4 + (i % 3) * 0.35; m.position.set(BR[0] + Math.cos(a) * r, 6.1 + Math.sin(a * 1.7 + i) * 0.45 + (i % 5) * 0.14, BR[2] - 0.6 + Math.sin(a) * r * 0.45); m.scale.setScalar(chemK * (0.8 + 0.25 * Math.sin(t * 5 + i))); });
+  applyCam(camera, evalCam(cd, u, t, st, si === 0), W / H);
+  renderer.render(scene, camera);
+  // captions: 2-3 words at a time, key words in yellow
+  let txt = ''; for (const Ln of chunks) for (const c of Ln) if (t >= c.a && t < c.b + 0.04) txt = c.c;
+  $('cap').innerHTML = txt.split(' ').map(w => KEY.has(w.toLowerCase().replace(/[^a-z]/g, '')) ? `<b>${w}</b>` : w).join(' ');
+  // number cards
+  const R = STEPRANGE.find(r => k >= r[0] && k <= r[1]); $('hook').style.opacity = R ? 0 : 1 - smooth((t - 4.2) / 0.5);
+  if (R) { const t0 = lines[R[0]].v0 - 0.1; $('step').style.opacity = clamp((t - t0) / 0.2); $('step').style.transform = `scale(${(0.8 + 0.2 * smooth((t - t0) / 0.25)).toFixed(3)})`; $('steptxt').textContent = R[2]; } else { $('step').style.opacity = 0; $('steptxt').textContent = ''; }
+  // "memory center" label follows the glowing part
+  const lv = new THREE.Vector3(); hip.getWorldPosition(lv); lv.project(camera); const on = smooth((t - L(7).v0 - 1.2) / 0.3) * (1 - smooth((t - L(8).v1 + 0.2) / 0.3));
+  const lb = $('lab'); lb.style.opacity = (on * (lv.z < 1 ? 1 : 0) * smooth((0.78 - Math.abs(lv.x)) / 0.2)).toFixed(3); lb.style.transform = `translate(${((lv.x * 0.5 + 0.5) * W - 100).toFixed(1)}px,${((-lv.y * 0.5 + 0.5) * H - 90).toFixed(1)}px)`;
+  $('credit').style.opacity = clamp((t - (TOTAL - 4.2)) / 0.5).toFixed(3);
+  $('fade').style.opacity = clamp((t - (TOTAL - 0.6)) / 0.5).toFixed(3);
+};
+window.renderFrame(0.5); window.ready = true;
+</script></body></html>
