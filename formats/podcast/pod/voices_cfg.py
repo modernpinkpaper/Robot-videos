@@ -26,3 +26,18 @@ VOICE.update({
  'NARRATOR': ('en_US-lessac-medium', 0.96, 1.0),
 })
 NAMES.update({'AMINA': 'Amina', 'MARCUS': 'Marcus', 'LILY': 'Lily', 'SOFIA': 'Sofia', 'GRANDPA': 'Grandpa', 'KID_BOY': 'Sam', 'KID_GIRL': 'Zoe', 'NARRATOR': 'Narrator'})
+
+# ---- Emotional robots cast (characters/expressive/body.js ROSTER). Closest existing voices; change pitch/speed per video if needed.
+VOICE.update({
+ 'MARA':  ('en_US-hfc_female-medium', 1.0, 1.0),
+ 'THEO':  ('en_US-ryan-medium', 0.88, 1.02),
+ 'PRIYA': ('en_US-amy-medium', 1.14, 0.97),
+ 'JUNE':  ('en_US-lessac-medium', 1.1, 1.08),
+ 'KAI':   ('en_US-joe-medium', 1.38, 0.95),
+ 'GUS':   ('en_US-lessac-medium', 0.80, 1.12),
+ 'ZOE':   ('en_US-amy-medium', 1.14, 0.97),
+ 'FINN':  ('en_US-ryan-medium', 1.02, 1.0),
+ 'HANA':  ('en_US-hfc_female-medium', 1.0, 1.0),
+ 'NINA':  ('en_GB-alba-medium', 1.25, 0.95),
+})
+NAMES.update({'MARA': 'Mara', 'THEO': 'Theo', 'PRIYA': 'Priya', 'JUNE': 'June', 'KAI': 'Kai', 'GUS': 'Gus', 'ZOE': 'Zoe', 'FINN': 'Finn', 'HANA': 'Hana', 'NINA': 'Nina'})
