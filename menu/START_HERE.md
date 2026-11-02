@@ -23,6 +23,7 @@ Default: humans for stories about people or work or life, robots for business to
 | "reaction" / "reaction video" | a character watches something and reacts | `formats/reaction.md` |
 | "podcast" / "episode" | the Robot Print Room studio format | `../formats/podcast/README.md` |
 | "explainer" / "how to" | a teacher character plus info cards | `formats/explainer.md` |
+| "religious teaching" / "Quran lesson" / "faith reminder" | teacher and learner, answer first, Arabic cards, 3 acted habits (Quran only, no hadith) | `formats/religious_teaching.md` |
 Default: story.
 
 ## 3. VOICES  -> `voices/VOICES.md`

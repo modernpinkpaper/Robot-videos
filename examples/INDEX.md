@@ -14,6 +14,7 @@ Status key: GOOD = Dalia picked it as the best example. DRAFT = a working exampl
 | Skit | none yet | EMPTY | Make one (see `menu/formats/skit.md`), then ask Dalia to confirm it |
 | Reaction | `examples/reaction/reaction_demo.mp4` (23s: Dalia reacts to "How the smartest people disagree") | DRAFT | Reactor top right, clip bottom left, captions with a highlighted word, clip pauses while she talks. Tool: `formats/reaction/` |
 | Explainer | none yet | EMPTY | Make one (see `menu/formats/explainer.md`) |
+| Religious teaching (Quran lesson) | `videos/quran_calm/quran_calm.mp4` (2:43, "Heart Calm") | DRAFT (Dalia likes it) | Answer-first header on frame 0, refrain, say-it-with-me Arabic words in the characters' voices, breathe moment, 3 acted habits, recall question, recap. Source: `plan.py`, `perform.js` (acting beats), `build_audio.py`, `AUDIT.md`. Recipe: `menu/formats/religious_teaching.md` |
 
 ## 1b. CHARACTER STYLE references
 | Style | Reference | Status | What to copy |
