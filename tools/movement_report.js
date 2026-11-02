@@ -27,7 +27,8 @@ const dir = process.argv[2], tl = process.argv[3] || 'timeline.json';
     }
     const w15 = Math.round(1.5 / dt), alive = a.map((_, i) => ev.slice(Math.max(0, i - w15), i + w15 + 1).some(Boolean));
     const listen = a.map((x, i) => !x.speaking ? i : -1).filter(i => i >= 0), listenAlive = listen.length ? listen.filter(i => alive[i]).length / listen.length : 1;
-    let still = 0, longest = 0; for (let i = 0; i < a.length; i++) { still = ev[i] ? 0 : still + dt; longest = Math.max(longest, still); }
+    let still = 0, longest = 0; const stills = []; for (let i = 0; i < a.length; i++) { still = ev[i] ? 0 : still + dt; longest = Math.max(longest, still); if (still > 4.0 && (i === a.length - 1 || ev[i + 1])) stills.push(`${a[i].scene} ${(a[i].t - still).toFixed(1)}s to ${a[i].t.toFixed(1)}s`); }
+    if (stills.length) console.log(`   ${w} still stretches over 4 s: ${stills.join(' | ')}`);
     const mins = a.length * dt / 60, ppm = poseChanges / Math.max(0.2, mins);
     console.log(`${w.padEnd(10)} ${(a.length * dt).toFixed(0).padStart(5)}s ${(listenAlive * 100).toFixed(0).padStart(15)}% ${longest.toFixed(1).padStart(13)}s ${String(poses.size).padStart(6)} ${String(faces.size).padStart(6)} ${ppm.toFixed(1).padStart(17)}`);
     if (a.length * dt > 20) {   // only characters with a real role

@@ -22,6 +22,9 @@ export const CUES = {
     // the verse: Amina is still and reverent (hands together). Dalia listens with soft eyes and lets her shoulders drop at "hearts find calm"
     { who: 'AMINA', t: ['L', 0, 0], until: ['LE', 2, 0.2], pose: 'lap', face: 'sweet' },
     { who: 'DALIA', t: ['L', 1, 0], until: ['L', 2, 1.4], face: 'thinking', look: [0.5, 0.1] },
+    { who: 'AMINA', t: ['L', 1, 2.0], d: 1.5, nod: 0.08, tilt: 0.08 },
+    { who: 'DALIA', t: ['L', 1, 2.6], d: 1.4, nod: 0.09, lean: 0.03 },
+    { who: 'AMINA', t: ['L', 2, 0.2], d: 1.4, tilt: -0.06, nod: 0.05 },
     { who: 'DALIA', t: ['L', 2, 1.5], d: 2.6, face: 'relieved', slump: 0.04, nod: 0.09 },
     // "Calm. That's the word I've been missing.": a hand to her own heart
     { who: 'DALIA', t: ['L', 3, 0.4], d: 2.8, pose: 'chest', face: 'relieved', slump: 0.03, tilt: 0.1 },
@@ -71,6 +74,10 @@ export const CUES = {
     // the verse is serious and tender: stillness, a hand on the heart at "remember Me"
     { who: 'AMINA', t: ['L', 2, 0], until: ['LE', 2, 0.3], pose: 'chest', face: 'sweet' },
     { who: 'DALIA', t: ['L', 2, 1.0], until: ['LE', 2, 0.4], face: 'proud', nod: 0.06, slump: 0.02 },
+    { who: 'AMINA', t: ['L', 2, 2.0], d: 1.6, tilt: 0.11, lean: 0.03 },
+    { who: 'DALIA', t: ['L', 2, 2.7], d: 1.3, act: 'nod' },
+    { who: 'AMINA', t: ['LE', 2, -2.0], d: 1.4, nod: 0.09, face: 'sweet' },
+    { who: 'DALIA', t: ['LE', 2, -1.2], d: 1.6, face: 'in love', tilt: 0.1 },
     { who: 'DALIA', t: ['L', 3, 0], d: 2.2, face: 'determined', pose: 'hips', lean: 0.05, slump: 0.0 },
     { who: 'AMINA', t: ['L', 3, 0.4], d: 1.6, face: 'happy', act: 'nod' },
   ],
@@ -88,7 +95,9 @@ export const CUES = {
     { who: 'DALIA', t: ['L', 0, 3.4], until: ['LE', 0, 0.4], look: [0, 0.9], nod: -0.3, face: 'surprised', lean: -0.04 },
     { who: 'DALIA', t: ['L', 1, 0], d: 1.6, look: [0, 0.9], nod: -0.3, face: 'surprised', lean: -0.05 },
     { who: 'DALIA', t: ['L', 1, 1.5], until: ['LE', 1, 0.5], look: [0, 0.8], nod: -0.28, face: 'happy', pose: 'open' },
-    { who: 'DALIA', t: ['L', 2, 0], until: ['LE', 2, 0.5], face: 'happy', pose: 'open', look: [0.2, 0.5], turn: 0.25, nod: -0.15 },
+    { who: 'DALIA', t: ['L', 2, 0], d: 2.6, face: 'happy', pose: 'open', look: [0.2, 0.5], turn: 0.3, nod: -0.15, lean: 0.03 },
+    { who: 'DALIA', t: ['L', 2, 2.5], d: 2.4, face: 'happy', pose: 'armsUp', look: [-0.2, 0.4], turn: -0.3, nod: -0.1, lean: -0.03 },
+    { who: 'DALIA', t: ['L', 2, 4.9], until: ['LE', 2, 0.5], face: 'relieved', pose: 'open', look: [0.1, 0.2], turn: 0.1, nod: 0.05, lean: 0.0 },
   ],
   act3: [
     // TALK: she sits quietly, hand on heart while she "talks"; unsure ("messy?") then relieved ("Especially then.")
