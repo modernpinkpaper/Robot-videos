@@ -92,6 +92,11 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     crossed:  { R: { e: [1.9, 2.95, 1.05], h: [-0.35, 3.3, 1.5] }, L: { e: [-1.9, 2.8, 0.85], h: [0.35, 3.05, 1.35] } },
     point:    { R: { e: [1.7, 3.6, 0.9], h: [1.9, 4.0, 2.0] }, L: IDLE_L },
     think:    { R: { e: [1.5, 3.7, 0.8], h: [0.55, 4.2, 1.45], hy: true }, L: { e: [-1.9, 2.8, 0.85], h: [0.35, 3.05, 1.35] } },
+    // added for teaching and quiet scenes (used only when asked for; nothing else changes)
+    chest:    { R: { e: [1.55, 2.95, 0.55], h: [0.5, 3.45, 1.2] }, L: IDLE_L },                                  // a hand on the heart
+    open:     { R: { e: [2.2, 3.1, 0.5], h: [2.55, 3.4, 1.4] }, L: { e: [-2.2, 3.1, 0.5], h: [-2.55, 3.4, 1.4] } },   // palms open, welcoming
+    lap:      { R: { e: [1.5, 2.7, 0.7], h: [0.45, 2.5, 1.35] }, L: { e: [-1.5, 2.7, 0.7], h: [-0.45, 2.5, 1.35] } },   // hands together, calm
+    reach:    { R: { e: [2.6, 3.0, 0.8], h: [3.4, 2.75, 1.25] }, L: IDLE_L },                                      // reaching out to the side (a phone on a table)
   };
 
   // ---------- one character ----------
