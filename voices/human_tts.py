@@ -33,8 +33,12 @@ EMO = {
 # A style is a preset of those knobs. A person can have a default style (PEOPLE[..]['style']) and any line can say "style": "comforting" or override single knobs.
 STYLES = {
     # clear but comforting: a little slower, a touch lower, more breathing room between sentences, warm and soft sound, even loudness
-    'comforting': dict(speed_mul=0.94, pitch_add=-0.3, exag_add=0.04, cfg_add=-0.12, pause_scale=1.5,
-                       eq="bass=g=2.5:f=190,equalizer=f=3300:t=q:w=1.2:g=-1.3,treble=g=-2.2:f=6500,acompressor=threshold=0.09:ratio=2:attack=25:release=300:makeup=1.6"),
+    # (v2, after Dalia's feedback: no hard stops, no dead silence, less robotic)
+    #   joint = the whole line is spoken in ONE pass, so sentence ends fall and breathe like a person (no gluing sentences together)
+    #   room  = a little natural room sound and a soft decay after every word and sentence end (dry digital silence sounds robotic)
+    #   temperature = how much the melody varies from take to take
+    'comforting': dict(speed_mul=1.0, pitch_add=-0.2, exag_add=0.08, cfg_add=-0.1, pause_scale=1.0, joint=True, temperature=0.9, room=0.13,
+                       eq="bass=g=1.8:f=190,treble=g=-1.5:f=7000"),
     # bright and friendly, for a younger or livelier person
     'bright': dict(speed_mul=1.03, pitch_add=0.3, exag_add=0.08, cfg_add=0.0, pause_scale=0.9, eq="treble=g=1.2:f=5500"),
 }
@@ -82,7 +86,7 @@ def style_for(who, text, emo='neutral', pace=None, tone=None, energy=None, style
     s['ref'] = os.path.join(REFS, P['ref'] + '.wav')
     S = dict(STYLES.get(style or P.get('style') or '', {})); S.update({k: v for k, v in (knobs or {}).items() if v is not None})   # a line can override single knobs: speed_mul, pitch_add, exag_add, cfg_add, pause_scale, eq
     s['exag'] = max(0.3, min(0.75, s['exag'] + S.get('exag_add', 0))); s['cfg'] = max(0.2, s['cfg'] + S.get('cfg_add', 0))
-    s['speed'] *= S.get('speed_mul', 1.0); s['pitch'] += S.get('pitch_add', 0); s['pause_scale'] = S.get('pause_scale', 1.0); s['eq'] = S.get('eq', '')
+    s['speed'] *= S.get('speed_mul', 1.0); s['pitch'] += S.get('pitch_add', 0); s['pause_scale'] = S.get('pause_scale', 1.0); s['eq'] = S.get('eq', ''); s['joint'] = S.get('joint', False); s['temperature'] = S.get('temperature', 0.8); s['room'] = S.get('room', 0.0)
     return s
 
 def pieces(text):
@@ -131,6 +135,20 @@ def ar_score(wav, sr, expected):
     except Exception as ex:
         print('  (no Arabic recogniser:', ex, ')', flush=True); return 0.5
 
+def add_room(path, wet=0.13, tail=0.45, tone_db=-56):
+    """Natural room: a short soft reverb tail (so words and sentence ends decay instead of stopping), and a very quiet room tone (so the gaps are never digital silence)."""
+    import wave, numpy as np
+    from scipy.signal import fftconvolve
+    w = wave.open(path); sr = w.getframerate(); x = np.frombuffer(w.readframes(w.getnframes()), dtype='<i2').astype(np.float32) / 32768; w.close()
+    rng = np.random.default_rng(7); n = int(0.38 * sr); t = np.arange(n) / sr
+    ir = rng.standard_normal(n) * np.exp(-t * 6.9 / 0.30); ir[0] = 0; ir = np.convolve(ir, np.ones(5) / 5, 'same')   # decays by 60 dB in about 0.3 s, a small soft room
+    ir /= np.abs(ir).sum() + 1e-9; ir *= 3.2
+    x = np.concatenate([x, np.zeros(int(tail * sr), dtype=np.float32)]); y = x + wet * fftconvolve(x, ir)[:len(x)]
+    pink = np.cumsum(rng.standard_normal(len(y))); pink = pink - np.convolve(pink, np.ones(2400) / 2400, 'same'); pink /= (np.abs(pink).max() + 1e-9)   # soft low rumble
+    y = y + pink * 10 ** (tone_db / 20) * 3 + rng.standard_normal(len(y)) * 10 ** ((tone_db - 8) / 20)
+    pk = np.abs(y).max(); y = y / pk * min(pk, 0.92) if pk > 0.92 else y
+    with wave.open(path, 'wb') as o: o.setnchannels(1); o.setsampwidth(2); o.setframerate(sr); o.writeframes((y * 32767).astype('<i2').tobytes())
+
 def soften_caps(t):
     # Keep emphasis (the model hears the energy) but avoid spelling out ALL CAPS letter by letter.
     return re.sub(r"\b([A-Z]{3,})\b", lambda m: m.group(1).capitalize(), t)
@@ -142,7 +160,7 @@ def main(path):
     model = ChatterboxTTS.from_pretrained(device=dev); sr = model.sr
     ml = None   # the multilingual model is loaded only if a row has a "lang" (like "ar")
     for row in json.load(open(path)):
-        who = row.get('voice', row['who']).upper(); st = style_for(who, row['text'], row.get('emo', 'neutral'), row.get('pace'), row.get('tone'), row.get('energy'), row.get('style'), {k: row.get(k) for k in ('speed_mul', 'pitch_add', 'exag_add', 'cfg_add', 'pause_scale', 'eq')})
+        who = row.get('voice', row['who']).upper(); st = style_for(who, row['text'], row.get('emo', 'neutral'), row.get('pace'), row.get('tone'), row.get('energy'), row.get('style'), {k: row.get(k) for k in ('speed_mul', 'pitch_add', 'exag_add', 'cfg_add', 'pause_scale', 'eq', 'joint', 'temperature', 'room')})
         if row.get('ref'): st['ref'] = row['ref']   # a row can point at any voice sample file (used to audition voices)
         cur_sr = sr
         if row.get('lang') and row['lang'] != 'en':
@@ -162,15 +180,16 @@ def main(path):
             pf = 2 ** (st['pitch'] / 12.0); tempo = st['speed'] / pf
             af = f"asetrate={int(cur_sr * pf)},aresample=44100,atempo={max(0.5, min(2.0, tempo)):.4f},highpass=f=70" + ("," + st["eq"] if st.get("eq") else "") + ",loudnorm=I=-18:TP=-2"
             subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-af', af, '-ar', '44100', '-ac', '1', row['out']], check=True); os.remove(raw)
+            if st.get('room'): add_room(row['out'], st['room'])
             print('made', who, row.get('emo', 'neutral'), row['lang'], f"best={best[0]:.2f}", '->', row['out'], flush=True)
             continue
         parts = []; rates = []
-        for sent, pause in pieces(row['text']):
+        for sent, pause in (pieces(row['text']) if not st.get('joint') else [(re.sub(r'\s+', ' ', row['text'].strip()), 0.0)]):
             e = st['exag'] + (0.02 if sent.endswith('!') else 0)
             n_words = max(1, len(sent.split())); max_dur = 1.2 + 0.7 * n_words          # a sentence can never take longer than this
             cfg = st['cfg']
             for attempt in range(4):                                                        # the model sometimes rambles: retry calmer, then cut
-                wav = model.generate(soften_caps(sent), audio_prompt_path=st['ref'], exaggeration=min(0.75, e), cfg_weight=cfg).squeeze(0)
+                wav = model.generate(soften_caps(sent), audio_prompt_path=st['ref'], exaggeration=min(0.75, e), cfg_weight=cfg, temperature=st.get('temperature', 0.8)).squeeze(0)
                 ok = wav.shape[0] / sr <= max_dur
                 if ok:
                     sc, wps = clarity(wav, sr, sent)
@@ -189,6 +208,7 @@ def main(path):
         pf = 2 ** (st['pitch'] / 12.0); tempo = st['speed'] * gov / pf
         af = f"asetrate={int(sr * pf)},aresample=44100,atempo={max(0.5, min(2.0, tempo)):.4f},highpass=f=70" + ("," + st["eq"] if st.get("eq") else "") + ",loudnorm=I=-18:TP=-2"
         subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-af', af, '-ar', '44100', '-ac', '1', row['out']], check=True); os.remove(raw)
+        if st.get('room'): add_room(row['out'], st['room'])
         print('made', who, row.get('emo', 'neutral'), f"exag={st['exag']:.2f} speed={st['speed']:.2f} pitch={st['pitch']:+.1f}", '->', row['out'], flush=True)
 
 if __name__ == '__main__': main(sys.argv[1])

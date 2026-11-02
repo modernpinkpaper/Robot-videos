@@ -51,9 +51,10 @@ if '--notts' not in sys.argv:
             if lang == 'ar' and AR_TEMPO != 1.0:
                 tmp = p.replace('.wav', '_fast.wav'); subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', p, '-af', f'atempo={AR_TEMPO}', '-ar', str(SR), '-ac', '1', tmp], check=True); x = read_wav(tmp)
             else: x = read_wav(p)
-            idx = np.where(np.abs(x) > 0.01)[0]; x = x[idx[0]:idx[-1] + 1] if len(idx) else x
-            if k: chunks.append(sil(0.14 if 'ar' in (lang, langs[k - 1]) else 0.1))
-            chunks.append(x)
+            idx = np.where(np.abs(x) > 0.01)[0]; x = x[max(0, idx[0] - int(0.05 * SR)):] if len(idx) else x   # trim only the start; keep the soft natural decay at the end (cutting it sounds like a hard stop)
+            if k:   # the end of each piece already decays naturally, so only a tiny gap (a bit more around Arabic words), and a short crossfade so nothing clicks
+                gap = int((0.05 if 'ar' in (lang, langs[k - 1]) else 0.02) * SR); chunks.append(sil(gap / SR))
+            fade = int(0.012 * SR); x = x.copy(); x[:fade] *= np.linspace(0, 1, fade); chunks.append(x)
         y = np.concatenate(chunks); y = y / max(1.0, np.abs(y).max() / 0.95)
         with wave.open(fin, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((y * 32767).astype('<i2').tobytes())
 def load(i):
