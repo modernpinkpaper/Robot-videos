@@ -170,10 +170,26 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
       if (st === 'bangs') hb(rx * 1.7, 0.34, 0.55, 0, ry * 0.76, rz * 0.7, 0.16);
     }
     else if (st === 'long') {
-      cap(); if (O.hairFlow) { const bk = hb(rx * 2.0, 3.5, 1.3, 0, -1.25, -rz * 0.62, 0.62); bk.scale.set(1, 1, 1); } else hb(rx * 2.15, 3.3, 0.9, 0, -1.4, -rz * 0.7, 0.45);
+      cap();
+      if (O.hairFlow) {   // option: the hair also wraps the sides and back of the head, stopping just in front of the ears (the ears stay visible), so no bare head shows beside the ears
+        {   // one smooth hair surface over the sides and back of the head. Its front edge sweeps in a curve: far forward at the forehead (b = 56 deg), back to just in front of the ear (b = 10 deg).
+          const R = 44, C = 90, hn = HD.n, pos = [], idx = [], sm = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+          for (let r = 0; r < R; r++) {
+            const u = r / (R - 1), th = (30 + u * 78) * D2R, b = lerp(58, 10, sm((u - 0.05) / 0.9)) * D2R, p0 = Math.PI - b, p1 = 2 * Math.PI + b;
+            for (let c = 0; c < C; c++) {
+              const ph = lerp(p0, p1, c / (C - 1)), x = -Math.cos(ph) * Math.sin(th), y = Math.cos(th), z = Math.sin(ph) * Math.sin(th), k = 1 / Math.pow(Math.pow(Math.abs(x), hn) + Math.pow(Math.abs(y), hn) + Math.pow(Math.abs(z), hn), 1 / hn);
+              pos.push(x * k * rx * 1.075, y * k * ry * 1.075, z * k * rz * 1.075);
+            }
+          }
+          for (let r = 0; r < R - 1; r++) for (let c = 0; c < C - 1; c++) { const a0 = r * C + c, b0 = a0 + 1, c0 = a0 + C, d0 = c0 + 1; idx.push(a0, c0, b0, b0, c0, d0); }
+          const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+          const pm = hmat.clone(); pm.side = THREE.DoubleSide; const patch = new THREE.Mesh(g, pm); patch.castShadow = true; head.add(patch);
+        }
+      }
+      if (O.hairFlow) { const bk = hb(rx * 2.0, 3.5, 1.3, 0, -1.25, -rz * 0.62, 0.62); bk.scale.set(1, 1, 1); } else hb(rx * 2.15, 3.3, 0.9, 0, -1.4, -rz * 0.7, 0.45);
       for (const s of [-1, 1]) {
         if (O.hairFlow) {   // option: ONE continuous curtain of hair per side. It starts inside the cap, hugs the side of the head, then falls straight down (no separate pieces, no ponytail look).
-          const R = 46, C = 18, y0 = ry * 0.82, yb = -2.35, zf = 0.62, zb = -rz * 0.8, hn = HD.n, pos = [], idx = [], sm = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+          const R = 46, C = 18, y0 = ry * 0.5, yb = -2.35, zf = -0.02, zb = -rz * 0.8, hn = HD.n, pos = [], idx = [], sm = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
           const xh = (y, z) => rx * Math.pow(Math.max(0.0001, 1 - Math.pow(Math.abs(y / ry), hn) - Math.pow(Math.abs(z / rz), hn)), 1 / hn);
           for (let r = 0; r < R; r++) {
             const u = r / (R - 1), y = lerp(y0, yb, u), yy = Math.max(y, -ry * 0.55), off = 0.5 * sm((y0 - y) / 0.9) + 0.04, zc = (zf + zb) / 2, sh = u > 0.82 ? Math.sqrt(Math.max(0.02, 1 - Math.pow((u - 0.82) / 0.18, 2))) : 1;
