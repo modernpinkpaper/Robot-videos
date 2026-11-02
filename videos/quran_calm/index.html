@@ -53,6 +53,8 @@ import { RoundedBoxGeometry } from '../../characters/RoundedBoxGeometry.js';
 import { createRobotKit } from '../../characters/robots.js';
 import { createExpressiveKit } from '../../characters/expressive/body.js';
 import { createActorKit } from '../../characters/expressive/actor.js';
+import { autoListener, autoSpeaker, applyCues } from '../../characters/expressive/behavior.js';
+import { CUES } from './perform.js';
 import { buildSets } from './sets.js';
 import { LIGHTS, WARM_POS, SC, CAMS } from './shots.js';
 import { CARDS } from './cards.js';
@@ -90,10 +92,10 @@ function setLight(name, shadow) {
 }
 const kit = createRobotKit(THREE, RoundedBoxGeometry), xk = createExpressiveKit(THREE, RoundedBoxGeometry, kit), ak = createActorKit(THREE, xk);
 const sets = buildSets(THREE, kit, scene, RoundedBoxGeometry);
-const SET_NAMES = ['room', 'bed', 'park', 'mat'];
-const actors = { DALIA: ak.mkActor('dalia', { parent: scene }), AMINA: ak.mkActor('amina', { parent: scene }) };
+const SET_NAMES = ['room', 'bed', 'park', 'mat', 'store'];
+const actors = { DALIA: ak.mkActor('dalia', { parent: scene }), AMINA: ak.mkActor('amina', { parent: scene }), NINA: ak.mkActor('nina', { parent: scene }), MARA: ak.mkActor('mara', { parent: scene }) };
 actors.DALIA.idx = 0; actors.AMINA.idx = 1; for (const k in actors) actors[k].g.visible = false;
-const ACC = { DALIA: '#3c4f9a', AMINA: '#a06cc8' }, NAMES = { DALIA: 'Dalia', AMINA: 'Amina' };
+const ACC = { DALIA: '#3c4f9a', AMINA: '#a06cc8', NINA: '#e08fb0', MARA: '#4a8f86' }, NAMES = { DALIA: 'Dalia', AMINA: 'Amina', NINA: 'Nina', MARA: 'Mara' };
 
 function evalKf(spec, lt) {
   const n = a => ({ t: a[0], x: a[1], z: a[2], y: a[3] || 0, ry: a[4] !== undefined ? a[4] : spec.ry });
@@ -111,24 +113,40 @@ function evalKf(spec, lt) {
   const l = kf[kf.length - 1]; return { x: l.x, z: l.z, y: l.y, ry: l.ry, walk: false };
 }
 const lineAt = (t, si) => TL.lines.find(l => l.scene === si && t >= l.v0 - 0.05 && t <= l.v1 + 0.12);
-function poseActors(def, S, si, t) {
+// The state of every character at time t (face, pose, nods, leans...). Built in layers, like a person:
+//   1) base: the line's emotion when speaking, the scene's posture (Dalia's slump)   2) automatic listening (nods, tilts, leans, look at the speaker)   3) hand-written beats (perform.js)
+const autoCache = {};
+function statesAt(def, S, si, t) {
   const lt = t - S.start, lines = S.lines.map(i => TL.lines[i]);
-  const c = { L: i => lines[i].v0 - S.start, E: S.end - S.start, line: lineAt(t, si) };
-  for (const k in actors) actors[k].g.visible = false;
+  const c = { L: i => lines[i].v0 - S.start, LE: i => lines[i].v1 - S.start, E: S.end - S.start, line: lineAt(t, si) };
+  const out = {};
   for (const who of Object.keys(def.cast)) {
-    const spec = def.cast[who], b = actors[who]; b.g.visible = true;
-    const p = evalKf(typeof spec.kf === 'function' ? Object.assign({}, spec, { kf: spec.kf(c) }) : spec, lt), patch = def.act ? (def.act(who, lt, c) || {}) : {};
+    const spec = def.cast[who], p = evalKf(typeof spec.kf === 'function' ? Object.assign({}, spec, { kf: spec.kf(c) }) : spec, lt);
     const speaking = !!(c.line && c.line.who === who);
     let amp = 0; if (speaking) { const e = c.line.env, ix = Math.floor((t - c.line.start) * 48); amp = e[clamp(ix, 0, e.length - 1)] ?? 0; }
-    let emo = patch.emo || spec.emo || 'neutral';
-    if (speaking && !patch.emo) emo = c.line.emo;
-    b.g.position.set(p.x, p.y, p.z); b.g.rotation.y = p.ry;
-    const st = { speaking, amp, emo, walk: p.walk, sit: !!spec.sit && !p.walk };
-    for (const k of ['look', 'nod', 'pose', 'act', 'actU', 'turn']) if (patch[k] !== undefined) st[k] = patch[k];
-    if (st.actU !== undefined) st.actU = clamp(st.actU);
+    let base = { emo: speaking ? c.line.emo : (spec.emo || 'neutral'), slump: def.posture?.[who] || 0 };
+    if (speaking) { const key = 'S' + si + who; const as = autoCache[key] || (autoCache[key] = autoSpeaker(lines, who, { side: def.side?.[who] ?? 1 })); Object.assign(base, as(t)); }   // 2a) automatic speaker movement
+    if (!speaking && lines.some(l => l.who !== who)) {   // 2b) automatic listening
+      const key = si + who; const al = autoCache[key] || (autoCache[key] = autoListener(lines, who, { side: def.side?.[who] ?? 1 }));
+      const a = al(t); if (a.look) base.look = a.look; for (const k of ['nod', 'tilt', 'lean']) if (a[k] !== undefined) base[k] = a[k]; if (a.smile) base.emo = 'happy';
+    }
+    const st = applyCues(base, CUES[S.id], who, lt, c);   // 3) hand-written beats
+    out[who] = Object.assign({ speaking, amp, walk: p.walk, sit: !!spec.sit && !p.walk, pos: p }, st);
+    if (out[who].actU !== undefined) out[who].actU = clamp(out[who].actU);
+  }
+  return out;
+}
+function poseActors(def, S, si, t) {
+  const states = statesAt(def, S, si, t);
+  for (const k in actors) actors[k].g.visible = false;
+  for (const who of Object.keys(states)) {
+    const b = actors[who], { pos, ...st } = states[who]; b.g.visible = true; b.g.position.set(pos.x, pos.y, pos.z); b.g.rotation.y = pos.ry;
     ak.animateActor(b, t, st);
   }
 }
+// for the movement report (tools/movement_report.py): the states at time t without drawing
+window.TOTAL_FOR_REPORT = TOTAL;
+window.statesAt = t => { t = clamp(t, 0, TOTAL - 1e-3); let si = TL.scenes.findIndex(s => t >= s.start && t < s.end); if (si < 0) si = TL.scenes.length - 1; const S = TL.scenes[si], o = statesAt(SC[S.id], S, si, t), r = {}; for (const w in o) { const { pos, ...st } = o[w]; r[w] = { speaking: st.speaking, emo: JSON.stringify(st.emo), pose: JSON.stringify(st.pose || 'idle'), nod: +(st.nod || 0).toFixed(3), tilt: +(st.tilt || 0).toFixed(3), lean: +(st.lean || 0).toFixed(3), slump: +(st.slump || 0).toFixed(3), turn: +(st.turn || 0).toFixed(3), act: st.act || '', look: st.look || null }; } return { scene: S.id, chars: r }; };
 function showSets(name) { for (const n of SET_NAMES) sets[n].g.visible = n === name; }
 
 const lerp3 = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
@@ -168,11 +186,11 @@ window.renderFrame = t => {
   const cdv = S.cards.find(c => t >= c.t0 && t < c.t1), card = $('card');
   if (cdv) { if (lastCard !== cdv.id) { $('cardin').innerHTML = CARDS[cdv.id]; lastCard = cdv.id; } const u = clamp((t - cdv.t0) / 0.4), o = clamp((cdv.t1 - t) / 0.25); card.style.opacity = Math.min(u > 0 ? 1 : 0, o).toFixed(2); card.style.transform = `scale(${(0.6 + 0.4 * backOut(u)).toFixed(3)}) translateY(${(Math.sin(t * 2) * 2).toFixed(1)}px)`; } else { card.style.opacity = 0; }
     // promise header: big in the first seconds (the whole pitch on frame 0), then a slim but READABLE bar that stays; the chip of the current habit lights up
-  { const k = clamp((t - 7.5) / 0.5), box = $('hbox'), chips = [...$('hchips').children], mix = (a, b) => (a + (b - a) * k).toFixed(1);
+  { const bigEnd = TL.lines[3].v0 - 0.1, k = clamp((t - bigEnd) / 0.5), box = $('hbox'), chips = [...$('hchips').children], mix = (a, b) => (a + (b - a) * k).toFixed(1);
     $('hbox').children[0].style.cssText = `opacity:${(1 - k).toFixed(2)};height:${mix(22, 0)}px;overflow:hidden`;
     $('hl2').style.fontSize = mix(44, 25) + 'px'; $('hl2').innerHTML = k > 0.5 ? '3 easy ways to <b>remember Allah</b>' : '3 easy ways to<br><b>remember Allah</b>';
     chips.forEach(c => { c.style.fontSize = mix(22, 15) + 'px'; c.style.padding = mix(7, 4) + 'px ' + mix(14, 10) + 'px'; }); $('hchips').style.marginTop = mix(8, 4) + 'px'; box.style.marginTop = mix(14, 8) + 'px'; box.style.padding = `${mix(10, 6)}px ${mix(22, 16)}px ${mix(12, 8)}px`;
-    const act = { act1: 0, act2: 1, act3: 2 }[S.id]; chips.forEach((c, i) => c.classList.toggle('on', (act === i) || (S.id === 'close' && t > S.start + 6) || (t < 7.5 && t > 3.0 + i * 0.9))); }
+    const act = { act1: 0, act2: 1, act3: 2 }[S.id]; const n1 = TL.lines[1].v1, cl = TL.lines.filter(l => l.scene === TL.scenes.findIndex(s => s.id === 'close')); chips.forEach((c, i) => c.classList.toggle('on', (act === i) || (S.id === 'close' && cl[1] && t > cl[1].v0 + 0.45 * i + 0.1) || (t < bigEnd && t > n1 - 1.75 + 0.55 * i))); }
   $('fade').style.opacity = clamp((t - (TOTAL - 0.8)) / 0.7).toFixed(3);
 };
 window.renderFrame(0.5); window.ready = true;

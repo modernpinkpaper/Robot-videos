@@ -21,76 +21,29 @@ export const HD = {
 };
 
 // where everybody stands. kf = [time-in-scene, x, z, y, ry]. sit = legs forward (on couch, chair, bed, mat).
+// posture = how heavy or light a character carries the body in this scene (slump: + = heavy, 0 = easy). Dalia starts heavy and ends light.
+// The acting itself (faces, hands, nods, leans) is in perform.js (hand-written beats) and characters/expressive/behavior.js (automatic listening).
+const DAL = (y = -0.02) => ({ kf: [[0, -2.4, -3.2, y, 0.75]], sit: 1 });
+const AMI = { kf: [[0, 5.0, -2.4, 0.8, -0.85]], sit: 1 };
 export const SC = {
-  open: { set: 'room', light: 'evening', shadow: 'room',
-    cast: { DALIA: { kf: [[0, -2.4, -3.2, -0.02, 0.75]], sit: 1, emo: 'sad' },
-            AMINA: { kf: [[0, 5.6, -0.6, 0, -1.2]], emo: 'worried' } },
-    act: (w, lt, c) => {
-      const k = c.line ? c.line.li : -1;
-      if (w === 'DALIA') { if (lt < c.L(1)) return { emo: 'sad', look: [0.2, -0.3] }; if (k === 1 || (k < 0 && lt < c.L(2))) return { emo: ['sad', 'relieved', Math.min(1, (lt - c.L(1)) / 1.6)], look: [0.5, 0.1] }; if (k === 2) return { emo: 'thinking', look: [0.6, 0.2] }; return { emo: ['thinking', 'happy', Math.min(1, (lt - c.L(3)) / 1.4)], look: [0.6, 0.15] }; }
-      if (w === 'AMINA') { if (lt < c.L(1)) return { emo: 'worried', look: [-0.4, 0] }; return {}; } } },
-
-  verse: { set: 'room', light: 'evening', shadow: 'room',
-    cast: { DALIA: { kf: [[0, -2.4, -3.2, -0.02, 0.75]], sit: 1, emo: 'thinking' }, AMINA: { kf: [[0, 5.0, -2.4, 0.8, -0.85]], sit: 1, emo: 'sweet' } },
-    act: (w, lt, c) => {
-      const k = c.line ? c.line.li : -1;
-      if (w === 'DALIA') { if (k === 3) return { emo: ['sad', 'relieved', Math.min(1, (lt - c.L(3)) / 1.4)] }; if (k === 2) return { emo: 'relieved', act: 'nod', actU: ((lt - c.L(2) - 1.6) / 1.2) }; return { emo: 'thinking', look: [0.6, 0.1] }; }
-      return {}; } },
-
-  words: { set: 'room', light: 'evening', shadow: 'room',
-    cast: { DALIA: { kf: [[0, -2.4, -3.2, -0.02, 0.75]], sit: 1, emo: 'thinking' }, AMINA: { kf: [[0, 5.0, -2.4, 0.8, -0.85]], sit: 1, emo: 'sweet' } },
-    act: (w, lt, c) => {
-      const k = c.line ? c.line.li : -1;
-      if (w === 'DALIA') { if (k === 4) return { emo: ['thinking', 'happy', Math.min(1, (lt - c.L(4)) / 0.6)] }; if (k === 5) return { emo: 'happy', act: 'nod', actU: (lt - c.L(5) - 1.6) / 1.0 }; if (k === 6) return { emo: 'surprised', look: [0.6, 0] }; return { emo: 'thinking', look: [0.6, 0.15] }; }
-      if (w === 'AMINA') { if (k === 5) return { emo: 'laugh', act: 'laugh', actU: (lt - c.L(5)) / 1.6 }; if (k === 6) return { emo: 'sweet', pose: ['idle', 'point', 0.6] }; return {}; } } },
-
-  habit: { set: 'room', light: 'evening', shadow: 'room',
-    cast: { DALIA: { kf: [[0, -2.4, -3.2, -0.02, 0.75]], sit: 1, emo: 'thinking' }, AMINA: { kf: [[0, 5.0, -2.4, 0.8, -0.85]], sit: 1, emo: 'sweet' } },
-    act: (w, lt, c) => {
-      const k = c.line ? c.line.li : -1;
-      if (w === 'DALIA') { if (k === 0) return { emo: ['worried', 'embarrassed', Math.min(1, (lt - c.L(0)) / 1.5)] }; if (k === 3) return { emo: ['thinking', 'happy', Math.min(1, (lt - c.L(3)) / 0.8)], act: 'nod', actU: (lt - c.L(3) - 3.0) / 1.0 }; if (k >= 4) return { emo: 'relieved', look: [0.6, 0.1] }; return { emo: 'embarrassed', look: [0.6, -0.1] }; }
-      if (w === 'AMINA') { if (k === 0) return { emo: 'sweet', look: [-0.5, 0] }; if (k === 1) return { emo: 'sweet', pose: ['idle', 'think', 0] }; return {}; } } },
-
-  how: { set: 'room', light: 'evening', shadow: 'room',
-    cast: { DALIA: { kf: [[0, -2.4, -3.2, -0.02, 0.75]], sit: 1, emo: 'thinking' }, AMINA: { kf: [[0, 5.0, -2.4, 0.8, -0.85]], sit: 1, emo: 'sweet' } },
-    act: (w, lt, c) => {
-      const k = c.line ? c.line.li : -1;
-      if (w === 'DALIA') return k === 1 ? { emo: 'thinking', look: [0.6, 0.1] } : { emo: 'thinking', look: [0.5, 0.1] };
-      return {}; } },
-
-  act1: { set: 'bed', light: 'morning', shadow: 'room',
-    cast: { DALIA: { kf: [[0, 0, -5.6, 0.68, 0.0]], sit: 1, emo: 'sleepy' } },
-    act: (w, lt, c) => {
-      const k = c.line ? c.line.li : -1;
-      if (k === 0 && lt < c.L(0) + 2.2) return { emo: 'sleepy', look: [0.9, -0.5] };       // staring at the phone on the nightstand
-      if (k === 0) return { emo: 'sleepy', look: [0, 0] };                                  // the pause
-      if (k === 1) return { emo: ['sleepy', 'relieved', Math.min(1, (lt - c.L(1)) / 1.4)], look: [0, 0.1] };
-      if (k === 2) return { emo: 'laugh' };
-      return { emo: 'relieved' }; } },
-
-  act2: { set: 'park', light: 'day', shadow: 'wide',
-    cast: { DALIA: { kf: [[0, 0, -12, 0, 0], [3.6, 0, 3.5, 0, 0]], emo: 'neutral' } },
-    act: (w, lt, c) => {
-      const k = c.line ? c.line.li : -1;
-      if (lt < c.L(1) - 0.2) return { emo: 'neutral' };                                      // walking, eyes on her feet
-      const up = Math.min(1, (lt - c.L(1) + 0.2) / 1.2);
-      return { emo: ['neutral', k === 2 ? 'happy' : 'surprised', up], look: [0, 0.9 * up], nod: -0.32 * up }; } },
-
-  act3: { set: 'mat', light: 'calm', shadow: 'room',
-    cast: { DALIA: { kf: [[0, 0, -2.2, -1.52, 0]], sit: 1, emo: 'neutral' } },
-    act: (w, lt, c) => {
-      const k = c.line ? c.line.li : -1;
-      if (k === 2) return { emo: 'worried', look: [0, -0.2] };
-      if (k === 3) return { emo: ['worried', 'relieved', Math.min(1, (lt - c.L(3)) / 1.0)] };
-      if (k === 1) return { emo: 'relieved', nod: 0.08 };
-      return { emo: 'neutral', nod: 0.06 }; } },
-
-  close: { set: 'room', light: 'evening', shadow: 'room',
-    cast: { DALIA: { kf: [[0, -2.4, -3.2, -0.02, 0.75]], sit: 1, emo: 'happy' }, AMINA: { kf: [[0, 5.0, -2.4, 0.8, -0.85]], sit: 1, emo: 'sweet' } },
-    act: (w, lt, c) => {
-      const k = c.line ? c.line.li : -1;
-      if (w === 'DALIA') { if (k === 2) return { emo: ['relieved', 'happy', Math.min(1, (lt - c.L(2)) / 0.8)], look: [0.5, 0] }; if (k === 1) return { emo: 'relieved', look: [0.6, 0.1], act: 'nod', actU: (lt - c.L(1) - 3.4) / 1.0 }; return { emo: 'happy' }; }
-      if (w === 'AMINA') { if (k === 2) return { emo: 'proud', look: [-0.5, 0] }; return {}; } } },
+  open:  { set: 'room', light: 'evening', shadow: 'room', side: { DALIA: 1, AMINA: -1 }, posture: { DALIA: 0.16 },
+           cast: { DALIA: Object.assign(DAL(), { emo: 'sad' }), AMINA: { kf: [[0, 5.6, -0.6, 0, -1.2]], emo: 'worried' } } },
+  verse: { set: 'room', light: 'evening', shadow: 'room', side: { DALIA: 1, AMINA: -1 }, posture: { DALIA: 0.12 },
+           cast: { DALIA: Object.assign(DAL(), { emo: 'thinking' }), AMINA: Object.assign({}, AMI, { emo: 'sweet' }) } },
+  words: { set: 'room', light: 'evening', shadow: 'room', side: { DALIA: 1, AMINA: -1 }, posture: { DALIA: 0.05 },
+           cast: { DALIA: Object.assign(DAL(), { emo: 'thinking' }), AMINA: Object.assign({}, AMI, { emo: 'sweet' }) } },
+  store: { set: 'store', light: 'day', shadow: 'room', side: { NINA: 1, MARA: -1 },
+           cast: { NINA: { kf: [[0, -1.5, 2.0, 0, 0.3], [3.2, -1.5, 2.0, 0, 0.3], [4.0, 1.4, 2.1, 0, 0.9]], emo: 'worried' }, MARA: { kf: [[0, 15, 2.0, 0, -1.57], [2.4, 15, 2.0, 0, -1.57], [3.4, 3.6, 2.1, 0, -1.4]], emo: 'happy' } } },
+  habit: { set: 'room', light: 'evening', shadow: 'room', side: { DALIA: 1, AMINA: -1 }, posture: { DALIA: 0.09 },
+           cast: { DALIA: Object.assign(DAL(), { emo: 'embarrassed' }), AMINA: Object.assign({}, AMI, { emo: 'sweet' }) } },
+  act1:  { set: 'bed', light: 'morning', shadow: 'room', posture: { DALIA: 0.07 },
+           cast: { DALIA: { kf: [[0, 0, -5.6, 0.68, 0.0]], sit: 1, emo: 'sleepy' } } },
+  act2:  { set: 'park', light: 'day', shadow: 'wide', posture: { DALIA: 0.0 },
+           cast: { DALIA: { kf: [[0, 0, -12, 0, 0], [3.8, 0, 3.5, 0, 0]], emo: 'neutral' } } },
+  act3:  { set: 'mat', light: 'calm', shadow: 'room', posture: { DALIA: 0.04 },
+           cast: { DALIA: { kf: [[0, 0, -2.2, -1.52, 0]], sit: 1, emo: 'neutral' } } },
+  close: { set: 'room', light: 'evening', shadow: 'room', side: { DALIA: 1, AMINA: -1 }, posture: { DALIA: 0.0 },
+           cast: { DALIA: Object.assign(DAL(), { emo: 'happy' }), AMINA: Object.assign({}, AMI, { emo: 'sweet' }) } },
 };
 
 const D = HD.dalia, A = HD.amina, M = HD.mid, Bd = HD.bed, P = HD.park, Mt = HD.mat;
@@ -119,6 +72,11 @@ export const CAMS = {
   dollyZoom: K.dollyZoom(up(A, 0), 17, 40),
   craneRoom: K.crane(M, 22, 38, 20),
   finalPull: { p: [[-1, 6, 24], [4, 20, 52]], l: [M, [1.3, 6, -4]], f: [34, 44], ease: 'io' },
+  // ---- store (the lost kid)
+  storeWide: { p: [[0, 7, 30], [1, 6, 25]], l: [[0, 3.5, 2], [0, 3.5, 2]], f: [44, 40], ease: 'io', shake: 0.04 },
+  storeNina: K.closeUp([-1.5, 3.4, 2.0], 13),
+  storeMom: { p: [[9, 4.5, 20], [4.5, 4.2, 15]], l: [[7, 3.8, 2], [2.5, 3.8, 2]], f: [34, 30], ease: 'io' },
+  storeHug: K.zoomLens([1.4, 3.8, 2.1], 20, 14),
   // ---- bed
   bedPush: K.pushIn(Bd, 26, 20, { side: 3 }),
   bedPhone: { p: [[3.5, 6.4, 6.5], [6.4, 5.2, 4.2]], l: [[7.7, 3.6, -5], [7.7, 3.7, -5]], f: [34, 26], ease: 'io' },

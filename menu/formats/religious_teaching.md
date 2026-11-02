@@ -12,6 +12,14 @@ Use it when Dalia asks for a Quran lesson, a faith reminder or "religious teachi
 7. **Ask a person to check it.** After building, tell Dalia the Arabic and meanings should be checked by someone she trusts. We are not scholars.
 8. **No real family or kids' names on screen** (the character names are fine).
 
+## ANSWER FIRST (learned from Dalia's feedback on Heart Calm)
+- **Frame 0 carries the whole promise:** a header such as "3 EASY WAYS TO REMEMBER ALLAH" with the three short names (PAUSE, NOTICE, TALK). Many people watch muted, so the first caption is the pitch. The header stays as a slim, readable bar all video, and the chip of the habit being taught lights up.
+- **Say the number and the names in the first 8 seconds, THEN explain why** (the verse). Never hide the answer behind a question.
+- **One refrain** (say it 3 to 4 times): the core idea in one sentence ("Remember Allah, and your heart finds calm").
+- **Make the viewer take part:** "say it with me" for each Arabic word (the teacher says it, the learner repeats it), one slow "breathe with me" moment, a recall question near the end ("Can you name the three?") with a pause.
+- **Show, do not only tell:** a 3-second picture for the everyday example, and every habit acted out in its own scene.
+- Give each habit ONE short name and a trigger: "When I reach for my phone, I pause."
+
 ## The formula (from our hook research, see below)
 | Time | What | Why |
 |---|---|---|

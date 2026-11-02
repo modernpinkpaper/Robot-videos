@@ -20,10 +20,19 @@ def moments(D):
         out.append(((a + (b or a)) / 2, f"{l.get('who', '')} ({l.get('emo', '')}): {l.get('text', '')}"))
     return sorted(out)
 
-def main(video, tl, outp, cols=4, cap=16):
+def main(video, tl, outp, cols=4, cap=28):
     ms = moments(json.load(open(tl)))
     if not ms: raise SystemExit('no moments found in ' + tl)
-    if len(ms) > cap: ms = [ms[int(i * (len(ms) - 1) / (cap - 1))] for i in range(cap)]
+    D = json.load(open(tl))
+    if len(ms) > cap and D.get('scenes'):      # videos with scenes: EVERY scene gets at least its first and its last moment, then the rest is spread evenly (a plain even spread skipped whole scenes)
+        keep = set()
+        for sc in D['scenes']:
+            inside = [i for i, (t, _) in enumerate(ms) if sc['start'] <= t < sc['end']]
+            if inside: keep.add(inside[0]); keep.add(inside[-1])
+        rest = [i for i in range(len(ms)) if i not in keep]; room = max(0, cap - len(keep))
+        pick = {rest[int(i * (len(rest) - 1) / max(1, room - 1))] for i in range(room)} if rest and room else set()
+        ms = [ms[i] for i in sorted(keep | pick)]
+    elif len(ms) > cap: ms = [ms[int(i * (len(ms) - 1) / (cap - 1))] for i in range(cap)]
     tw = 216; font = ImageFont.load_default()
     for fp in ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'):
         if os.path.exists(fp): font = ImageFont.truetype(fp, 11); break

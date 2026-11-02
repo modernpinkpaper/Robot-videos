@@ -47,8 +47,8 @@ Each character has a voice. She can say "deeper", "kid voices", "make the cowork
 -1. Run the brief (`BRIEF.md`): confirm the 8 required things, save them as `videos/<name>/BRIEF.md`.
 0. Open `examples/INDEX.md`: find the reference video, camera reel and voice samples for the choices, and match them.
 1. Parse her request into cast + format + voices + topic (use defaults for what she did not say).
-2. Read the cast file, the format file, `characters/STYLE.md`, `camera/CAMERA.md`.
+2. Read the cast file, the format file, `characters/STYLE.md`, `camera/CAMERA.md`. **Any video with people also needs the human-behavior rules:** `menu/QUALITY.md` (the MUSTS), `formats/reaction/BEHAVIOR.md` and `formats/reaction/REACTOR_VOICE.md` (faces and moves must fit), and `characters/expressive/behavior.js` for automatic listening and speaking.
 3. Write the script as lines `(WHO, text, emotion, pause)` and a shot plan using the format file's shot recipe.
 4. Voices: use `formats/podcast/pod/voices_cfg.py` names (see `voices/VOICES.md`). Copy the pipeline from `videos/no_lies/` (plan.py, build_audio.py, index.html, shots.js, render.js).
-5. Render in the background, look at 4+ frames, tell her honestly what you checked and could not (audio).
+5. Render in the background, look at the fit sheet (it covers every scene), run `node tools/movement_report.js videos/<name>`, do the rule audit from `QUALITY.md` step 6, and tell her honestly what you checked and could not (audio, whether gestures fit).
 6. Put the new video in `videos/<short_name>/`. Do not touch other videos.

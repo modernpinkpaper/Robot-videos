@@ -45,7 +45,7 @@ STYLES = {
 # One reference voice per person (voices/refs/<name>.wav) plus a base pitch and pace so each sounds different.
 PEOPLE = {
     'DALIA':    dict(ref='dalia',    pitch=0.0,  speed=1.00),
-    'AMINA':    dict(ref='amina',    pitch=0.0,  speed=0.98),
+    'AMINA':    dict(ref='amina',    pitch=0.0,  speed=0.98, style='comforting'),   # sample = a natural voice (Kokoro af_heart, expressive reading), not Piper; style = clear but comforting
     'MARCUS':   dict(ref='marcus',   pitch=-1.0, speed=0.98),
     'LILY':     dict(ref='lily',     pitch=1.0,  speed=1.04),
     'SOFIA':    dict(ref='sofia',    pitch=0.0,  speed=1.02),

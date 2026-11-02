@@ -140,5 +140,24 @@ export function buildSets(THREE, kit, scene, RBG) {
     plant(g, -15, -6.5, 1.5); plant(g, 14, -6.8, 1.0);
     C(g, 0.9, 1.1, 0xf3d58a, 11.5, 0.55, -3, { r2: 0.7, seg: 10 }); C(g, 0.35, 0.6, 0xfff0c8, 11.5, 1.4, -3, { mat: glow(0xffe2a0, 0.9) });
   }
+
+  // ------------------------------------------------------------------ STORE (the lost kid finds her mom)
+  const store = grp(); sets.store = { g: store };
+  {
+    const g = store;
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(140, 90), mat(0xf4ead8, { roughness: 0.8 })); floor.rotation.x = -Math.PI / 2; floor.position.z = 10; floor.receiveShadow = true; g.add(floor);
+    for (let x = -60; x <= 60; x += 6) B(g, 0.12, 0.05, 90, 0xe8dcc4, x, 0.03, 10, { cast: false });                 // floor tiles
+    B(g, 60, 18, 0.6, 0xe6f0f8, 0, 9, -12, { cast: false }); B(g, 0.6, 18, 40, 0xdbe8f4, -30, 9, 6, { cast: false }); B(g, 0.6, 18, 40, 0xdbe8f4, 30, 9, 6, { cast: false });
+    const cols = [0xf08fae, 0x8fb8f0, 0xf3d58a, 0x8fd3a0, 0xc3a8f5, 0xffb98f, 0xffffff];
+    function shelf(x, z, w, ry = 0, tall = 11) {   // a tall shelf unit full of colorful boxes (no writing)
+      const u = new THREE.Group(); u.position.set(x, 0, z); u.rotation.y = ry; g.add(u);
+      B(u, w, tall, 2.6, 0xffffff, 0, tall / 2, 0, { round: 0.2 });
+      for (let r = 0; r < 4; r++) { B(u, w - 0.3, 0.3, 2.8, 0xd9cdb8, 0, 1.2 + r * 2.5, 0.05, { cast: false }); for (let k = 0; k < Math.floor(w / 1.4); k++) B(u, 1.1, 1.3 + rnd() * 0.5, 1.4, cols[(k + r * 3) % 7], -w / 2 + 1 + k * 1.4, 2.0 + r * 2.5, 0.9, { round: 0.12 }); }
+    }
+    shelf(-9, -9, 14); shelf(9, -9, 14); shelf(-22, -2, 16, Math.PI / 2); shelf(22, -2, 16, -Math.PI / 2);
+    for (const x of [-9, 0, 9]) B(g, 3.6, 0.5, 3.6, 0xfff0b8, x, 16.5, -2, { cast: false, mat: glow(0xfff0b8, 0.8) });            // ceiling lamps
+    // a basket and a few boxes on the floor
+    B(g, 2.6, 1.6, 1.8, 0xff9fb8, 6.5, 0.8, 5.5, { round: 0.3 }); B(g, 1.4, 1.4, 1.4, 0xf3d58a, -6, 0.7, 6, { round: 0.2, ry: 0.4 });
+  }
   return sets;
 }
