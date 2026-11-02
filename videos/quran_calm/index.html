@@ -12,7 +12,16 @@ canvas{display:block}
 #cap{bottom:84px;text-align:center;opacity:0}
 #cap .who{display:inline-block;font:800 20px/1 "Liberation Sans",Arial,sans-serif;color:#fff;padding:6px 14px;border-radius:14px 14px 0 0;letter-spacing:1px;text-transform:uppercase}
 #cap .txt{display:block;margin:0 22px;font:800 31px/1.2 "Liberation Sans",Arial,sans-serif;color:#fff;background:rgba(36,28,66,.86);padding:12px 18px 14px;border-radius:22px;box-shadow:0 6px 0 rgba(0,0,0,.18)}
-#card{top:58px;text-align:center;opacity:0}
+
+#hdr{top:0;text-align:center;opacity:1}
+#hdr .box{display:inline-block;margin-top:14px;padding:10px 22px 12px;border-radius:26px;background:rgba(255,248,240,.96);box-shadow:0 6px 0 rgba(160,108,200,.9);transform-origin:50% 0}
+#hdr .l1{font:900 20px/1.1 "Liberation Sans",Arial,sans-serif;letter-spacing:1.5px;color:#a06cc8}
+#hdr .l2{font:900 44px/1.02 "Liberation Sans",Arial,sans-serif;color:#2a2147;text-transform:uppercase}
+#hdr .l2 b{color:#ff6fae}
+#hdr .chips{margin-top:8px;display:flex;gap:8px;justify-content:center}
+#hdr .chip{font:900 22px/1 "Liberation Sans",Arial,sans-serif;padding:7px 14px;border-radius:16px;background:#efe6fa;color:#6a5a8a;letter-spacing:1px}
+#hdr .chip.on{background:#ff6fae;color:#fff;transform:scale(1.12)}
+#card{top:98px;text-align:center;opacity:0}
 #card .pill{display:inline-block;box-sizing:border-box;width:520px;padding:20px 24px 24px;border-radius:38px;background:rgba(255,248,240,.97);box-shadow:0 9px 0 rgba(160,108,200,.9),0 0 46px rgba(255,220,240,.65);color:#2a2147}
 .ref{font:800 17px/1 "Liberation Sans",Arial,sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:#a06cc8;margin-bottom:10px}
 .ar{direction:rtl;font-family:"AmiriQ","DejaVu Sans",serif;font-weight:400;font-size:44px;line-height:1.75;color:#1f3f55;margin:0 0 8px}
@@ -33,6 +42,7 @@ canvas{display:block}
 ol{margin:6px 0 10px;padding:0 0 0 38px;text-align:left;font:800 28px/1.4 "Liberation Sans",Arial,sans-serif;color:#2a2147}li::marker{color:#ff6fae;font-weight:900}
 </style></head><body><div id="wrap"><div id="cv"></div>
 <div class="ov" id="vig"></div><div class="ov" id="flash"></div>
+<div class="ov" id="hdr"><div class="box" id="hbox"><div class="l1">A QURAN LESSON · 2 MINUTES</div><div class="l2" id="hl2">3 easy ways to<br><b>remember Allah</b></div><div class="chips" id="hchips"><span class="chip">1 PAUSE</span><span class="chip">2 NOTICE</span><span class="chip">3 TALK</span></div></div></div>
 <div class="ov" id="card"><div class="pill" id="cardin"></div></div>
 <div class="ov" id="cap"><span class="who" id="capwho"></span><span class="txt" id="captxt"></span></div>
 <div class="ov" id="fade"></div></div>
@@ -157,6 +167,12 @@ window.renderFrame = t => {
   // info cards
   const cdv = S.cards.find(c => t >= c.t0 && t < c.t1), card = $('card');
   if (cdv) { if (lastCard !== cdv.id) { $('cardin').innerHTML = CARDS[cdv.id]; lastCard = cdv.id; } const u = clamp((t - cdv.t0) / 0.4), o = clamp((cdv.t1 - t) / 0.25); card.style.opacity = Math.min(u > 0 ? 1 : 0, o).toFixed(2); card.style.transform = `scale(${(0.6 + 0.4 * backOut(u)).toFixed(3)}) translateY(${(Math.sin(t * 2) * 2).toFixed(1)}px)`; } else { card.style.opacity = 0; }
+    // promise header: big in the first seconds (the whole pitch on frame 0), then a slim but READABLE bar that stays; the chip of the current habit lights up
+  { const k = clamp((t - 7.5) / 0.5), box = $('hbox'), chips = [...$('hchips').children], mix = (a, b) => (a + (b - a) * k).toFixed(1);
+    $('hbox').children[0].style.cssText = `opacity:${(1 - k).toFixed(2)};height:${mix(22, 0)}px;overflow:hidden`;
+    $('hl2').style.fontSize = mix(44, 25) + 'px'; $('hl2').innerHTML = k > 0.5 ? '3 easy ways to <b>remember Allah</b>' : '3 easy ways to<br><b>remember Allah</b>';
+    chips.forEach(c => { c.style.fontSize = mix(22, 15) + 'px'; c.style.padding = mix(7, 4) + 'px ' + mix(14, 10) + 'px'; }); $('hchips').style.marginTop = mix(8, 4) + 'px'; box.style.marginTop = mix(14, 8) + 'px'; box.style.padding = `${mix(10, 6)}px ${mix(22, 16)}px ${mix(12, 8)}px`;
+    const act = { act1: 0, act2: 1, act3: 2 }[S.id]; chips.forEach((c, i) => c.classList.toggle('on', (act === i) || (S.id === 'close' && t > S.start + 6) || (t < 7.5 && t > 3.0 + i * 0.9))); }
   $('fade').style.opacity = clamp((t - (TOTAL - 0.8)) / 0.7).toFixed(3);
 };
 window.renderFrame(0.5); window.ready = true;

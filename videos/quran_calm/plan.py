@@ -8,7 +8,7 @@ SCENES = [
    ('AMINA', "Your heart isn't broken. It's waiting for one thing.", 'sweet', 0.35),
    ('DALIA', 'Okay. What thing?', 'neutral', 0.45),
    ('AMINA', 'One verse. Three words. Three small habits.', 'sweet', 0.4)],
-  shots=[('daliaCu', 0), ('aminaCuS', 'L1'), ('daliaCu2', 'L2'), ('pushAminaS', 'L3')], cards=[('title', 'L3-0.1', 'E')]),
+  shots=[('daliaHook', 0), ('aminaCuS', 'L1'), ('daliaCu2', 'L2'), ('pushAminaS', 'L3')], cards=[('title', 'L3-0.1', 'E')]),
  dict(id='verse', set='room', pre=0.6, post=0.5, lines=[
    ('AMINA', "Surah Ar-Ra'd. Verse twenty-eight.", 'neutral', 0, '{ar:سُورَةُ الرَّعْدِ}. Verse twenty-eight.'),
    ('AMINA', 'Those who believe, and whose hearts find calm in remembering Allah.', 'sweet', 0.4),

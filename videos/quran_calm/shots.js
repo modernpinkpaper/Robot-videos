@@ -99,6 +99,7 @@ const AS = [5.6, 5.7, -0.6];   // Amina standing (opening scene)
 export const CAMS = {
   // ---- living room
   aerial: { p: [[-15, 32, 50], [-1.5, 9.5, 29]], l: [[0, 5, -3], [1, 5.6, -3]], f: [50, 40], ease: 'io' },
+  daliaHook: Object.assign(K.pushIn(up(D, 0.0), 24, 16), { ease: 'out' }),
   daliaCu: K.closeUp(up(D, 0.0), 17.5),
   twoShot: { p: [[1.3, 8.5, 36], [1.3, 7.6, 31]], l: [M, M], f: [36, 34], ease: 'io', shake: 0.03 },
   aminaCuS: K.closeUp(AS, 17.5),
