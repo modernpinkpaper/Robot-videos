@@ -33,7 +33,7 @@ export const SC = {
   words: { set: 'room', light: 'evening', shadow: 'room', side: { DALIA: 1, AMINA: -1 }, posture: { DALIA: 0.05 },
            cast: { DALIA: Object.assign(DAL(), { emo: 'thinking' }), AMINA: Object.assign({}, AMI, { emo: 'sweet' }) } },
   store: { set: 'store', light: 'day', shadow: 'room', side: { NINA: 1, MARA: -1 },
-           cast: { NINA: { kf: [[0, -1.5, 2.0, 0, 0.3], [3.2, -1.5, 2.0, 0, 0.3], [4.0, 1.4, 2.1, 0, 0.9]], emo: 'worried' }, MARA: { kf: [[0, 15, 2.0, 0, -1.57], [2.4, 15, 2.0, 0, -1.57], [3.4, 3.6, 2.1, 0, -1.4]], emo: 'happy' } } },
+           cast: { NINA: { kf: [[0, -1.5, 2.0, 0, 0.3], [3.2, -1.5, 2.0, 0, 0.3], [4.0, 1.4, 2.1, 0, 0.9]], emo: 'worried' }, MARA: { kf: [[0, 18, 2.0, 0, -1.57], [1.4, 18, 2.0, 0, -1.57], [3.4, 3.8, 2.1, 0, -1.4]], emo: 'happy' } } },
   habit: { set: 'room', light: 'evening', shadow: 'room', side: { DALIA: 1, AMINA: -1 }, posture: { DALIA: 0.09 },
            cast: { DALIA: Object.assign(DAL(), { emo: 'embarrassed' }), AMINA: Object.assign({}, AMI, { emo: 'sweet' }) } },
   act1:  { set: 'bed', light: 'morning', shadow: 'room', posture: { DALIA: 0.07 },
@@ -75,7 +75,7 @@ export const CAMS = {
   // ---- store (the lost kid)
   storeWide: { p: [[0, 7, 30], [1, 6, 25]], l: [[0, 3.5, 2], [0, 3.5, 2]], f: [44, 40], ease: 'io', shake: 0.04 },
   storeNina: K.closeUp([-1.5, 3.4, 2.0], 13),
-  storeMom: { p: [[9, 4.5, 20], [4.5, 4.2, 15]], l: [[7, 3.8, 2], [2.5, 3.8, 2]], f: [34, 30], ease: 'io' },
+  storeMom: { p: [[14, 4.5, 20], [7, 4.2, 16]], l: [[12, 4, 2], [5, 3.8, 2]], f: [38, 32], ease: 'io' },
   storeHug: K.zoomLens([1.4, 3.8, 2.1], 20, 14),
   // ---- bed
   bedPush: K.pushIn(Bd, 26, 20, { side: 3 }),

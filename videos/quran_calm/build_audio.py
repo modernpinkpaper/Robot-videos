@@ -33,7 +33,7 @@ if '--notts' not in sys.argv:
             segs = segments(say); parts = []
             for k, (lang, t) in enumerate(segs):
                 o = f'{WORK}/s{i:02d}_{k}.wav'; parts.append(o)
-                rows.append(dict(who=l[0], text=t, emo=l[2], out=o, **(dict(lang='ar', verify=t, tries=4) if lang == 'ar' else {})))
+                rows.append(dict(who=l[0], text=t, emo=l[2], out=o, **(dict(lang='ar', verify=t, tries=int(os.environ.get('AR_TRIES', '4'))) if lang == 'ar' else {})))
             joins.append((fin, parts, [lang for lang, _ in segs]))
         else: rows.append(dict(who=l[0], text=say, emo=l[2], out=fin))
     if rows: synth_lines(rows)

@@ -40,15 +40,15 @@ export const CUES = {
   words: [
     // say it with me: Amina says the word with open palms, Dalia repeats it with effort, Amina approves; the meaning gets a matching gesture
     { who: 'AMINA', t: ['L', 0, 0], until: ['LE', 0, 0], pose: 'open', face: 'sweet' },
-    { who: 'DALIA', t: ['L', 1, 0], d: 1.1, face: 'determined', nod: 0.1, lean: 0.04 },
+    { who: 'DALIA', t: ['L', 1, 0], d: 1.1, face: 'nervous smile', nod: 0.1, lean: 0.04 },
     { who: 'AMINA', t: ['L', 1, 0.5], d: 1.2, face: 'proud', act: 'nod' },
     { who: 'AMINA', t: ['L', 2, 0], d: 1.6, pose: 'think', face: 'sweet' },
     { who: 'AMINA', t: ['L', 3, 0], d: 1.5, pose: 'open', face: 'sweet' },
-    { who: 'DALIA', t: ['L', 4, 0], d: 1.1, face: 'determined', nod: 0.1, lean: 0.04 },
+    { who: 'DALIA', t: ['L', 4, 0], d: 1.1, face: 'nervous smile', nod: 0.1, lean: 0.04 },
     { who: 'AMINA', t: ['L', 4, 0.5], d: 1.2, face: 'proud', act: 'nod' },
     { who: 'AMINA', t: ['L', 5, 0], d: 1.6, pose: 'chest', face: 'sweet', tilt: 0.1 },
     { who: 'AMINA', t: ['L', 6, 0], d: 1.5, pose: 'open', face: 'sweet' },
-    { who: 'DALIA', t: ['L', 7, 0], d: 1.3, face: 'determined', nod: 0.1, lean: 0.04 },
+    { who: 'DALIA', t: ['L', 7, 0], d: 1.3, face: 'nervous smile', nod: 0.1, lean: 0.04 },
     { who: 'AMINA', t: ['L', 7, 0.6], d: 1.2, face: 'proud', act: 'nod' },
     // "Calm. Settled. Safe.": Amina's hands come together slowly; Dalia's shoulders drop
     { who: 'AMINA', t: ['L', 8, 0], until: ['LE', 8, 0.4], pose: 'lap', face: 'sweet', nod: 0.05 },
@@ -78,7 +78,7 @@ export const CUES = {
     { who: 'DALIA', t: ['L', 2, 2.7], d: 1.3, act: 'nod' },
     { who: 'AMINA', t: ['LE', 2, -2.0], d: 1.4, nod: 0.09, face: 'sweet' },
     { who: 'DALIA', t: ['LE', 2, -1.2], d: 1.6, face: 'in love', tilt: 0.1 },
-    { who: 'DALIA', t: ['L', 3, 0], d: 2.2, face: 'determined', pose: 'hips', lean: 0.05, slump: 0.0 },
+    { who: 'DALIA', t: ['L', 3, 0], d: 2.2, face: 'happy', pose: 'hips', lean: 0.05, tilt: 0.1, slump: 0.0 },
     { who: 'AMINA', t: ['L', 3, 0.4], d: 1.6, face: 'happy', act: 'nod' },
   ],
   act1: [

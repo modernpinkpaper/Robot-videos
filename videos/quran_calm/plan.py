@@ -33,7 +33,7 @@ SCENES = [
   cards=[('w_dhikr', 'L0+2.2', 'L3-0.2'), ('w_qulub', 'L3-0.1', 'L6-0.2'), ('w_tatmain', 'L6-0.1', 'L9-0.2')]),
  dict(id='store', set='store', vo=True, pre=0.4, post=0.9, lines=[
    ('AMINA', 'Exactly like that. The panic drops, and your whole body exhales.', 'sweet', 0.2)],
-  shots=[('storeWide', 0), ('storeNina', 0.9), ('storeMom', 2.4), ('storeHug', 3.4)], cards=[]),
+  shots=[('storeWide', 0), ('storeNina', 0.9), ('storeMom', 2.2), ('storeHug', 3.5)], cards=[]),
  dict(id='habit', set='room', pre=0.5, post=0.4, lines=[
    ('DALIA', "But I say Alhamdulillah all day. It's just habit.", 'worried', 0, "But I say {ar:الْحَمْدُ لِلَّهِ} all day. It's just habit."),
    ('AMINA', 'Habit is a good door. Remembering is walking through it.', 'sweet', 0.5),
