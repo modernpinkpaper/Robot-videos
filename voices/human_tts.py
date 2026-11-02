@@ -135,7 +135,7 @@ def ar_score(wav, sr, expected):
     except Exception as ex:
         print('  (no Arabic recogniser:', ex, ')', flush=True); return 0.5
 
-def trim_main_utterance(x, sr, lead=0.06, tail=0.12, fade=0.14):
+def trim_main_utterance(x, sr, lead=0.06, tail=0.20, fade=0.24):
     """The multilingual (Arabic) voice finishes the word and then keeps making a faint babble or hiss for 1 to 2 seconds. Keep only the real word(s):
     find the loud runs, take the loudest one, and keep a following run only if it is nearly as loud (a second word of the same phrase). Cut the rest and fade out softly."""
     import numpy as np

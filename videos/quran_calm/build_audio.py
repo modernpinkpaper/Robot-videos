@@ -47,13 +47,15 @@ if '--notts' not in sys.argv:
                 if all(os.path.exists(p) for p in parts): joins.append((f'{WORK}/l{i:02d}.wav', parts, [lang for lang, _ in segs]))
     AR_TEMPO = float(os.environ.get('AR_TEMPO', '1.3'))   # the Arabic words come out slowly; at 1.3x they stay just as clear (checked with speech recognition) and sound like normal speech
     for fin, parts, langs in joins:   # join the English and Arabic pieces of one line (a short natural pause around the Arabic)
-        sil = lambda sec: np.zeros(int(sec * SR), dtype=np.float32); chunks = []
+        sil = lambda sec: (np.random.default_rng(3).standard_normal(int(sec * SR)) * 10 ** (-58 / 20)).astype(np.float32); chunks = []   # a gap is quiet room sound, never digital silence
         for k, (p, lang) in enumerate(zip(parts, langs)):
             if lang == 'ar':
                 x = trim_main_utterance(read_wav(p), SR)   # keep the word, cut the faint babble the Arabic voice makes after it
                 tmp = p.replace('.wav', '_fast.wav')
                 with wave.open(tmp.replace('_fast', '_trim'), 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x * 32767).astype('<i2').tobytes())
+                add_room(tmp.replace('_fast', '_trim'), 0.13)   # the cut removed the word's natural tail: put a soft room decay back
                 if AR_TEMPO != 1.0: subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', tmp.replace('_fast', '_trim'), '-af', f'atempo={AR_TEMPO}', '-ar', str(SR), '-ac', '1', tmp], check=True); x = read_wav(tmp)
+                else: x = read_wav(tmp.replace('_fast', '_trim'))
             else: x = read_wav(p)
             idx = np.where(np.abs(x) > 0.01)[0]; x = x[max(0, idx[0] - int(0.05 * SR)):] if len(idx) else x   # trim only the start; English pieces keep their natural decay (cutting it sounds like a hard stop)
             if k:   # the end of each piece already decays naturally, so only a tiny gap (a bit more around Arabic words), and a short crossfade so nothing clicks
@@ -64,7 +66,7 @@ if '--notts' not in sys.argv:
 ROOM_FOR = {'DALIA': 0.10}   # Dalia's lines have pure digital silence between sentences (only Amina's style added room sound). Fill it with the same soft room, once.
 os.makedirs(WORK + '/raw', exist_ok=True)
 for i, (si, li, l) in enumerate(flat):
-    wet = ROOM_FOR.get(l[0]); say = l[4] if len(l) > 4 else l[1]
+    say = l[4] if len(l) > 4 else l[1]; wet = ROOM_FOR.get(l[0])   # Dalia's lines (her pieces carry no room sound); Amina's pieces already have it
     if not wet: continue
     fin = f'{WORK}/l{i:02d}.wav'
     if not AR.search(say):
