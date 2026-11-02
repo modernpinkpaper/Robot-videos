@@ -86,6 +86,8 @@ def style_for(who, text, emo='neutral', pace=None, tone=None, energy=None, style
     s['speed'] = (max(0.93, s['speed']) if pace is None else pace) * P['speed']   # never drag: slow lines still need to sound like a person talking
     s['pitch'] = s['pitch'] + P['pitch'] + (tone or 0)
     s['ref'] = os.path.join(REFS, P['ref'] + '.wav')
+    priv = os.path.join(REFS, 'private', P['ref'] + '.wav')   # a REAL person's voice sample lives in voices/refs/private/ (git-ignored: the repo is public) and overrides the public sample on this computer only
+    if os.path.exists(priv): s['ref'] = priv
     S = dict(STYLES.get(style or P.get('style') or '', {})); S.update({k: v for k, v in (knobs or {}).items() if v is not None})   # a line can override single knobs: speed_mul, pitch_add, exag_add, cfg_add, pause_scale, eq
     s['exag'] = max(0.3, min(0.75, s['exag'] + S.get('exag_add', 0))); s['cfg'] = max(0.2, s['cfg'] + S.get('cfg_add', 0))
     s['speed'] *= S.get('speed_mul', 1.0); s['pitch'] += S.get('pitch_add', 0); s['pause_scale'] = S.get('pause_scale', 1.0); s['eq'] = S.get('eq', ''); s['joint'] = S.get('joint', False); s['temperature'] = S.get('temperature', 0.8); s['room'] = S.get('room', 0.0)

@@ -64,3 +64,10 @@ Learned on Heart Calm. Do this whenever a voice sounds robotic or a new characte
 5. **Apply her pick:** copy the chosen sample to `voices/refs/<name>.wav`, set the style in `PEOPLE` (`human_tts.py`), remake that character's lines (delete their `work/l*.wav`, run `build_audio.py`), then run `python3 tools/audio_check.py videos/<name>` and ask Dalia to listen to the finished video.
 **Styles:** `comforting` (teacher or comforting voice), `natural` (normal conversation), `bright`. **Never** use a real person's voice without their permission.
 **Why the old voices were robotic:** (1) the sample was made by Piper, (2) sentences were made one by one and glued with dead silence, (3) no room sound, so every sentence stopped dead. All three are fixed (whole-line speech, room sound, natural samples).
+
+## A REAL person's voice (Dalia's own voice): keep it PRIVATE
+This repository is **public**. A recording of a real person's voice (and any sample made from it) must NEVER be committed: it is private (these recordings may talk about personal or medical things) and a public voice sample can be used by anyone to clone the voice.
+- Put the cleaned sample at `voices/refs/private/<name>.wav`. That folder is git-ignored. `human_tts.py` uses it automatically instead of `voices/refs/<name>.wav`, on this computer only. Without it (a fresh checkout) the public synthetic sample is used.
+- Clean the recording first (noise gets copied into the voice): `ffmpeg -i in.wav -af "highpass=f=70,afftdn=nr=18:nf=-38:tn=1,lowpass=f=11500,acompressor=threshold=0.08:ratio=2:attack=15:release=250:makeup=1.5,loudnorm=I=-20:TP=-2" -ar 24000 -ac 1 clean.wav`. Pick a calm or warm tone; avoid clips with background sound.
+- Check how close the clone is with Resemblyzer (a voice similarity score from 0 to 1, installed by `setup_natural_refs.sh`); a clone above about 0.75 against the real recordings sounds clearly like her. Always ask the person to listen.
+- Only with the person's own permission.
