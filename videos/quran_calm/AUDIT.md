@@ -20,6 +20,7 @@ YES = done and checked. NO = not met. CANNOT CHECK = the tools cannot tell, a pe
 | Fit sheet looked at | YES | `fit_sheet.jpg`, 28 moments, every scene. |
 | Quran only, no hadith; Arabic from a Quran text source | YES | Verses 13:28, 2:152 (first part) and 3:191 (part) copied from the Uthmani text (api.alquran.cloud). No hadith. |
 | Arabic pronounced correctly in the characters' voices | CANNOT CHECK | Speech-recognition scores of the best take per word: 0.86 to 1.00 (Ar-Ra'd 0.86, tatma'inn 0.91, the rest 1.00). I cannot hear it. A person who knows Arabic must listen. |
+| Audio check (`tools/audio_check.py`): no stray sound, no hard stops, no digital silence, levels within 4 dB | YES | Passes: loudest leftover after any last word is -49 dB (room sound is about -57 dB, speech about -25 dB); Dalia -22 dB and Amina -19 dB median. Found and fixed the faint babble the Arabic voice made after each word (1.3 to 2.3 s, reported by Dalia at 1:22), and the dead silence in Dalia's lines. |
 | Amina's voice is natural, comforting, no hard stops | CANNOT CHECK | Measured: sentence ends fade out over about 0.8 to 0.95 s, under 1% digital silence. How it sounds is for Dalia to judge. |
-| Length about 2 minutes | NO | 2:49. The slower, comforting voice and the added participation moments (breathe, say it with me, recall) cost time. |
+| Length about 2 minutes | NO | 2:43 (after removing the babble). The slower, comforting voice and the added participation moments (breathe, say it with me, recall) cost time. |
 | Is it funny, moving, does a gesture really fit the words | CANNOT CHECK | Only a person can tell. |
