@@ -154,7 +154,15 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
       cap(); hb(rx * 2.15, 2.3, 0.9, 0, -0.35, -rz * 0.7, 0.45); for (const s of [-1, 1]) hb(0.55, 1.75, 1.5, s * rx * 0.98, 0.0, -0.25);
       if (st === 'bangs') hb(rx * 1.7, 0.34, 0.55, 0, ry * 0.76, rz * 0.7, 0.16);
     }
-    else if (st === 'long') { cap(); hb(rx * 2.15, 3.3, 0.9, 0, -1.4, -rz * 0.7, 0.45); for (const s of [-1, 1]) hb(0.55, 2.5, 1.5, s * rx * 0.98, -0.6, -0.25); }
+    else if (st === 'long') {
+      cap(); hb(rx * 2.15, 3.3, 0.9, 0, -1.4, -rz * 0.7, 0.45);
+      for (const s of [-1, 1]) {
+        if (O.hairFlow) {   // option: the side hair flows down from the cap (no gap at the temples): tall soft locks that start up inside the cap and a blob that fills the temple
+          const lock = hb(0.62, 3.1, 1.55, s * rx * 0.95, -0.55, -0.3, 0.3); lock.rotation.z = -s * 0.04;
+          const t = ball(head, 0.5, hair, s * rx * 0.9, ry * 0.2, -0.3, { m: { roughness: 0.5 } }); t.scale.set(0.75, 1.9, 1.7);
+        } else hb(0.55, 2.5, 1.5, s * rx * 0.98, -0.6, -0.25);
+      }
+    }
     else if (st === 'ponytail') { cap(); const pt = box(head, 0.7, 2.0, 0.7, hair, 0, 0.2, -rz * 1.25, { round: 0.3 }); pt.rotation.x = 0.35; }
     else if (st === 'curly') { cap(1.05); for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; ball(head, 0.66, hair, Math.cos(a) * rx * 1.02, 0.35 + Math.sin(a) * ry * 0.8, -0.25, { m: { roughness: 0.5 } }); } }
     else if (st === 'pigtails') {   // center part, two low curly pigtails with little ties
@@ -305,7 +313,7 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     { name: 'hana', tags: 'Soft round face · black bob with bangs · small eyes · coral top', bio: 'Quiet and observant. Her one raised eyebrow says it all.', skin: '#f3d0b0', hair: '#15121a', hairStyle: 'bangs', top: '#ff9b7a', bottom: '#4a4466', eye: '#2a1c14',
       build: { w: 0.95, h: 0.98, leg: 1.0, arm: 0.95 }, head: { rx: 1.46, ry: 1.24, rz: 1.2, n: 2.4 },
       look: { eyeScale: 0.92, eyeGap: 1.02, noseSize: 0.65, lipColor: '#c0485f', browThick: 0.85 } },
-    { name: 'dalia', tags: 'Long straight dark hair, slicked back · big wide-set brown eyes · bold thick arched brows · big warm smile · beauty mark · navy ribbed top', bio: 'Big smile, bold brows, and a sharp eye for everything.', skin: '#dcaa82', hair: '#2a1a16', hairStyle: 'long', top: '#27356b', pattern: { type: 'ribs', color2: '#33427d' }, bottom: '#2f2a45', eye: '#3a2118', browColor: '#1f1410',
+    { name: 'dalia', tags: 'Long straight dark hair, slicked back · big wide-set brown eyes · bold thick arched brows · big warm smile · beauty mark · navy ribbed top', bio: 'Big smile, bold brows, and a sharp eye for everything.', skin: '#dcaa82', hair: '#2a1a16', hairStyle: 'long', hairFlow: true, top: '#27356b', pattern: { type: 'ribs', color2: '#33427d' }, bottom: '#2f2a45', eye: '#3a2118', browColor: '#1f1410',
       build: { w: 0.98, h: 1.0, leg: 1.05, arm: 0.98 }, head: { rx: 1.42, ry: 1.33, rz: 1.18, n: 2.6 },
       look: { lashes: 0.5, eyeScale: 1.1, eyeGap: 1.02, browThick: 1.45, noseSize: 1.12, lipColor: '#c4746f', mole: { x: -262, y: 262 } } },
     { name: 'nina', tags: 'Six years old · dark curly pigtails with pink ties · big brown eyes · rosy cheeks · cream flower dress with a white collar', bio: 'Six years old, full of questions, and never sits still.', skin: '#f0c9a6', hair: '#43291b', hairStyle: 'pigtails', top: '#f6efe2', pattern: { type: 'floral', color2: '#f0a9b4' }, dress: true, buttons: '#f4efe6', bottom: '#f4e8dc', shoe: '#7a5642', eye: '#3a2118', browColor: '#2a1a12', kid: true,
