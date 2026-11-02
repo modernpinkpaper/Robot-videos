@@ -115,12 +115,12 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     // torso: ONE soft egg, no neck
     const tmat = O.pattern ? new THREE.MeshStandardMaterial({ map: patternTex(O.pattern.type, O.top, O.pattern.color2), roughness: 0.6, metalness: 0.05 }) : mat(top, { roughness: 0.6 });
     const torso = new THREE.Mesh(egg(D.sx, D.sy, D.sz, { n: D.n, taper: D.taper }), tmat); torso.position.set(0, tc, 0); torso.castShadow = true; torso.receiveShadow = true; bodyG.add(torso);
-    if (O.neck) {   // a neck, and a regular round neckline (not a turtleneck): skin shows at the throat, with a thin trim around the opening
-      const chin = headY - HD.ry * B.head, nb = topY - 0.8, nh = chin + 0.35 - nb;
-      const neckM = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.68, nh, 28), mat(skin, { roughness: 0.6 })); neckM.position.set(0, nb + nh / 2, -0.04); neckM.castShadow = true; bodyG.add(neckM);
-      const zN = eggZ(0, topY - 0.55, D);
-      const rim = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), mat(hexn(O.neckRim || (O.pattern ? O.pattern.color2 : O.top)), { roughness: 0.6 })); rim.scale.set(0.74, 0.54, 0.15); rim.position.set(0, topY - 0.36, zN + 0.01); rim.rotation.x = -0.1; bodyG.add(rim);
-      const sc = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), mat(skin, { roughness: 0.6 })); sc.scale.set(0.62, 0.44, 0.16); sc.position.set(0, topY - 0.3, zN + 0.03); sc.rotation.x = -0.1; bodyG.add(sc);
+    if (O.neck) {   // a neck and a regular round neckline (not a turtleneck): skin shows at the throat, and a thin trim follows only the BOTTOM curve of the opening (a U), so it never looks like a ring around the neck
+      const chin = headY - HD.ry * B.head, nb = topY - 0.3, nh = chin + 0.3 - nb;
+      const neckM = new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.62, nh, 28), mat(skin, { roughness: 0.6 })); neckM.position.set(0, nb + nh / 2, -0.04); neckM.castShadow = true; bodyG.add(neckM);
+      const zN = eggZ(0, topY - 0.7, D), trim = mat(hexn(O.neckRim || (O.pattern ? O.pattern.color2 : O.top)), { roughness: 0.6 }); trim.side = THREE.DoubleSide;
+      const rim = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), trim); rim.scale.set(0.8, 0.62, 0.14); rim.position.set(0, topY - 0.1, zN + 0.02); rim.rotation.x = -0.42; bodyG.add(rim);
+      const sc = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), mat(skin, { roughness: 0.6 })); sc.scale.set(0.7, 0.55, 0.15); sc.position.set(0, topY - 0.08, zN + 0.04); sc.rotation.x = -0.42; sc.material.side = THREE.DoubleSide; bodyG.add(sc);
     }
     if (O.dress) {   // a flared skirt (same fabric as the top) and a small white collar
       const prof = [[0.0, 0.5], [1.15 * B.w, 0.25], [1.4 * B.w, -0.2], [1.72 * B.w, -0.95], [1.82 * B.w, -1.32], [1.74 * B.w, -1.45], [1.5 * B.w, -1.38]].map(([r, y]) => new THREE.Vector2(r, y));
@@ -325,8 +325,8 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     { name: 'hana', tags: 'Soft round face · black bob with bangs · small eyes · coral top', bio: 'Quiet and observant. Her one raised eyebrow says it all.', skin: '#f3d0b0', hair: '#15121a', hairStyle: 'bangs', top: '#ff9b7a', bottom: '#4a4466', eye: '#2a1c14',
       build: { w: 0.95, h: 0.98, leg: 1.0, arm: 0.95 }, head: { rx: 1.46, ry: 1.24, rz: 1.2, n: 2.4 },
       look: { eyeScale: 0.92, eyeGap: 1.02, noseSize: 0.65, lipColor: '#c0485f', browThick: 0.85 } },
-    { name: 'dalia', tags: 'Long straight dark hair, slicked back · big wide-set brown eyes · bold thick arched brows · big warm smile · beauty mark · navy ribbed top', bio: 'Big smile, bold brows, and a sharp eye for everything.', skin: '#dcaa82', hair: '#2a1a16', hairStyle: 'long', hairFlow: true, neck: 0.62, top: '#27356b', pattern: { type: 'ribs', color2: '#33427d' }, bottom: '#2f2a45', eye: '#3a2118', browColor: '#1f1410',
-      build: { w: 0.9, h: 1.0, leg: 1.2, arm: 1.0 }, torsoN: 2.9, taper: 0.16, torsoDepth: 0.88, head: { rx: 1.42, ry: 1.33, rz: 1.18, n: 2.6 },
+    { name: 'dalia', tags: 'Long straight dark hair, slicked back · big wide-set brown eyes · bold thick arched brows · big warm smile · beauty mark · navy ribbed top', bio: 'Big smile, bold brows, and a sharp eye for everything.', skin: '#dcaa82', hair: '#2a1a16', hairStyle: 'long', hairFlow: true, neck: 0.28, top: '#27356b', pattern: { type: 'ribs', color2: '#33427d' }, bottom: '#2f2a45', eye: '#3a2118', browColor: '#1f1410',
+      build: { w: 0.92, h: 1.12, leg: 1.45, arm: 1.08 }, torsoN: 2.9, taper: 0.16, torsoDepth: 0.88, head: { rx: 1.42, ry: 1.33, rz: 1.18, n: 2.6 },
       look: { lashes: 0.5, eyeScale: 1.1, eyeGap: 1.02, browThick: 1.45, noseSize: 1.12, lipColor: '#c4746f', mole: { x: -262, y: 262 } } },
     { name: 'nina', tags: 'Six years old · dark curly pigtails with pink ties · big brown eyes · rosy cheeks · cream flower dress with a white collar', bio: 'Six years old, full of questions, and never sits still.', skin: '#f0c9a6', hair: '#43291b', hairStyle: 'pigtails', top: '#f6efe2', pattern: { type: 'floral', color2: '#f0a9b4' }, dress: true, buttons: '#f4efe6', bottom: '#f4e8dc', shoe: '#7a5642', eye: '#3a2118', browColor: '#2a1a12', kid: true,
       build: { w: 0.9, h: 0.8, leg: 0.8, head: 1.2, arm: 0.88 }, head: { rx: 1.5, ry: 1.3, rz: 1.2, n: 2.4 },
