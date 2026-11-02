@@ -52,3 +52,15 @@ Sources: [Parloa on prosody](https://www.parloa.com/knowledge-hub/what-does-pros
 
 ## Arabic (and other languages): the babble after a word
 The multilingual voice says the word and then often keeps making a faint babble or hiss for 1 to 2 seconds. The speech recognizer ignores it, so the score still says 1.00, but you can HEAR it. `human_tts.py` now cuts it (`trim_main_utterance`: keeps the loudest word or words, drops the rest) and `videos/quran_calm/build_audio.py` puts a soft room tail back on the word. Always run `python3 tools/audio_check.py videos/<name>` and listen to every Arabic word.
+
+## How to choose a voice (make a natural voice sample for a character)
+Learned on Heart Calm. Do this whenever a voice sounds robotic or a new character needs a voice. **Dalia listens and picks: never choose a voice for her.**
+1. **One-time setup:** `./voices/setup_natural_refs.sh` (after `setup_chatterbox.sh`). It adds Kokoro (a small, free, natural voice model) and the measuring tool.
+2. **Make 3 or 4 candidate samples** (do NOT replace the real sample yet):
+   `voices/cbenv/bin/python voices/make_natural_ref.py <name> <kokoro_voice> --out /tmp/<name>_<voice>.wav`
+   Kokoro voices: `af_heart` (warm, bright), `af_sarah` (most expressive), `af_bella` (higher, lively), `af_sky` (deeper, calm), `af_nicole`, `bf_emma`, `bf_isabella` (British). Use the `expressive` reading unless the character is calm.
+3. **Measure them** with `python3 voices/measure_voice.py a.wav b.wav`. A woman's usual speaking pitch is about 165 to 255 Hz; a melody variety under about 3 semitones sounds flat; more than 3.5 is lively. (The old Piper samples sat near 140 Hz and about 2.5, which is why they sounded robotic.)
+4. **Make the same 4 real lines of the character with each candidate** through `human_tts.py` (a row can carry `"ref": "/path/sample.wav"` and `"style": "natural"` or `"comforting"`), join them into one mp3 per candidate, add the CURRENT voice as sample A, and send them to Dalia. She listens and picks (and says what to change: slower, lower, softer, more upbeat).
+5. **Apply her pick:** copy the chosen sample to `voices/refs/<name>.wav`, set the style in `PEOPLE` (`human_tts.py`), remake that character's lines (delete their `work/l*.wav`, run `build_audio.py`), then run `python3 tools/audio_check.py videos/<name>` and ask Dalia to listen to the finished video.
+**Styles:** `comforting` (teacher or comforting voice), `natural` (normal conversation), `bright`. **Never** use a real person's voice without their permission.
+**Why the old voices were robotic:** (1) the sample was made by Piper, (2) sentences were made one by one and glued with dead silence, (3) no room sound, so every sentence stopped dead. All three are fixed (whole-line speech, room sound, natural samples).

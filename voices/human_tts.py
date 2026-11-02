@@ -39,6 +39,8 @@ STYLES = {
     #   temperature = how much the melody varies from take to take
     'comforting': dict(speed_mul=1.0, pitch_add=-0.2, exag_add=0.08, cfg_add=-0.1, pause_scale=1.0, joint=True, temperature=0.9, room=0.13,
                        eq="bass=g=1.8:f=190,treble=g=-1.5:f=7000"),
+    # natural conversation: no extra softness, but the same fixes (whole-line speech, room sound, a lively melody)
+    'natural': dict(speed_mul=1.0, pitch_add=0.0, exag_add=0.06, cfg_add=-0.05, pause_scale=1.0, joint=True, temperature=0.9, room=0.12, eq=""),
     # bright and friendly, for a younger or livelier person
     'bright': dict(speed_mul=1.03, pitch_add=0.3, exag_add=0.08, cfg_add=0.0, pause_scale=0.9, eq="treble=g=1.2:f=5500"),
 }
