@@ -8,7 +8,7 @@ const sm = u => { u = Math.min(1, Math.max(0, u)); return u * u * (3 - 2 * u); }
   const p = await br.newPage({ viewport: { width: W, height: H } });
   p.on('pageerror', e => console.log('pageerror:', e.message));
   await p.goto('http://localhost:8766/characters/expressive/stage.html'); await p.waitForFunction(() => window.ready);
-  await p.evaluate(() => window.build([{ person: process.argv[3] || 'dalia', x: -2.7 }, { person: process.argv[4] || 'amina', x: 2.7 }]));
+  await p.evaluate(names => window.build([{ person: names[0], x: -2.7 }, { person: names[1], x: 2.7 }]), [process.argv[3] || 'dalia', process.argv[4] || 'amina']);
   for (let i = 0; i < N; i++) {
     const t = i / FPS;
     // 0-1s front, 1-8s one full turn, 8-10s push in on the two faces from the front

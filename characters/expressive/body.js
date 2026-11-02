@@ -35,11 +35,16 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
   // the torso: a soft egg, wider at the bottom, narrower at the top. dims = radii at the widest part.
   function egg(sx, sy, sz, o = {}) {
     const g = new THREE.SphereGeometry(1, 48, 36, o.phiStart || 0, o.phiLen ?? Math.PI * 2, o.thStart || 0, o.thLen ?? Math.PI), pos = g.attributes.position;
-    for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), w = 1 - 0.34 * smooth01((y + 0.15) / 1.15); pos.setXYZ(i, x * sx * w, y * sy, z * sz * w); }
+    const tp = o.taper ?? 0.34, n = o.n || 2;   // taper: how much narrower the top is than the bottom. n: 2 = round egg, higher = straighter sides (a more natural torso)
+    for (let i = 0; i < pos.count; i++) {
+      let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      if (n !== 2) { const k = 1 / Math.pow(Math.pow(Math.abs(x), n) + Math.pow(Math.abs(y), n) + Math.pow(Math.abs(z), n), 1 / n) || 1; x *= k; y *= k; z *= k; }
+      const w = 1 - tp * smooth01((y + 0.15) / 1.15); pos.setXYZ(i, x * sx * w, y * sy, z * sz * w);
+    }
     g.computeVertexNormals(); return g;
   }
   // z of the front surface of the egg at body position (x, y)
-  function eggZ(x, y, d) { const yy = (y - d.yc) / d.sy, w = 1 - 0.34 * smooth01((yy + 0.15) / 1.15), rx = d.sx * w, rz = d.sz * w, q = 1 - (x / rx) ** 2 - yy * yy; return rz * Math.sqrt(Math.max(0.02, q)); }
+  function eggZ(x, y, d) { const n = d.n || 2, yy = (y - d.yc) / d.sy, w = 1 - (d.taper ?? 0.34) * smooth01((yy + 0.15) / 1.15), rx = d.sx * w, rz = d.sz * w, q = 1 - Math.pow(Math.abs(x / rx), n) - Math.pow(Math.abs(yy), n); return rz * Math.pow(Math.max(0.02, q), 1 / n); }
   // the face decal: same blob, slightly bigger, UV mapped straight from the front so the 2D face fits exactly
   const faceGeoCache = {};
   function facePatch(h) {
@@ -99,7 +104,7 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     const bodyG = new THREE.Group(); body.add(bodyG);   // torso, arms and head (leans and bounces)
     // measurements
     const hipY = 0.4 + 1.1 * B.leg, tc = hipY - 0.1 + 1.55 * B.h, topY = tc + 1.55 * B.h, headY = topY - 0.3 + HD.ry * B.head;
-    const D = { sx: 1.28 * B.w, sy: 1.55 * B.h, sz: 0.98 * B.w, yc: tc };
+    const D = { sx: 1.28 * B.w, sy: 1.55 * B.h, sz: 0.98 * B.w * (O.torsoDepth ?? 1), yc: tc, n: O.torsoN || 2, taper: O.taper ?? 0.34 };   // options: torsoN (straighter sides), taper, torsoDepth (front to back)
     // legs: short stubby tubes ending in big round shoes
     const legs = [-1, 1].map(s => {
       const l = new THREE.Group(); l.position.set(s * 0.55 * B.w, hipY, 0); g.add(l);
@@ -109,7 +114,7 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     });
     // torso: ONE soft egg, no neck
     const tmat = O.pattern ? new THREE.MeshStandardMaterial({ map: patternTex(O.pattern.type, O.top, O.pattern.color2), roughness: 0.6, metalness: 0.05 }) : mat(top, { roughness: 0.6 });
-    const torso = new THREE.Mesh(egg(D.sx, D.sy, D.sz), tmat); torso.position.set(0, tc, 0); torso.castShadow = true; torso.receiveShadow = true; bodyG.add(torso);
+    const torso = new THREE.Mesh(egg(D.sx, D.sy, D.sz, { n: D.n, taper: D.taper }), tmat); torso.position.set(0, tc, 0); torso.castShadow = true; torso.receiveShadow = true; bodyG.add(torso);
     if (O.dress) {   // a flared skirt (same fabric as the top) and a small white collar
       const prof = [[0.0, 0.5], [1.15 * B.w, 0.25], [1.4 * B.w, -0.2], [1.72 * B.w, -0.95], [1.82 * B.w, -1.32], [1.74 * B.w, -1.45], [1.5 * B.w, -1.38]].map(([r, y]) => new THREE.Vector2(r, y));
       const skm = tmat.clone(); skm.side = THREE.DoubleSide; const sk = new THREE.Mesh(new THREE.LatheGeometry(prof, 40), skm); sk.scale.z = 0.86; sk.position.set(0, tc - 0.4 * B.h + 0.2, 0); sk.castShadow = true; sk.receiveShadow = true; bodyG.add(sk);
@@ -155,7 +160,7 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
       if (st === 'bangs') hb(rx * 1.7, 0.34, 0.55, 0, ry * 0.76, rz * 0.7, 0.16);
     }
     else if (st === 'long') {
-      cap(); hb(rx * 2.15, 3.3, 0.9, 0, -1.4, -rz * 0.7, 0.45);
+      cap(); if (O.hairFlow) { const bk = hb(rx * 2.0, 3.5, 1.3, 0, -1.25, -rz * 0.62, 0.62); bk.scale.set(1, 1, 1); } else hb(rx * 2.15, 3.3, 0.9, 0, -1.4, -rz * 0.7, 0.45);
       for (const s of [-1, 1]) {
         if (O.hairFlow) {   // option: the side hair flows down from the cap (no gap at the temples): tall soft locks that start up inside the cap and a blob that fills the temple
           const lock = hb(0.62, 3.1, 1.55, s * rx * 0.95, -0.55, -0.3, 0.3); lock.rotation.z = -s * 0.04;
@@ -314,7 +319,7 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
       build: { w: 0.95, h: 0.98, leg: 1.0, arm: 0.95 }, head: { rx: 1.46, ry: 1.24, rz: 1.2, n: 2.4 },
       look: { eyeScale: 0.92, eyeGap: 1.02, noseSize: 0.65, lipColor: '#c0485f', browThick: 0.85 } },
     { name: 'dalia', tags: 'Long straight dark hair, slicked back · big wide-set brown eyes · bold thick arched brows · big warm smile · beauty mark · navy ribbed top', bio: 'Big smile, bold brows, and a sharp eye for everything.', skin: '#dcaa82', hair: '#2a1a16', hairStyle: 'long', hairFlow: true, top: '#27356b', pattern: { type: 'ribs', color2: '#33427d' }, bottom: '#2f2a45', eye: '#3a2118', browColor: '#1f1410',
-      build: { w: 0.98, h: 1.0, leg: 1.05, arm: 0.98 }, head: { rx: 1.42, ry: 1.33, rz: 1.18, n: 2.6 },
+      build: { w: 0.9, h: 1.0, leg: 1.2, arm: 1.0 }, torsoN: 2.9, taper: 0.16, torsoDepth: 0.88, head: { rx: 1.42, ry: 1.33, rz: 1.18, n: 2.6 },
       look: { lashes: 0.5, eyeScale: 1.1, eyeGap: 1.02, browThick: 1.45, noseSize: 1.12, lipColor: '#c4746f', mole: { x: -262, y: 262 } } },
     { name: 'nina', tags: 'Six years old · dark curly pigtails with pink ties · big brown eyes · rosy cheeks · cream flower dress with a white collar', bio: 'Six years old, full of questions, and never sits still.', skin: '#f0c9a6', hair: '#43291b', hairStyle: 'pigtails', top: '#f6efe2', pattern: { type: 'floral', color2: '#f0a9b4' }, dress: true, buttons: '#f4efe6', bottom: '#f4e8dc', shoe: '#7a5642', eye: '#3a2118', browColor: '#2a1a12', kid: true,
       build: { w: 0.9, h: 0.8, leg: 0.8, head: 1.2, arm: 0.88 }, head: { rx: 1.5, ry: 1.3, rz: 1.2, n: 2.4 },
