@@ -135,10 +135,43 @@ def ar_score(wav, sr, expected):
     except Exception as ex:
         print('  (no Arabic recogniser:', ex, ')', flush=True); return 0.5
 
+def trim_main_utterance(x, sr, lead=0.06, tail=0.12, fade=0.14):
+    """The multilingual (Arabic) voice finishes the word and then keeps making a faint babble or hiss for 1 to 2 seconds. Keep only the real word(s):
+    find the loud runs, take the loudest one, and keep a following run only if it is nearly as loud (a second word of the same phrase). Cut the rest and fade out softly."""
+    import numpy as np
+    x = np.asarray(x, dtype=np.float32); win = max(1, int(0.01 * sr)); n = len(x) // win
+    if n < 5: return x
+    db = 20 * np.log10(np.sqrt((x[:n * win].reshape(n, win) ** 2).mean(1)) + 1e-9); pk = db.max(); on = db > pk - 30
+    runs = []; i = 0; gap = int(0.12 / 0.01)
+    while i < n:
+        if on[i]:
+            j = i
+            while j < n and (on[j] or on[j:j + gap].any()): j += 1
+            runs.append([i, j, float(db[i:j].mean())]); i = j
+        else: i += 1
+    if not runs: return x
+    main = max(runs, key=lambda r: (r[1] - r[0]) * (r[2] - (pk - 60)))
+    k = runs.index(main); start, end, mean = runs[k]
+    for r in runs[k + 1:]:                       # a following run only counts if it is a real continuation (close and nearly as loud)
+        if r[0] - end <= int(0.35 / 0.01) and r[2] >= mean - 8: end = r[1]
+        else: break
+    for r in reversed(runs[:k]):                 # same for a run just before
+        if start - r[1] <= int(0.35 / 0.01) and r[2] >= mean - 8: start = r[0]
+        else: break
+    ext = 0
+    while end + ext < n and ext < 30 and db[end + ext] > pk - 42: ext += 1      # keep the soft ending of the last word (up to 0.3 s), but never bridge into the babble
+    end += ext
+    a = max(0, int((start * 0.01 - lead) * sr)); b = min(len(x), int((end * 0.01 + tail) * sr)); y = x[a:b].copy()
+    f = min(len(y), int(fade * sr)); y[-f:] *= np.linspace(1, 0, f) ** 1.5
+    return y
+
 def add_room(path, wet=0.13, tail=0.45, tone_db=-56):
     """Natural room: a short soft reverb tail (so words and sentence ends decay instead of stopping), and a very quiet room tone (so the gaps are never digital silence)."""
     import wave, numpy as np
-    from scipy.signal import fftconvolve
+    try: from scipy.signal import fftconvolve
+    except ImportError:
+        def fftconvolve(a, b):
+            n = len(a) + len(b) - 1; m = 1 << (n - 1).bit_length(); return np.fft.irfft(np.fft.rfft(a, m) * np.fft.rfft(b, m), m)[:n]
     w = wave.open(path); sr = w.getframerate(); x = np.frombuffer(w.readframes(w.getnframes()), dtype='<i2').astype(np.float32) / 32768; w.close()
     rng = np.random.default_rng(7); n = int(0.38 * sr); t = np.arange(n) / sr
     ir = rng.standard_normal(n) * np.exp(-t * 6.9 / 0.30); ir[0] = 0; ir = np.convolve(ir, np.ones(5) / 5, 'same')   # decays by 60 dB in about 0.3 s, a small soft room
@@ -174,7 +207,7 @@ def main(path):
                 print(f"  {row['lang']} try {attempt + 1}: score {sc:.2f}, {w.shape[0] / ml.sr:.1f}s", flush=True)
                 if best is None or sc > best[0]: best = (sc, w)
                 if sc >= 0.95: break
-            audio = best[1].unsqueeze(0); cur_sr = ml.sr; rates = [2.0]
+            import numpy as np; audio = torch.from_numpy(trim_main_utterance(best[1].numpy(), ml.sr)).unsqueeze(0); cur_sr = ml.sr; rates = [2.0]   # cut the babble after the word
             if best[0] < 0.7: print(f"  WARNING: best score only {best[0]:.2f} for {row['text']}", flush=True)
             raw = tempfile.mktemp(suffix='.wav'); ta.save(raw, audio, cur_sr)
             pf = 2 ** (st['pitch'] / 12.0); tempo = st['speed'] / pf

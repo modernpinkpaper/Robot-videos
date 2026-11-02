@@ -4,6 +4,7 @@
 import sys, os, re, wave, json, subprocess, numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, ROOT + '/voices'); sys.path.insert(0, HERE)
+from human_tts import trim_main_utterance, add_room
 from plan import SCENES
 WORK = HERE + '/work'; os.makedirs(WORK, exist_ok=True); SR = 44100
 flat = [(si, li, l) for si, s in enumerate(SCENES) for li, l in enumerate(s['lines'])]
@@ -37,7 +38,7 @@ if '--notts' not in sys.argv:
             joins.append((fin, parts, [lang for lang, _ in segs]))
         else: rows.append(dict(who=l[0], text=say, emo=l[2], out=fin))
     if rows: synth_lines(rows)
-    if '--rejoin' in sys.argv:   # rebuild the joined lines from the pieces already made (no new voices)
+    if True:   # ALWAYS rebuild the joined lines from the pieces (cheap): the Arabic babble is trimmed here and room sound is added for Dalia exactly once
         joins = []
         for i, (si, li, l) in enumerate(flat):
             say = l[4] if len(l) > 4 else l[1]
@@ -48,15 +49,29 @@ if '--notts' not in sys.argv:
     for fin, parts, langs in joins:   # join the English and Arabic pieces of one line (a short natural pause around the Arabic)
         sil = lambda sec: np.zeros(int(sec * SR), dtype=np.float32); chunks = []
         for k, (p, lang) in enumerate(zip(parts, langs)):
-            if lang == 'ar' and AR_TEMPO != 1.0:
-                tmp = p.replace('.wav', '_fast.wav'); subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', p, '-af', f'atempo={AR_TEMPO}', '-ar', str(SR), '-ac', '1', tmp], check=True); x = read_wav(tmp)
+            if lang == 'ar':
+                x = trim_main_utterance(read_wav(p), SR)   # keep the word, cut the faint babble the Arabic voice makes after it
+                tmp = p.replace('.wav', '_fast.wav')
+                with wave.open(tmp.replace('_fast', '_trim'), 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((x * 32767).astype('<i2').tobytes())
+                if AR_TEMPO != 1.0: subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', tmp.replace('_fast', '_trim'), '-af', f'atempo={AR_TEMPO}', '-ar', str(SR), '-ac', '1', tmp], check=True); x = read_wav(tmp)
             else: x = read_wav(p)
-            idx = np.where(np.abs(x) > 0.01)[0]; x = x[max(0, idx[0] - int(0.05 * SR)):] if len(idx) else x   # trim only the start; keep the soft natural decay at the end (cutting it sounds like a hard stop)
+            idx = np.where(np.abs(x) > 0.01)[0]; x = x[max(0, idx[0] - int(0.05 * SR)):] if len(idx) else x   # trim only the start; English pieces keep their natural decay (cutting it sounds like a hard stop)
             if k:   # the end of each piece already decays naturally, so only a tiny gap (a bit more around Arabic words), and a short crossfade so nothing clicks
-                gap = int((0.05 if 'ar' in (lang, langs[k - 1]) else 0.02) * SR); chunks.append(sil(gap / SR))
+                gap = int((0.14 if 'ar' in (lang, langs[k - 1]) else 0.06) * SR); chunks.append(sil(gap / SR))
             fade = int(0.012 * SR); x = x.copy(); x[:fade] *= np.linspace(0, 1, fade); chunks.append(x)
         y = np.concatenate(chunks); y = y / max(1.0, np.abs(y).max() / 0.95)
         with wave.open(fin, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((y * 32767).astype('<i2').tobytes())
+ROOM_FOR = {'DALIA': 0.10}   # Dalia's lines have pure digital silence between sentences (only Amina's style added room sound). Fill it with the same soft room, once.
+os.makedirs(WORK + '/raw', exist_ok=True)
+for i, (si, li, l) in enumerate(flat):
+    wet = ROOM_FOR.get(l[0]); say = l[4] if len(l) > 4 else l[1]
+    if not wet: continue
+    fin = f'{WORK}/l{i:02d}.wav'
+    if not AR.search(say):
+        raw = f'{WORK}/raw/l{i:02d}.wav'
+        if not os.path.exists(raw): import shutil; shutil.copy(fin, raw)
+        import shutil; shutil.copy(raw, fin)
+    add_room(fin, wet)
 def load(i):
     w = wave.open(f'{WORK}/l{i:02d}.wav'); return np.frombuffer(w.readframes(w.getnframes()), dtype='<i2').astype(np.float32) / 32768
 # ---- timeline
@@ -102,7 +117,7 @@ def whoosh(ts, d=0.4, g=0.14):
     n = int(d * SR); r = np.random.default_rng(int(ts * 100)).standard_normal(n); u = np.arange(n) / n
     sm = np.convolve(r, np.ones(30) / 30, 'same') - np.convolve(r, np.ones(300) / 300, 'same')
     put(sfx, max(0, int(ts * SR)), sm * np.sin(np.pi * u) ** 2 * g * 3)
-for sc in scenes[1:]: whoosh(sc['start'] - 0.2, 0.4, 0.09)
+for sc in scenes[1:]: whoosh(sc['start'] - 0.2, 0.4, 0.04)
 for sc in scenes:
     for sh in sc['shots'][1:]: whoosh(sh['t'] - 0.06, 0.14, 0.025)
 # quiet air: soft filtered noise (room tone), a little brighter outdoors (park scene)
