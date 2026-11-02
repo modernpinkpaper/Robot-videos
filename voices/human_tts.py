@@ -28,6 +28,16 @@ EMO = {
     'smug':     dict(exag=0.50, cfg=0.50, speed=0.94, pitch=-0.2),
     'dramatic': dict(exag=0.70, cfg=0.45, speed=0.96, pitch=0.0),
 }
+# VOICE DIRECTION. Every voice has these dimensions; each one has a knob (see voices/README.md):
+#   pace (speed) · pitch/tone (semitones) · pitch variety/emotion (exaggeration) · deliberateness (cfg) · pauses/rhythm (pause_scale) · warmth/softness/body (EQ + gentle compression)
+# A style is a preset of those knobs. A person can have a default style (PEOPLE[..]['style']) and any line can say "style": "comforting" or override single knobs.
+STYLES = {
+    # clear but comforting: a little slower, a touch lower, more breathing room between sentences, warm and soft sound, even loudness
+    'comforting': dict(speed_mul=0.94, pitch_add=-0.3, exag_add=0.04, cfg_add=-0.12, pause_scale=1.5,
+                       eq="bass=g=2.5:f=190,equalizer=f=3300:t=q:w=1.2:g=-1.3,treble=g=-2.2:f=6500,acompressor=threshold=0.09:ratio=2:attack=25:release=300:makeup=1.6"),
+    # bright and friendly, for a younger or livelier person
+    'bright': dict(speed_mul=1.03, pitch_add=0.3, exag_add=0.08, cfg_add=0.0, pause_scale=0.9, eq="treble=g=1.2:f=5500"),
+}
 # One reference voice per person (voices/refs/<name>.wav) plus a base pitch and pace so each sounds different.
 PEOPLE = {
     'DALIA':    dict(ref='dalia',    pitch=0.0,  speed=1.00),
@@ -53,7 +63,7 @@ PEOPLE = {
 }
 HUMANS = set(PEOPLE)
 
-def style_for(who, text, emo='neutral', pace=None, tone=None, energy=None):
+def style_for(who, text, emo='neutral', pace=None, tone=None, energy=None, style=None, knobs=None):
     """Pick pace, emotion and tone for one line from its emotion tag and its words."""
     s = dict(EMO.get(emo, EMO['neutral'])); P = PEOPLE.get(who, PEOPLE['DALIA'])
     ex, q = text.count('!'), text.count('?')
@@ -70,6 +80,9 @@ def style_for(who, text, emo='neutral', pace=None, tone=None, energy=None):
     s['speed'] = (max(0.93, s['speed']) if pace is None else pace) * P['speed']   # never drag: slow lines still need to sound like a person talking
     s['pitch'] = s['pitch'] + P['pitch'] + (tone or 0)
     s['ref'] = os.path.join(REFS, P['ref'] + '.wav')
+    S = dict(STYLES.get(style or P.get('style') or '', {})); S.update({k: v for k, v in (knobs or {}).items() if v is not None})   # a line can override single knobs: speed_mul, pitch_add, exag_add, cfg_add, pause_scale, eq
+    s['exag'] = max(0.3, min(0.75, s['exag'] + S.get('exag_add', 0))); s['cfg'] = max(0.2, s['cfg'] + S.get('cfg_add', 0))
+    s['speed'] *= S.get('speed_mul', 1.0); s['pitch'] += S.get('pitch_add', 0); s['pause_scale'] = S.get('pause_scale', 1.0); s['eq'] = S.get('eq', '')
     return s
 
 def pieces(text):
@@ -129,7 +142,8 @@ def main(path):
     model = ChatterboxTTS.from_pretrained(device=dev); sr = model.sr
     ml = None   # the multilingual model is loaded only if a row has a "lang" (like "ar")
     for row in json.load(open(path)):
-        who = row.get('voice', row['who']).upper(); st = style_for(who, row['text'], row.get('emo', 'neutral'), row.get('pace'), row.get('tone'), row.get('energy'))
+        who = row.get('voice', row['who']).upper(); st = style_for(who, row['text'], row.get('emo', 'neutral'), row.get('pace'), row.get('tone'), row.get('energy'), row.get('style'), {k: row.get(k) for k in ('speed_mul', 'pitch_add', 'exag_add', 'cfg_add', 'pause_scale', 'eq')})
+        if row.get('ref'): st['ref'] = row['ref']   # a row can point at any voice sample file (used to audition voices)
         cur_sr = sr
         if row.get('lang') and row['lang'] != 'en':
             if ml is None:
@@ -146,7 +160,7 @@ def main(path):
             if best[0] < 0.7: print(f"  WARNING: best score only {best[0]:.2f} for {row['text']}", flush=True)
             raw = tempfile.mktemp(suffix='.wav'); ta.save(raw, audio, cur_sr)
             pf = 2 ** (st['pitch'] / 12.0); tempo = st['speed'] / pf
-            af = f"asetrate={int(cur_sr * pf)},aresample=44100,atempo={max(0.5, min(2.0, tempo)):.4f},highpass=f=70,loudnorm=I=-18:TP=-2"
+            af = f"asetrate={int(cur_sr * pf)},aresample=44100,atempo={max(0.5, min(2.0, tempo)):.4f},highpass=f=70" + ("," + st["eq"] if st.get("eq") else "") + ",loudnorm=I=-18:TP=-2"
             subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-af', af, '-ar', '44100', '-ac', '1', row['out']], check=True); os.remove(raw)
             print('made', who, row.get('emo', 'neutral'), row['lang'], f"best={best[0]:.2f}", '->', row['out'], flush=True)
             continue
@@ -167,13 +181,13 @@ def main(path):
                 e = max(0.3, e - 0.12); cfg = min(0.8, cfg + 0.08)
             else:
                 wav = wav[:int(sr * max_dur)]; n = int(sr * 0.12); wav[-n:] = wav[-n:] * torch.linspace(1, 0, n)
-            rates.append(n_words / max(0.4, wav.shape[0] / sr)); parts.append(wav); parts.append(torch.zeros(int(sr * pause)))
+            rates.append(n_words / max(0.4, wav.shape[0] / sr)); parts.append(wav); parts.append(torch.zeros(int(sr * pause * st['pause_scale'])))
         audio = torch.cat(parts[:-1]).unsqueeze(0)           # no pause after the last sentence
         raw = tempfile.mktemp(suffix='.wav'); ta.save(raw, audio, sr)
         # pace (tempo) and tone (pitch) without changing the other: shift pitch by resampling, then correct the tempo
         avg = sum(rates) / len(rates); gov = min(1.0, 3.3 / avg) if avg > 3.3 else 1.0     # pace governor: never faster than about 3.3 words a second
         pf = 2 ** (st['pitch'] / 12.0); tempo = st['speed'] * gov / pf
-        af = f"asetrate={int(sr * pf)},aresample=44100,atempo={max(0.5, min(2.0, tempo)):.4f},highpass=f=70,loudnorm=I=-18:TP=-2"
+        af = f"asetrate={int(sr * pf)},aresample=44100,atempo={max(0.5, min(2.0, tempo)):.4f},highpass=f=70" + ("," + st["eq"] if st.get("eq") else "") + ",loudnorm=I=-18:TP=-2"
         subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-af', af, '-ar', '44100', '-ac', '1', row['out']], check=True); os.remove(raw)
         print('made', who, row.get('emo', 'neutral'), f"exag={st['exag']:.2f} speed={st['speed']:.2f} pitch={st['pitch']:+.1f}", '->', row['out'], flush=True)
 

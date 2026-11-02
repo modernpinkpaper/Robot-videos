@@ -31,3 +31,21 @@ This check hears whether words are CLEAR, not whether the voice sounds nice. Alw
 A line has a `who` (the character on screen) and may have a `voice` (whose voice to use). Without `voice`, the character uses its own.
 `{"who": "THEO", "voice": "AMINA", "text": "...", "emo": "happy", "out": "l00.wav"}` -> Theo speaks with Amina's voice.
 So the Emotional Robots, the cute people and the robots can all share the same voices. Samples of every voice: `examples/voices/`.
+
+## What makes a voice sound human and comforting (the dimensions, and the knob for each)
+Researched for the Heart Calm video (sources at the end). A human voice is more than the words: it has these parts, and a flat voice is usually missing one or more of them.
+| Dimension | What it is | Robotic when | Knob here |
+|---|---|---|---|
+| **Pace** (rate) | words per second, speeding up and slowing down | always the same speed | `pace` (1 = normal), style `speed_mul`. Comforting = about 0.94 |
+| **Pitch** (tone, level) | how high or low the voice sits (measured in Hz) | too low or too high for the person | `tone` in semitones, style `pitch_add`. A woman's usual speaking pitch is about 165 to 255 Hz |
+| **Pitch variety** (intonation, melody) | the rise and fall inside a sentence (up for a question, down to finish) | flat melody. We measure it: under about 3 semitones sounds flat | `energy` or emotion tag (exaggeration), style `exag_add` |
+| **Loudness and stress** | which words are pushed | every word the same | a WORD in CAPS, `!`, `?` (see above) |
+| **Pauses and rhythm** | breath between phrases and sentences | no breathing room, or pauses all the same | style `pause_scale` (comforting = 1.5), `...` in the text |
+| **Deliberateness** | how carefully each word is shaped | rushed or slurred | `cfg_add` (lower = slower and more careful) |
+| **Timbre** (warmth, softness, breathiness) | the "colour" of the voice | thin, harsh, buzzy | style `eq` (warm low end, softer top, gentle compression), and the voice sample itself |
+| **Clarity** | every word understood | slurred | the self-check (speech recognition) keeps this |
+| **Emotion** | the feeling behind it | the same feeling for every line | the emotion tag per line |
+**The most important part is the voice sample** (`voices/refs/<name>.wav`). Chatterbox copies it. If the sample is a robot voice (the old samples were made with Piper), every line copies that flat, robotic delivery. Use a natural, expressive recording.
+**Styles** (`STYLES` in `human_tts.py`): `comforting` (a little slower, slightly lower, more pauses, warm and soft sound) and `bright`. Give a person a default with `PEOPLE[..]['style']`, or set `"style": "comforting"` on any line, and override single knobs per line (`speed_mul`, `pitch_add`, `exag_add`, `cfg_add`, `pause_scale`, `eq`). A line can also use a different sample with `"ref": "/path/sample.wav"` (to audition voices).
+**Measure a voice** (no guessing): `python3 voices/measure_voice.py a.wav b.wav` prints pitch level, pitch variety, range, breathiness and pause share. Listening is still the final test.
+Sources: [Parloa on prosody](https://www.parloa.com/knowledge-hub/what-does-prosody-mean/), [Camb.ai on pitch, pace and stress](https://www.camb.ai/blog-post/prosody-in-speech-ai-voices-pitch-pace-stress), [Surrey speech tutorial](https://ph-vssp-www.eps.surrey.ac.uk/tutorials/speech/chapter15.pdf), [Soft-voice cues (Johns Hopkins Muse)](https://muse.jhu.edu/article/683220?ref=rc), [Why we like some voices](https://www.theswaddle.com/why-we-like-some-peoples-voices-more-than-others).
