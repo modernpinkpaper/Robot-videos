@@ -1,6 +1,6 @@
 // Info cards. The Arabic is copied from the Uthmani Quran text (api.alquran.cloud, checked). Meanings in simple English are ours (not word-for-word).
 export const CARDS = {
-  title: `<div class="kick">A LESSON FROM THE QURAN</div><div class="big">Heart Calm</div><div class="sub">Surah Ar-Ra'd · 13:28</div>`,
+  title: `<div class="kick" style="font-size:16px;letter-spacing:1.3px;white-space:nowrap">ONE VERSE · THREE WORDS · THREE HABITS</div><div class="big">Heart Calm</div><div class="sub">Surah Ar-Ra'd · 13:28</div>`,
   v1328: `<div class="ref">Surah Ar-Ra'd · 13:28</div>
     <div class="ar">ٱلَّذِينَ ءَامَنُوا۟ وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ ٱللَّهِ ۗ أَلَا بِذِكْرِ ٱللَّهِ تَطْمَئِنُّ ٱلْقُلُوبُ</div>
     <div class="en">Those who believe, and whose hearts find calm in remembering Allah. Truly, in remembering Allah, hearts find calm.</div>`,

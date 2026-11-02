@@ -157,7 +157,7 @@ window.renderFrame = t => {
   // info cards
   const cdv = S.cards.find(c => t >= c.t0 && t < c.t1), card = $('card');
   if (cdv) { if (lastCard !== cdv.id) { $('cardin').innerHTML = CARDS[cdv.id]; lastCard = cdv.id; } const u = clamp((t - cdv.t0) / 0.4), o = clamp((cdv.t1 - t) / 0.25); card.style.opacity = Math.min(u > 0 ? 1 : 0, o).toFixed(2); card.style.transform = `scale(${(0.6 + 0.4 * backOut(u)).toFixed(3)}) translateY(${(Math.sin(t * 2) * 2).toFixed(1)}px)`; } else { card.style.opacity = 0; }
-  $('fade').style.opacity = Math.max(clamp((t - (TOTAL - 0.8)) / 0.7), clamp(1 - t / 0.5)).toFixed(3);
+  $('fade').style.opacity = clamp((t - (TOTAL - 0.8)) / 0.7).toFixed(3);
 };
 window.renderFrame(0.5); window.ready = true;
 </script></body></html>

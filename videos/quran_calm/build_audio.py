@@ -1,17 +1,61 @@
 # Makes the voices (voices/speak.py: Chatterbox for these two), the timeline (work/timeline.json) and the audio (work/audio.wav).
 #   python3 build_audio.py            voices + timeline + audio      |   --notts: reuse the voice files already in work/
 # NO MUSIC on purpose (Quran lesson): only the voices, very soft whooshes between scenes, and a quiet room / outdoor air.
-import sys, os, re, wave, json, numpy as np
+import sys, os, re, wave, json, subprocess, numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, ROOT + '/voices'); sys.path.insert(0, HERE)
 from plan import SCENES
 WORK = HERE + '/work'; os.makedirs(WORK, exist_ok=True); SR = 44100
 flat = [(si, li, l) for si, s in enumerate(SCENES) for li, l in enumerate(s['lines'])]
+# A spoken line may contain Arabic words written as {ar:...} (with vowel marks). Those are spoken in Arabic by the SAME character voice
+# (voices/human_tts.py, lang "ar", several tries, best one kept by speech recognition); the English parts are spoken as before; then they are joined.
+AR = re.compile(r'\{ar:([^}]*)\}')
+def segments(say):
+    out = []; pos = 0
+    for m in AR.finditer(say):
+        pre = say[pos:m.start()].strip(' ,.:;?!')
+        if pre: out.append(('en', pre + ('.' if not re.search(r'[:?]$', pre) else '')))
+        out.append(('ar', m.group(1).strip())); pos = m.end()
+    post = say[pos:].strip(' ,.:;')
+    if post: out.append(('en', post))
+    return out
+def read_wav(p):
+    w = wave.open(p); return np.frombuffer(w.readframes(w.getnframes()), dtype='<i2').astype(np.float32) / 32768
 if '--notts' not in sys.argv:
     from speak import synth_lines
-    rows = [dict(who=l[0], text=(l[4] if len(l) > 4 else l[1]), emo=l[2], out=f'{WORK}/l{i:02d}.wav') for i, (si, li, l) in enumerate(flat)
-            if not os.path.exists(f'{WORK}/l{i:02d}.wav') or '--redo' in sys.argv]
-    if rows: os.environ.setdefault('VIDEO_FORMAT', 'story'); synth_lines(rows)
+    os.environ.setdefault('VIDEO_FORMAT', 'story'); os.environ['SKIP_LINT'] = '1'   # the whole lines were checked with tools/lint_dialogue.py plan.py (pieces of a line would give false alarms)
+    rows = []; joins = []
+    for i, (si, li, l) in enumerate(flat):
+        fin = f'{WORK}/l{i:02d}.wav'
+        if os.path.exists(fin) and '--redo' not in sys.argv: continue
+        say = l[4] if len(l) > 4 else l[1]
+        if AR.search(say):
+            segs = segments(say); parts = []
+            for k, (lang, t) in enumerate(segs):
+                o = f'{WORK}/s{i:02d}_{k}.wav'; parts.append(o)
+                rows.append(dict(who=l[0], text=t, emo=l[2], out=o, **(dict(lang='ar', verify=t, tries=4) if lang == 'ar' else {})))
+            joins.append((fin, parts, [lang for lang, _ in segs]))
+        else: rows.append(dict(who=l[0], text=say, emo=l[2], out=fin))
+    if rows: synth_lines(rows)
+    if '--rejoin' in sys.argv:   # rebuild the joined lines from the pieces already made (no new voices)
+        joins = []
+        for i, (si, li, l) in enumerate(flat):
+            say = l[4] if len(l) > 4 else l[1]
+            if AR.search(say):
+                segs = segments(say); parts = [f'{WORK}/s{i:02d}_{k}.wav' for k in range(len(segs))]
+                if all(os.path.exists(p) for p in parts): joins.append((f'{WORK}/l{i:02d}.wav', parts, [lang for lang, _ in segs]))
+    AR_TEMPO = float(os.environ.get('AR_TEMPO', '1.3'))   # the Arabic words come out slowly; at 1.3x they stay just as clear (checked with speech recognition) and sound like normal speech
+    for fin, parts, langs in joins:   # join the English and Arabic pieces of one line (a short natural pause around the Arabic)
+        sil = lambda sec: np.zeros(int(sec * SR), dtype=np.float32); chunks = []
+        for k, (p, lang) in enumerate(zip(parts, langs)):
+            if lang == 'ar' and AR_TEMPO != 1.0:
+                tmp = p.replace('.wav', '_fast.wav'); subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', p, '-af', f'atempo={AR_TEMPO}', '-ar', str(SR), '-ac', '1', tmp], check=True); x = read_wav(tmp)
+            else: x = read_wav(p)
+            idx = np.where(np.abs(x) > 0.01)[0]; x = x[idx[0]:idx[-1] + 1] if len(idx) else x
+            if k: chunks.append(sil(0.14 if 'ar' in (lang, langs[k - 1]) else 0.1))
+            chunks.append(x)
+        y = np.concatenate(chunks); y = y / max(1.0, np.abs(y).max() / 0.95)
+        with wave.open(fin, 'wb') as w: w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR); w.writeframes((y * 32767).astype('<i2').tobytes())
 def load(i):
     w = wave.open(f'{WORK}/l{i:02d}.wav'); return np.frombuffer(w.readframes(w.getnframes()), dtype='<i2').astype(np.float32) / 32768
 # ---- timeline

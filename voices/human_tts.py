@@ -2,7 +2,7 @@
 # Run with the Chatterbox Python (see voices/setup_chatterbox.sh):
 #   $CHATTERBOX_PY voices/human_tts.py lines.json
 # lines.json = [ { "who": "DALIA", "text": "Wait, she did WHAT?", "emo": "shock", "out": "/path/l00.wav" }, ... ]
-# Optional per line: "voice": use another character's voice (mix and match, e.g. THEO speaking with MARCUS's voice); "pace": 0.9..1.2 (1 = normal), "tone": -2..+2 (semitones, + = brighter), "energy": 0..1 (extra emotion)
+# Optional per line: "lang": "ar" (speak Arabic in the SAME character voice; also "verify": expected Arabic text, "tries": how many attempts, the best by recognition is kept), "voice": use another character's voice (mix and match, e.g. THEO speaking with MARCUS's voice); "pace": 0.9..1.2 (1 = normal), "tone": -2..+2 (semitones, + = brighter), "energy": 0..1 (extra emotion)
 #
 # Every line gets its own pace, emotion and tone chosen from (a) the emotion tag and (b) what the words say:
 #   !  more energy      ?  brighter, slightly slower      ...  slower, softer      ALL CAPS words  emphasis
@@ -99,6 +99,25 @@ def clarity(wav, sr, sent):
     except Exception as ex:                                                              # no recogniser installed: skip the check
         return 1.0, 0.0
 
+_asr_ar = None
+def ar_norm(t):
+    import unicodedata
+    t = unicodedata.normalize('NFKD', t); t = ''.join(c for c in t if not unicodedata.category(c).startswith('M'))
+    t = t.replace('\u0640', ''); t = re.sub('[\u0623\u0625\u0622\u0671]', '\u0627', t); t = t.replace('\u0649', '\u064a').replace('\u0629', '\u0647')
+    return re.sub(r'[^\u0621-\u064a ]', '', t).strip()
+def ar_score(wav, sr, expected):
+    """Listen to an Arabic clip with speech recognition (small model) and score it 0..1 against the expected text (vowel marks ignored)."""
+    global _asr_ar
+    try:
+        import difflib, torchaudio
+        from faster_whisper import WhisperModel
+        if _asr_ar is None: _asr_ar = WhisperModel('small', compute_type='int8')
+        a = torchaudio.functional.resample(wav.unsqueeze(0), sr, 16000).squeeze(0).numpy().astype('float32')
+        segs, _ = _asr_ar.transcribe(a, language='ar', beam_size=5); heard = ' '.join(x.text for x in segs)
+        return difflib.SequenceMatcher(None, ar_norm(expected), ar_norm(heard)).ratio()
+    except Exception as ex:
+        print('  (no Arabic recogniser:', ex, ')', flush=True); return 0.5
+
 def soften_caps(t):
     # Keep emphasis (the model hears the energy) but avoid spelling out ALL CAPS letter by letter.
     return re.sub(r"\b([A-Z]{3,})\b", lambda m: m.group(1).capitalize(), t)
@@ -108,8 +127,29 @@ def main(path):
     from chatterbox.tts import ChatterboxTTS
     dev = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = ChatterboxTTS.from_pretrained(device=dev); sr = model.sr
+    ml = None   # the multilingual model is loaded only if a row has a "lang" (like "ar")
     for row in json.load(open(path)):
         who = row.get('voice', row['who']).upper(); st = style_for(who, row['text'], row.get('emo', 'neutral'), row.get('pace'), row.get('tone'), row.get('energy'))
+        cur_sr = sr
+        if row.get('lang') and row['lang'] != 'en':
+            if ml is None:
+                from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+                ml = ChatterboxMultilingualTTS.from_pretrained(device=dev)
+            best = None
+            for attempt in range(int(row.get('tries', 4))):
+                w = ml.generate(row['text'], language_id=row['lang'], audio_prompt_path=st['ref'], exaggeration=min(0.6, st['exag']), cfg_weight=st['cfg']).squeeze(0)
+                sc = ar_score(w, ml.sr, row.get('verify', row['text'])) if row['lang'] == 'ar' else 1.0
+                print(f"  {row['lang']} try {attempt + 1}: score {sc:.2f}, {w.shape[0] / ml.sr:.1f}s", flush=True)
+                if best is None or sc > best[0]: best = (sc, w)
+                if sc >= 0.95: break
+            audio = best[1].unsqueeze(0); cur_sr = ml.sr; rates = [2.0]
+            if best[0] < 0.7: print(f"  WARNING: best score only {best[0]:.2f} for {row['text']}", flush=True)
+            raw = tempfile.mktemp(suffix='.wav'); ta.save(raw, audio, cur_sr)
+            pf = 2 ** (st['pitch'] / 12.0); tempo = st['speed'] / pf
+            af = f"asetrate={int(cur_sr * pf)},aresample=44100,atempo={max(0.5, min(2.0, tempo)):.4f},highpass=f=70,loudnorm=I=-18:TP=-2"
+            subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', raw, '-af', af, '-ar', '44100', '-ac', '1', row['out']], check=True); os.remove(raw)
+            print('made', who, row.get('emo', 'neutral'), row['lang'], f"best={best[0]:.2f}", '->', row['out'], flush=True)
+            continue
         parts = []; rates = []
         for sent, pause in pieces(row['text']):
             e = st['exag'] + (0.02 if sent.endswith('!') else 0)
