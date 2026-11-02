@@ -174,10 +174,29 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     else if (st === 'hijab') {
       const sh = new THREE.Mesh(blob(rx * 1.13, ry * 1.13, rz * 1.15, { thLen: 126 * D2R, n: HD.n }), hmat); sh.rotation.x = -(Math.PI / 2 - 0.26); sh.castShadow = true; head.add(sh);   // the opening faces the front
       const dr = ball(head, 1.2, hair, 0, -ry * 0.8, -0.45, { m: { roughness: 0.5 } }); dr.scale.set(1.25, 1.05, 0.95);
-      if (O.hijabDrape) {   // the scarf hangs down the front in two soft panels (one long, one folded across)
-        const soft = (w, h, x, y, rz, tiltX) => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), hmat); m.scale.set(w, h, 0.17); m.position.set(x, y, eggZ(x, y, D) + 0.1); m.rotation.set(tiltX, 0, rz); m.castShadow = true; bodyG.add(m); return m; };
-        soft(0.5, 1.5, 0.78, topY - 1.5, -0.06, 0.12);      // the long panel down the front
-        soft(0.46, 1.05, -0.72, topY - 1.0, 0.55, 0.1);     // the folded panel across the chest
+      if (O.hijabDrape) {   // the scarf flows from the head wrap down the front in two soft panels (one long, one folded across). Each panel is a chain of soft overlapping pieces that starts INSIDE the head wrap, so there is no gap.
+        const dmat = hmat.clone(); dmat.side = THREE.DoubleSide;
+        const drape = (pts, w0, w1) => {   // pts: [x, y] top to bottom (the first point is up inside the head wrap). One smooth soft ribbon: rounded across, tapering, rounded at the end.
+          const R = 44, C = 16, at = u => {   // Catmull-Rom spline through the points: a smooth curve with no kinks
+            const f = u * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(f)), k = f - i, P = j => pts[Math.max(0, Math.min(pts.length - 1, j))];
+            const cr = c => 0.5 * ((2 * P(i)[c]) + (-P(i - 1)[c] + P(i + 1)[c]) * k + (2 * P(i - 1)[c] - 5 * P(i)[c] + 4 * P(i + 1)[c] - P(i + 2)[c]) * k * k + (-P(i - 1)[c] + 3 * P(i)[c] - 3 * P(i + 1)[c] + P(i + 2)[c]) * k * k * k);
+            return [cr(0), cr(1)]; };
+          const zAt = (x, y) => eggZ(x, Math.min(y, topY - 0.15), D) + 0.03 + Math.max(0, y - (topY - 0.15)) * 0.25;   // above the torso top the scarf follows the head wrap forward
+          const pos = [], idx = [];
+          for (let i = 0; i < R; i++) {
+            const u = i / (R - 1), p = at(u), p2 = at(Math.min(1, u + 0.03)), p1 = at(Math.max(0, u - 0.03)); let tx = p2[0] - p1[0], ty = p2[1] - p1[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+            const nx = -ty, ny = tx, end = u > 0.68 ? Math.pow(Math.max(0.02, 1 - ((u - 0.68) / 0.32) ** 2), 0.6) : 1, hw = lerp(w0, w1, u) * end;
+            for (let j = 0; j < C; j++) {
+              const c = -1 + 2 * j / (C - 1), x = p[0] + nx * hw * c, y = p[1] + ny * hw * c, th = 0.24 * Math.pow(Math.max(0, 1 - c * c), 0.6) * Math.min(1, end * 1.4) * (0.8 + 0.2 * Math.sin(u * Math.PI));
+              pos.push(x, y, zAt(x, y) + th);
+            }
+          }
+          for (let i = 0; i < R - 1; i++) for (let j = 0; j < C - 1; j++) { const a0 = i * C + j, b0 = a0 + 1, c0 = a0 + C, d0 = c0 + 1; idx.push(a0, c0, b0, b0, c0, d0); }
+          const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+          const m = new THREE.Mesh(g, dmat); m.castShadow = true; bodyG.add(m);
+        };
+        drape([[0.95, topY + 0.55], [0.92, topY - 0.7], [0.9, topY - 1.9], [0.78, topY - 3.2]], 0.56, 0.5);     // the long panel down the front
+        drape([[-0.95, topY + 0.55], [-0.88, topY - 0.6], [-0.55, topY - 1.5], [-0.1, topY - 2.3]], 0.54, 0.46);  // the folded panel across the chest
       }
       if (O.pin) ball(head, 0.13, hexn(O.pin), rx * 1.1, -0.55, 0.5, { noShadow: true, m: { roughness: 0.25 } });
     }
