@@ -225,18 +225,22 @@ def main(path):
             e = st['exag'] + (0.02 if sent.endswith('!') else 0)
             n_words = max(1, len(sent.split())); max_dur = 1.2 + 0.7 * n_words          # a sentence can never take longer than this
             cfg = st['cfg']
-            for attempt in range(4):                                                        # the model sometimes rambles: retry calmer, then cut
+            best_take = None                                                                # keep the best take, not the last one
+            for attempt in range(5 if n_words <= 4 else 4):                                 # the model sometimes rambles or garbles short lines: retry calmer, keep the best
                 wav = model.generate(soften_caps(sent), audio_prompt_path=st['ref'], exaggeration=min(0.75, e), cfg_weight=cfg, temperature=st.get('temperature', 0.8)).squeeze(0)
-                ok = wav.shape[0] / sr <= max_dur
+                ok = wav.shape[0] / sr <= max_dur; sc = 0.0
                 if ok:
                     sc, wps = clarity(wav, sr, sent)
                     ok = sc >= 0.92 and wps <= 3.9                                          # words must be recognised, and not rushed
                     if not ok: print(f'  retry: clarity {sc:.2f}, {wps:.1f} words/s', flush=True)
                 else: print(f'  retry ({wav.shape[0] / sr:.1f}s for {n_words} words)', flush=True)
+                if best_take is None or sc > best_take[0]: best_take = (sc, wav)
                 if ok: break
                 e = max(0.3, e - 0.12); cfg = min(0.8, cfg + 0.08)
             else:
-                wav = wav[:int(sr * max_dur)]; n = int(sr * 0.12); wav[-n:] = wav[-n:] * torch.linspace(1, 0, n)
+                wav = best_take[1]
+                if wav.shape[0] / sr > max_dur:
+                    wav = wav[:int(sr * max_dur)].clone(); n = int(sr * 0.12); wav[-n:] = wav[-n:] * torch.linspace(1, 0, n)
             rates.append(n_words / max(0.4, wav.shape[0] / sr)); parts.append(wav); parts.append(torch.zeros(int(sr * pause * st['pause_scale'])))
         audio = torch.cat(parts[:-1]).unsqueeze(0)           # no pause after the last sentence
         raw = tempfile.mktemp(suffix='.wav'); ta.save(raw, audio, sr)

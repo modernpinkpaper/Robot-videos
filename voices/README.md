@@ -71,3 +71,6 @@ This repository is **public**. A recording of a real person's voice (and any sam
 - Clean the recording first (noise gets copied into the voice): `ffmpeg -i in.wav -af "highpass=f=70,afftdn=nr=18:nf=-38:tn=1,lowpass=f=11500,acompressor=threshold=0.08:ratio=2:attack=15:release=250:makeup=1.5,loudnorm=I=-20:TP=-2" -ar 24000 -ac 1 clean.wav`. Pick a calm or warm tone; avoid clips with background sound.
 - Check how close the clone is with Resemblyzer (a voice similarity score from 0 to 1, installed by `setup_natural_refs.sh`); a clone above about 0.75 against the real recordings sounds clearly like her. Always ask the person to listen.
 - Only with the person's own permission.
+
+## Short sentences and bad takes
+Very short sentences (1 to 2 words, like "Near.") often come out garbled with the cloned voices. Write them as a longer sentence ("It means near."). `human_tts.py` now makes up to 5 tries for short lines and keeps the BEST take (not the last). Always run `voices/cbenv/bin/python -I tools/lines_check.py videos/<name>` after making the voices: it compares every line with the script. If you edit a line, delete `work/l<NN>.wav` and `work/raw/l<NN>.wav` before running `build_audio.py` again.

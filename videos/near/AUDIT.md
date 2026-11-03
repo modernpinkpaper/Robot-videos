@@ -19,3 +19,9 @@ YES = done and checked. NO = not met. CANNOT CHECK = the tools cannot tell, a pe
 | Voices natural, comforting, no hard stops | CANNOT CHECK | Measured only. Dalia must listen. |
 | Length about 2 minutes | PARTLY | 2:28 (aimed 2:15). Shorter than Heart Calm (2:43). |
 | Is it funny, moving, does a gesture really fit | CANNOT CHECK | Only a person can tell. |
+
+## Fix after Dalia's question about 0:28 (voice defect)
+- Found: Dalia's line at 0:27 to 0:30 ("Near. Not far at all.") was garbled ("Here, it can be pressed"). Other short lines had the same flaw (words "Near." and "I answer.", "Ask. Quote. Act.", "Near. And He answers.").
+- Why missed: the earlier checks looked for clicks, silence and babble, and only transcribed some lines. Nothing compared every line to the script.
+- Fix: lines rewritten as longer sentences ("Allah is near, not far at all.", "It means near.", "It means: I answer.", "First ask, then borrow words, then act.", "Allah is near, and He answers."). Old cached takes in work/raw were deleted. `human_tts.py` now keeps the best take. New tool `tools/lines_check.py`.
+- Re-checked: lines_check (all English lines match; only Arabic-word lines read oddly, as expected), audio_check passes, movement report passes, fit sheet looked at. NOT checked: how the voices sound, and the Arabic itself (a person must listen).
