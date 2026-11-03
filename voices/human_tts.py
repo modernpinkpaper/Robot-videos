@@ -39,6 +39,8 @@ STYLES = {
     #   temperature = how much the melody varies from take to take
     'comforting': dict(speed_mul=1.0, pitch_add=-0.2, exag_add=0.08, cfg_add=-0.1, pause_scale=1.0, joint=True, temperature=0.9, room=0.13,
                        eq="bass=g=1.8:f=190,treble=g=-1.5:f=7000"),
+    # natural conversation: no extra softness, but the same fixes (whole-line speech, room sound, a lively melody)
+    'natural': dict(speed_mul=1.0, pitch_add=0.0, exag_add=0.06, cfg_add=-0.05, pause_scale=1.0, joint=True, temperature=0.9, room=0.12, eq=""),
     # bright and friendly, for a younger or livelier person
     'bright': dict(speed_mul=1.03, pitch_add=0.3, exag_add=0.08, cfg_add=0.0, pause_scale=0.9, eq="treble=g=1.2:f=5500"),
 }
@@ -84,6 +86,8 @@ def style_for(who, text, emo='neutral', pace=None, tone=None, energy=None, style
     s['speed'] = (max(0.93, s['speed']) if pace is None else pace) * P['speed']   # never drag: slow lines still need to sound like a person talking
     s['pitch'] = s['pitch'] + P['pitch'] + (tone or 0)
     s['ref'] = os.path.join(REFS, P['ref'] + '.wav')
+    priv = os.path.join(REFS, 'private', P['ref'] + '.wav')   # a REAL person's voice sample lives in voices/refs/private/ (git-ignored: the repo is public) and overrides the public sample on this computer only
+    if os.path.exists(priv): s['ref'] = priv
     S = dict(STYLES.get(style or P.get('style') or '', {})); S.update({k: v for k, v in (knobs or {}).items() if v is not None})   # a line can override single knobs: speed_mul, pitch_add, exag_add, cfg_add, pause_scale, eq
     s['exag'] = max(0.3, min(0.75, s['exag'] + S.get('exag_add', 0))); s['cfg'] = max(0.2, s['cfg'] + S.get('cfg_add', 0))
     s['speed'] *= S.get('speed_mul', 1.0); s['pitch'] += S.get('pitch_add', 0); s['pause_scale'] = S.get('pause_scale', 1.0); s['eq'] = S.get('eq', ''); s['joint'] = S.get('joint', False); s['temperature'] = S.get('temperature', 0.8); s['room'] = S.get('room', 0.0)
@@ -221,18 +225,22 @@ def main(path):
             e = st['exag'] + (0.02 if sent.endswith('!') else 0)
             n_words = max(1, len(sent.split())); max_dur = 1.2 + 0.7 * n_words          # a sentence can never take longer than this
             cfg = st['cfg']
-            for attempt in range(4):                                                        # the model sometimes rambles: retry calmer, then cut
+            best_take = None                                                                # keep the best take, not the last one
+            for attempt in range(5 if n_words <= 4 else 4):                                 # the model sometimes rambles or garbles short lines: retry calmer, keep the best
                 wav = model.generate(soften_caps(sent), audio_prompt_path=st['ref'], exaggeration=min(0.75, e), cfg_weight=cfg, temperature=st.get('temperature', 0.8)).squeeze(0)
-                ok = wav.shape[0] / sr <= max_dur
+                ok = wav.shape[0] / sr <= max_dur; sc = 0.0
                 if ok:
                     sc, wps = clarity(wav, sr, sent)
                     ok = sc >= 0.92 and wps <= 3.9                                          # words must be recognised, and not rushed
                     if not ok: print(f'  retry: clarity {sc:.2f}, {wps:.1f} words/s', flush=True)
                 else: print(f'  retry ({wav.shape[0] / sr:.1f}s for {n_words} words)', flush=True)
+                if best_take is None or sc > best_take[0]: best_take = (sc, wav)
                 if ok: break
                 e = max(0.3, e - 0.12); cfg = min(0.8, cfg + 0.08)
             else:
-                wav = wav[:int(sr * max_dur)]; n = int(sr * 0.12); wav[-n:] = wav[-n:] * torch.linspace(1, 0, n)
+                wav = best_take[1]
+                if wav.shape[0] / sr > max_dur:
+                    wav = wav[:int(sr * max_dur)].clone(); n = int(sr * 0.12); wav[-n:] = wav[-n:] * torch.linspace(1, 0, n)
             rates.append(n_words / max(0.4, wav.shape[0] / sr)); parts.append(wav); parts.append(torch.zeros(int(sr * pause * st['pause_scale'])))
         audio = torch.cat(parts[:-1]).unsqueeze(0)           # no pause after the last sentence
         raw = tempfile.mktemp(suffix='.wav'); ta.save(raw, audio, sr)
