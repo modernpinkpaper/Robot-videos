@@ -39,6 +39,8 @@ export const CUES = {
   words: [
     // say it with me: Amina says the word with open palms, Dalia repeats it with effort, Amina approves; each meaning has its own gesture
     { who: 'AMINA', t: ['L', 0, 0], until: ['LE', 0, 0], pose: 'open', face: 'sweet' },
+    { who: 'DALIA', t: ['L', 0, 0.8], d: 1.5, face: 'thinking', tilt: 0.1, nod: 0.07 },
+    { who: 'DALIA', t: ['L', 0, 2.9], d: 1.4, face: 'happy', nod: 0.09, lean: 0.03 },
     { who: 'DALIA', t: ['L', 1, 0], d: 1.1, face: 'nervous smile', nod: 0.1, lean: 0.04 },
     { who: 'AMINA', t: ['L', 1, 0.5], d: 1.2, face: 'proud', act: 'nod' },
     { who: 'AMINA', t: ['L', 2, 0], d: 1.6, pose: 'chest', face: 'sweet', tilt: 0.1 },            // near: close to me
@@ -84,6 +86,8 @@ export const CUES = {
     // QUOTE: she sits quietly, tries the Arabic phrase with effort, then is proud that she quoted the Quran
     { who: 'DALIA', t: ['L', 0, 0], until: ['LE', 0, 0.3], pose: 'lap', face: 'neutral', slump: 0.04 },
     { who: 'DALIA', t: ['L', 1, 0], until: ['LE', 1, 0.3], pose: 'lap', face: 'thinking', tilt: 0.1, look: [0.2, 0.2] },
+    { who: 'DALIA', t: ['L', 1, 1.6], d: 1.3, pose: 'lap', face: 'thinking', nod: 0.08 },
+    { who: 'DALIA', t: ['L', 1, 4.2], d: 1.4, pose: 'lap', face: 'nervous smile', tilt: -0.08, lean: 0.03 },
     { who: 'DALIA', t: ['L', 2, 0], until: ['LE', 2, 0.3], pose: 'lap', face: 'nervous smile', nod: 0.08, lean: 0.03 },
     { who: 'DALIA', t: ['L', 3, 0.2], until: ['E', 0], pose: 'chest', face: 'proud', slump: 0.0, nod: 0.1 },
   ],
