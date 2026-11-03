@@ -176,15 +176,18 @@ window.renderFrame = t => {
   let yaw = 0, blur = 0, flash = 0;
   for (let k = 1; k < TL.scenes.length; k++) { const tb = TL.scenes[k].start, d = t - tb, dir = k % 2 ? 1 : -1; if (d > -0.2 && d < 0.2) { if (d < 0) { const u = (d + 0.2) / 0.2; yaw = dir * 0.9 * u * u; blur = 20 * Math.pow(u, 1.2); } else { const u = d / 0.2; yaw = -dir * 0.9 * (1 - u) * (1 - u); blur = 20 * Math.pow(1 - u, 1.2); } flash = 0.2 * (1 - Math.abs(d) / 0.2); } }
   showSets(def.set); setLight(def.light, def.shadow); poseActors(def, S, si, t);
-  applyCam(evalCam(cd, sh.u, t, sh.st, sh.i === 0), W / H, yaw);
+  // info cards
+  const cdv = S.cards.find(c => t >= c.t0 && t < c.t1), card = $('card');
+  if (cdv) { if (lastCard !== cdv.id) { $('cardin').innerHTML = CARDS[cdv.id]; lastCard = cdv.id; } const u = clamp((t - cdv.t0) / 0.4), o = clamp((cdv.t1 - t) / 0.25); card.style.opacity = Math.min(u > 0 ? 1 : 0, o).toFixed(2); card.style.transform = `scale(${(0.6 + 0.4 * backOut(u)).toFixed(3)}) translateY(${(Math.sin(t * 2) * 2).toFixed(1)}px)`; } else { card.style.opacity = 0; }
+  // KEEP FACES VISIBLE: while a card is up, shift the picture down (and widen it a little) so the characters sit in the space BELOW the card and ABOVE the caption
+  const cardOp = parseFloat(card.style.opacity || 0) || 0, cardH = cdv ? $('cardin').offsetHeight : 0;
+  const lo = 98 + cardH + 14, hi = 826, shiftPx = cdv ? Math.max(0, (lo + hi) / 2 - H / 2) * cardOp : 0, widen = 1 + (cdv ? 0.38 * cardOp : 0);
+  { const cc = evalCam(cd, sh.u, t, sh.st, sh.i === 0); cc.fov = 2 * Math.atan(Math.tan(cc.fov * Math.PI / 360) * widen) * 180 / Math.PI; applyCam(cc, W / H, yaw); if (shiftPx > 0.5) camera.setViewOffset(W, H, 0, -shiftPx, W, H); else camera.clearViewOffset(); }
   renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H); renderer.render(scene, camera);
   cv.style.filter = blur > 0.3 ? `blur(${blur.toFixed(1)}px)` : 'none'; $('flash').style.opacity = flash.toFixed(3);
   // captions (also for voice-over lines)
   const ln = TL.lines.find(l => t >= l.v0 - 0.08 && t <= l.v1 + 0.3), cap = $('cap');
   if (ln) { $('capwho').textContent = NAMES[ln.who]; $('capwho').style.background = ACC[ln.who]; $('captxt').textContent = ln.text; cap.style.opacity = clamp(Math.min((t - ln.v0 + 0.08) / 0.1, (ln.v1 + 0.3 - t) / 0.12)).toFixed(2); } else cap.style.opacity = 0;
-  // info cards
-  const cdv = S.cards.find(c => t >= c.t0 && t < c.t1), card = $('card');
-  if (cdv) { if (lastCard !== cdv.id) { $('cardin').innerHTML = CARDS[cdv.id]; lastCard = cdv.id; } const u = clamp((t - cdv.t0) / 0.4), o = clamp((cdv.t1 - t) / 0.25); card.style.opacity = Math.min(u > 0 ? 1 : 0, o).toFixed(2); card.style.transform = `scale(${(0.6 + 0.4 * backOut(u)).toFixed(3)}) translateY(${(Math.sin(t * 2) * 2).toFixed(1)}px)`; } else { card.style.opacity = 0; }
     // promise header: big in the first seconds (the whole pitch on frame 0), then a slim but READABLE bar that stays; the chip of the current habit lights up
   { const bigEnd = TL.lines[3].v0 - 0.1, k = clamp((t - bigEnd) / 0.5), box = $('hbox'), chips = [...$('hchips').children], mix = (a, b) => (a + (b - a) * k).toFixed(1);
     $('hbox').children[0].style.cssText = `opacity:${(1 - k).toFixed(2)};height:${mix(22, 0)}px;overflow:hidden`;

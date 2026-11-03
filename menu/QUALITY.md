@@ -44,3 +44,6 @@ The rules below mostly say what NOT to do ("nothing moves without a reason"). Th
 ## What the tools can and cannot do
 - The gate checks words and rules (see `tools/lint_dialogue.py`). It cannot tell if a line is funny, if the voice sounds natural, or if a pose looks right. That is what the fit sheet (you) and Dalia are for.
 - If Dalia says a line or reaction feels off, find WHY, then add a rule to this file or to `tools/lint_dialogue.py` so it never happens again.
+
+## Cards must not hide faces (Dalia's rule)
+When an info card is on screen, the characters' faces must stay visible in the space BELOW the card and ABOVE the caption. Do not leave the camera aimed at the middle of the frame under a card. In the render page, while a card is up: measure the card height, shift the picture down with `camera.setViewOffset` and widen the lens a little (see the "KEEP FACES VISIBLE" block in `videos/near/index.html`; copy it). Check this on the fit sheet: for every frame with a card, can you see a face?
