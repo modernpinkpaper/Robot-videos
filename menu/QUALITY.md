@@ -47,3 +47,6 @@ The rules below mostly say what NOT to do ("nothing moves without a reason"). Th
 
 ## Cards must not hide faces (Dalia's rule)
 When an info card is on screen, the characters' faces must stay visible in the space BELOW the card and ABOVE the caption. Do not leave the camera aimed at the middle of the frame under a card. In the render page, while a card is up: measure the card height, shift the picture down with `camera.setViewOffset` and widen the lens a little (see the "KEEP FACES VISIBLE" block in `videos/near/index.html`; copy it). Check this on the fit sheet: for every frame with a card, can you see a face?
+
+## Faces must be easy to read (Dalia's rule)
+The `thinking` and `eye roll` faces send the eyes UP and to the side, so a listener looks like she is rolling her eyes. Never use `thinking` for someone who is listening, learning or feeling something. Use: listening = `neutral` with the eyes on the speaker (plus a small nod or tilt); burdened = `worried` or `sad` with the head and eyes DOWN; looking up to Allah = a soft face, head tilted back, open hands, and the camera shows the sky; remembering = a hand-to-chin pose with a `neutral` face. If you cannot tell on the fit sheet whether a face is "looking up", "burdened" or "rolling eyes", change it.
