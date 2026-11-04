@@ -50,3 +50,6 @@ When an info card is on screen, the characters' faces must stay visible in the s
 
 ## Faces must be easy to read (Dalia's rule)
 The `thinking` and `eye roll` faces send the eyes UP and to the side, so a listener looks like she is rolling her eyes. Never use `thinking` for someone who is listening, learning or feeling something. Use: listening = `neutral` with the eyes on the speaker (plus a small nod or tilt); burdened = `worried` or `sad` with the head and eyes DOWN; looking up to Allah = a soft face, head tilted back, open hands, and the camera shows the sky; remembering = a hand-to-chin pose with a `neutral` face. If you cannot tell on the fit sheet whether a face is "looking up", "burdened" or "rolling eyes", change it.
+
+## Shown Arabic must come from the Quran text (checked by a tool)
+Copy every Arabic word or phrase that is SHOWN on a card or phone screen from the Uthmani text (`https://api.alquran.cloud/v1/ayah/<surah>:<ayah>/quran-uthmani`), by code, not by typing it. Then run `python3 tools/arabic_source_check.py videos/<name>/cards.js <ref> <ref> ...` (list every verse the video cites). It must say "all shown Arabic is in the Quran source". Also run `tools/ar_cover.py` on the SPOKEN Arabic: a voice can drop the last words (it did for Al-Fatihah).
