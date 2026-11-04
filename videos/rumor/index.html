@@ -23,6 +23,25 @@ canvas{display:block}
 #hdr .chip.on{background:#ff6fae;color:#fff;transform:scale(1.12)}
 .phone{border:9px solid #2d2748;border-radius:34px;background:#fffaf2;padding:8px 16px 14px;margin:-12px -16px -18px}.pbar{display:flex;justify-content:space-between;font:800 15px/1 'Liberation Sans',Arial,sans-serif;color:#6a5a8a;padding:2px 6px 10px}.phone mark{background:#ffe97a;border-radius:10px;padding:0 8px}
 #pops{top:0;bottom:0}.pop{position:absolute;font-size:92px;line-height:1;filter:drop-shadow(0 5px 0 rgba(160,108,200,.55))}
+
+#phoneview{top:0;bottom:0;opacity:0;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#fbeaf3 0%,#eadcf6 70%,#dccdf0 100%)}
+#pw{position:absolute;left:50%;top:132px;width:452px;height:930px;margin-left:-226px;transform-origin:50% 55%}
+#pw .ph{position:absolute;inset:0;border-radius:58px;background:#1d1a2e;padding:15px;box-shadow:0 24px 44px rgba(60,30,100,.38);z-index:2}
+#pw .ph:before{content:"";position:absolute;top:22px;left:50%;width:92px;height:22px;margin-left:-46px;border-radius:12px;background:#0f0d1a;z-index:3}
+#pscreen{position:relative;width:100%;height:100%;border-radius:44px;background:#fff;overflow:hidden;font-family:"Liberation Sans",Arial,sans-serif;color:#2a2147}
+#pw .fg{position:absolute;right:-30px;width:74px;height:44px;border-radius:22px;background:#e2bda6;border:4px solid #3a2a40;z-index:3}
+#pw .th{position:absolute;left:-32px;top:640px;width:62px;height:120px;border-radius:31px;background:#e2bda6;border:4px solid #3a2a40;transform:rotate(14deg);z-index:3}
+#pw .arm{position:absolute;right:-78px;top:640px;width:170px;height:460px;border-radius:80px;background:#2a3568;border:4px solid #3a2a40;transform:rotate(-14deg);z-index:1}
+.apphd{background:#7a5cc8;color:#fff;padding:52px 20px 14px;display:flex;justify-content:space-between;align-items:baseline}.apphd b{font-size:27px}.apphd small{font-size:16px;opacity:.85}
+.msgs{padding:16px 14px;background:#efe9fb;height:100%}
+.bub{display:block;max-width:78%;margin:0 0 12px;padding:10px 16px 12px;border-radius:20px;font:700 23px/1.25 "Liberation Sans",Arial,sans-serif;background:#fff;box-shadow:0 3px 0 rgba(122,92,200,.18)}
+.bub .nm{display:block;font-size:15px;color:#7a5cc8;font-weight:900;margin-bottom:2px}.bub.out{margin-left:auto;background:#ff9bc8;color:#3a1230}
+.shot{margin:0 0 12px;padding:14px 16px;border-radius:20px;background:#fff;border:3px solid #ff6f6f;box-shadow:0 3px 0 rgba(122,92,200,.18)}.shot .tag{font:900 17px/1 "Liberation Sans",Arial,sans-serif;color:#ff4a4a;letter-spacing:1.5px}.shot .hl{font:900 28px/1.15 "Liberation Sans",Arial,sans-serif;margin:8px 0 6px}.shot .sm{font:700 16px/1.2 "Liberation Sans",Arial,sans-serif;color:#6a5a8a}
+.row{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 14px;border-radius:18px;background:#fff;font:800 24px/1.1 "Liberation Sans",Arial,sans-serif;box-shadow:0 3px 0 rgba(122,92,200,.18)}.row small{display:block;font-size:16px;color:#2fa36b;margin-top:3px}.row .av{font-size:34px}
+.bigstep{margin-top:14px;text-align:center;font:900 30px/1.3 "Liberation Sans",Arial,sans-serif;color:#2a2147;background:#fff6c9;border-radius:20px;padding:12px 8px}
+.qhd{background:#fffaf2;display:flex;justify-content:space-between;align-items:center;padding:52px 20px 12px;border-bottom:2px solid #eadff2;font:800 22px/1 "Liberation Sans",Arial,sans-serif;color:#6a5a8a}
+.qpage{background:#fffaf2;height:100%;padding-bottom:20px}.qar{direction:rtl;font-family:"AmiriQ","DejaVu Sans",serif;font-size:37px;line-height:1.85;padding:16px 22px 6px;color:#1f3f55}.qar mark{background:#fff3b8;border-radius:10px;padding:0 6px;display:inline-block}.qar .key{background:#ffc94a;border-radius:8px;padding:0 4px;color:#3a1c00}
+.qen{padding:8px 24px;font:700 25px/1.3 "Liberation Sans",Arial,sans-serif;color:#2a2147}.qen i{display:inline-block;font-style:normal;margin-right:6px}.qlab{padding:8px 24px 0;font:900 15px/1 "Liberation Sans",Arial,sans-serif;letter-spacing:1.5px;color:#a06cc8}
 #card{top:98px;text-align:center;opacity:0}
 #card .pill{display:inline-block;box-sizing:border-box;width:520px;padding:20px 24px 24px;border-radius:38px;background:rgba(255,248,240,.97);box-shadow:0 9px 0 rgba(160,108,200,.9),0 0 46px rgba(255,220,240,.65);color:#2a2147}
 .ref{font:800 17px/1 "Liberation Sans",Arial,sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:#a06cc8;margin-bottom:10px}
@@ -43,7 +62,7 @@ canvas{display:block}
 .batt{display:inline-flex;gap:8px;padding:10px;border:7px solid #2a2147;border-radius:18px;margin:10px 0 6px;position:relative}.batt:after{content:"";position:absolute;right:-18px;top:18px;width:9px;height:26px;background:#2a2147;border-radius:0 6px 6px 0}.batt i{display:block;width:46px;height:44px;border-radius:8px;background:#7fd09a}
 ol{margin:6px 0 10px;padding:0 0 0 38px;text-align:left;font:800 28px/1.4 "Liberation Sans",Arial,sans-serif;color:#2a2147}li::marker{color:#ff6fae;font-weight:900}
 </style></head><body><div id="wrap"><div id="cv"></div>
-<div class="ov" id="vig"></div><div class="ov" id="flash"></div>
+<div class="ov" id="vig"></div><div class="ov" id="flash"></div><div class="ov" id="phoneview"><div id="pw"><div class="arm"></div><i class="fg" style="top:460px"></i><i class="fg" style="top:516px"></i><i class="fg" style="top:572px"></i><i class="fg" style="top:628px"></i><i class="th"></i><div class="ph"><div id="pscreen"></div></div></div></div>
 <div class="ov" id="hdr"><div class="box" id="hbox"><div class="l1">A QURAN LESSON · 1 MINUTE</div><div class="l2" id="hl2">1 easy way to<br><b>stop a rumor</b></div><div class="chips" id="hchips"></div></div></div>
 <div class="ov" id="pops"></div><div class="ov" id="card"><div class="pill" id="cardin"></div></div>
 <div class="ov" id="cap"><span class="who" id="capwho"></span><span class="txt" id="captxt"></span></div>
@@ -59,7 +78,7 @@ import { autoListener, autoSpeaker, applyCues } from '../../characters/expressiv
 import { CUES } from './perform.js';
 import { buildSets } from './sets.js';
 import { LIGHTS, WARM_POS, SC, CAMS } from './shots.js';
-import { CARDS } from './cards.js';
+import { CARDS, PHONES } from './cards.js';
 const W = 576, H = 1024;
 await document.fonts.load('44px AmiriQ', 'ٱلَّذِينَ'); await document.fonts.load('700 84px AmiriQ', 'ذِكْر');
 const TL = await (await fetch('work/' + (new URLSearchParams(location.search).get('tl') || 'timeline.json'))).json();
@@ -168,7 +187,7 @@ function applyCam(c, aspect, yaw = 0) {
 }
 function shotAt(S, t) { let i = 0; for (let k = 0; k < S.shots.length; k++) if (t >= S.shots[k].t - 1e-6) i = k; const st = S.shots[i].t, en = i + 1 < S.shots.length ? S.shots[i + 1].t : S.end; return { i, st, en, name: S.shots[i].name, u: (t - st) / (en - st) }; }
 
-const cv = renderer.domElement; let lastCard = '';
+const cv = renderer.domElement; let lastCard = '', lastPhone = '';
 window.renderFrame = t => {
   t = clamp(t, 0, TOTAL - 1e-3);
   let si = TL.scenes.findIndex(s => t >= s.start && t < s.end); if (si < 0) si = TL.scenes.length - 1;
@@ -183,6 +202,15 @@ window.renderFrame = t => {
   if (cdv) { if (lastCard !== cdv.id) { $('cardin').innerHTML = CARDS[cdv.id]; lastCard = cdv.id; } const u = clamp((t - cdv.t0) / 0.4), o = clamp((cdv.t1 - t) / 0.25); card.style.opacity = Math.min(u > 0 ? 1 : 0, o).toFixed(2); card.style.transform = `scale(${(0.6 + 0.4 * backOut(u)).toFixed(3)}) translateY(${(Math.sin(t * 2) * 2).toFixed(1)}px)`; } else { card.style.opacity = 0; }
   // pop-up pictures (a phone, a clock) that bounce in when something is mentioned
   { const pp = (S.pops || []).filter(q => t >= q.t0 && t < q.t1).map(q => { const u = clamp((t - q.t0) / 0.35), o = clamp((q.t1 - t) / 0.2); return `<div class="pop" style="left:${q.x}px;top:${q.y + Math.sin(t * 3 + q.x) * 4}px;opacity:${o.toFixed(2)};transform:scale(${(0.2 + 0.8 * backOut(u)).toFixed(3)}) rotate(${(Math.sin(t * 2.3 + q.x) * 6).toFixed(1)}deg)">${q.e}</div>`; }).join(''); const pe = $('pops'); if (pe.dataset.k !== pp) { pe.innerHTML = pp; } }
+  // PHONE CLOSE-UP: a hand holding a phone fills the frame; things on the screen appear one by one (data-f = when, as a fraction of the segment)
+  let phoneShown = false;
+  { const q = (S.phones || []).find(z => t >= z.t0 && t < z.t1), pv = $('phoneview');
+    if (q) { phoneShown = true; if (lastPhone !== q.id) { $('pscreen').innerHTML = PHONES[q.id]; lastPhone = q.id; }
+      const u = clamp((t - q.t0) / (q.t1 - q.t0)), inn = clamp((t - q.t0) / 0.3), out = clamp((q.t1 - t) / 0.18);
+      pv.style.opacity = Math.min(1, out + (t < q.t0 + 0.05 ? 0 : 0)).toFixed(2);
+      $('pw').style.transform = `translateY(${((1 - backOut(inn)) * 170).toFixed(1)}px) rotate(${(-2.2 + Math.sin(t * 1.4) * 1.2).toFixed(2)}deg) scale(${(1 + Math.sin(t * 0.9) * 0.012).toFixed(4)})`;
+      $('pscreen').querySelectorAll('[data-f]').forEach(el => { const e = clamp((u - parseFloat(el.dataset.f)) / 0.06); el.style.opacity = e.toFixed(2); el.style.transform = `translateY(${((1 - e) * 16).toFixed(1)}px)`; });
+    } else { pv.style.opacity = 0; } }
   // KEEP FACES VISIBLE: while a card is up, shift the picture down (and widen it a little) so the characters sit in the space BELOW the card and ABOVE the caption
   const cardOp = parseFloat(card.style.opacity || 0) || 0, cardH = cdv ? $('cardin').offsetHeight : 0;
   const lo = 98 + cardH + 14, hi = 826, shiftPx = cdv ? Math.max(0, (lo + hi) / 2 - H / 2) * cardOp : 0, widen = 1 + (cdv ? 0.38 * cardOp : 0);
