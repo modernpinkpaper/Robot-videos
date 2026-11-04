@@ -82,11 +82,11 @@ const QL = (() => {
   }
 
   // ---------- phone close-up
-  function phone(t, tin, dur) {
-    const k = clamp((t - tin) / 0.55), pop = eback(k), A = L.ayah;
+  function phone(t, tin, dur, A) {
+    const k = clamp((t - tin) / 0.55), pop = eback(k);
     c.save(); c.fillStyle = '#fdfdfd'; c.fillRect(0, 0, W, H);
     const read = A.readFrom != null ? clamp((t - A.readFrom) / (A.readTo - A.readFrom)) : clamp((t - tin - 0.9) / Math.max(dur - 1.2, 1)); const z = 1 + 0.2 * ease(clamp((t - tin) / dur));
-    c.translate(288, 520 + (1 - pop) * 700); c.rotate(-0.1 + 0.03 * Math.sin(t * 1.2)); c.scale(z, z);
+    c.translate(288, 560 + (1 - pop) * 700); c.rotate(-0.1 + 0.03 * Math.sin(t * 1.2)); c.scale(z, z);
     // phone body
     c.beginPath(); c.roundRect(-190, -420, 380, 800, 38); c.fillStyle = '#111'; c.fill(); stroke(2);
     c.beginPath(); c.roundRect(-176, -406, 352, 772, 28); c.fillStyle = '#fff'; c.fill();
@@ -136,6 +136,40 @@ const QL = (() => {
     }
   }
 
+
+  // ---------- header (frame 0 carries the promise) and cards (step / word / recap). Cards sit at the top; shots keep faces below them.
+  function wrap(txt, w) { const ws = txt.split(' '), out = []; let cur = ''; for (const x of ws) { const tt = cur ? cur + ' ' + x : x; if (c.measureText(tt).width > w && cur) { out.push(cur); cur = x; } else cur = tt; } if (cur) out.push(cur); return out; }
+  function panel(x, y, w, h, a = 1) { c.save(); c.globalAlpha = a; c.shadowColor = 'rgba(60,40,60,.18)'; c.shadowBlur = 18; c.shadowOffsetY = 6; c.beginPath(); c.roundRect(x, y, w, h, 22); c.fillStyle = '#fff'; c.fill(); c.shadowColor = 'transparent'; stroke(2); c.restore(); }
+  function chipRow(cx, y, active, scale = 1, a = 1) {
+    const H = L.header; c.save(); c.globalAlpha = a; c.font = `800 ${Math.round(15 * scale)}px Montserrat`; c.textBaseline = 'middle'; c.textAlign = 'center';
+    const ws = H.chips.map((t, i) => c.measureText(`${i + 1} ${t}`).width + 26 * scale); const gap = 8 * scale; let x = cx - (ws.reduce((p, q) => p + q, 0) + gap * (ws.length - 1)) / 2;
+    H.chips.forEach((t, i) => { const on = active === 'all' || active === i; c.beginPath(); c.roundRect(x, y - 14 * scale, ws[i], 28 * scale, 14 * scale); c.fillStyle = on ? '#ff6fae' : '#f1ecef'; c.fill(); c.fillStyle = on ? '#fff' : '#8a7f86'; c.fillText(`${i + 1} ${t}`, x + ws[i] / 2, y + 1); x += ws[i] + gap; });
+    c.restore();
+  }
+  function activeChip(t) { const sc = TL.scenes.find(s => t >= s.start && t < s.end); if (!sc) return -1; const m = /^step(\d)$/.exec(sc.id); if (m) return +m[1] - 1; return sc.id === 'close' ? 'all' : -1; }
+  function header(t) {
+    const H = L.header; if (!H) return; const k = ease(clamp((t - 3.4) / 0.6)), hh = lerp(176, 56, k), a = clamp(t / 0.15);
+    panel(24, 10, 528, hh, a); c.save(); c.globalAlpha = a; c.textAlign = 'center';
+    if (k < 1) { c.globalAlpha = a * (1 - k); c.fillStyle = '#8a7f86'; c.font = '700 14px Montserrat'; c.fillText(H.kicker, 288, 38); c.fillStyle = INK; c.font = '800 42px Montserrat'; H.title.forEach((ln, i) => c.fillText(ln, 288, 86 + i * 46)); }
+    if (k > 0) { c.globalAlpha = a * k; c.fillStyle = INK; c.font = '800 17px Montserrat'; c.textAlign = 'left'; c.fillText(H.short, 44, 44); }
+    c.restore();
+    if (k < 1) chipRow(288, 160, k < 0.5 ? 'all' : -1, 1.1, a * (1 - k)); if (k > 0) chipRow(430, 38, activeChip(t), 0.78, a * k);
+  }
+  function cards(t) {
+    for (const cd of TL.scenes.flatMap(s => s.cards || [])) {
+      if (t < cd.t0 || t > cd.t1 + 0.3) continue; const D = L.cards[cd.id]; if (!D) continue;
+      const kin = clamp((t - cd.t0) / 0.4), kout = clamp((t - cd.t1) / 0.3), y0 = 78, off = (1 - eback(kin)) * -240 + eout(kout) * -260;
+      c.save(); c.translate(0, off); c.textAlign = 'center';
+      if (D.type === 'step') { panel(34, y0, 508, 148); c.beginPath(); c.arc(86, y0 + 52, 30, 0, 7); c.fillStyle = '#ff6fae'; c.fill(); c.fillStyle = '#fff'; c.font = '800 34px Montserrat'; c.textBaseline = 'middle'; c.fillText(D.n, 86, y0 + 54); c.textBaseline = 'alphabetic';
+        c.textAlign = 'left'; c.fillStyle = INK; c.font = '800 38px Montserrat'; c.fillText(D.name, 134, y0 + 64); c.fillStyle = '#6a6a6a'; c.font = '600 20px Montserrat'; wrap(D.body, 380).forEach((ln, i) => c.fillText(ln, 134, y0 + 96 + i * 26)); }
+      if (D.type === 'word') { panel(34, y0, 508, 206); c.fillStyle = '#ff6fae'; c.font = '800 14px Montserrat'; c.fillText(D.label, 288, y0 + 28); c.direction = 'rtl'; c.fillStyle = '#1a1a1a'; c.font = '64px Amiri'; c.fillText(D.ar, 288, y0 + 100); c.direction = 'ltr';
+        c.fillStyle = INK; c.font = '800 30px Montserrat'; c.fillText(D.tr + '  =  ' + D.mean, 288, y0 + 145); c.fillStyle = '#8a8a8a'; c.font = '600 17px Montserrat'; c.fillText(D.tip, 288, y0 + 178); }
+      if (D.type === 'recap') { panel(34, y0, 508, 206); c.fillStyle = '#8a7f86'; c.font = '800 14px Montserrat'; c.fillText('THE LESSON', 288, y0 + 28); D.items.forEach((it, i) => { const x = 110 + i * 178; c.beginPath(); c.arc(x, y0 + 82, 24, 0, 7); c.fillStyle = '#ff6fae'; c.fill(); c.fillStyle = '#fff'; c.font = '800 26px Montserrat'; c.textBaseline = 'middle'; c.fillText(i + 1, x, y0 + 84); c.textBaseline = 'alphabetic'; c.fillStyle = INK; c.font = '800 20px Montserrat'; c.fillText(it, x, y0 + 134); });
+        c.fillStyle = '#ff6fae'; c.font = '800 18px Montserrat'; c.fillText(D.note, 288, y0 + 182); }
+      c.restore();
+    }
+  }
+
   // ---------- end card
   function card(t, t0) {
     c.fillStyle = '#fdfdfd'; c.fillRect(0, 0, W, H); const k = clamp((t - t0) / 0.7), e = eback(k); const C = L.card;
@@ -150,7 +184,7 @@ const QL = (() => {
   function renderFrame(t) {
     const { s, k, dt } = shot(t), def = L.shots[s.name];
     c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#fdfdfd'; c.fillRect(0, 0, W, H);
-    if (def.phone) { phone(t, def.from ? TL.allShots.find(x => x.name === def.from).t : s.t, def.dur); caption(t); fadeIn(dt); return; }
+    if (def.phone) { phone(t, def.from ? TL.allShots.find(x => x.name === def.from).t : s.t, def.dur, L.ayahs ? L.ayahs[def.ayah] : L.ayah); header(t); caption(t); fadeIn(dt); return; }
     if (def.card) { card(t, s.t); return; }
     const z = lerp(def.z[0], def.z[1], ease(k)), cx = lerp(def.cx[0], def.cx[1], ease(k)), cy = lerp(def.cy[0], def.cy[1], ease(k)), rot = (def.rot || 0) * (1 - k) + Math.sin(t * 0.7) * 0.004;
     c.save(); c.translate(W / 2, H / 2); c.rotate(rot); c.scale(z, z); c.translate(-cx, -cy);
@@ -158,7 +192,7 @@ const QL = (() => {
     const order = Object.keys(L.chars); const hand = {};
     for (const n of order) hand[n] = girl(pose(n, t));
     L.doodles && L.doodles(c, t, { bubble, scribble, heart, spark, qmark, hand, stroke, ink: INK, lineAt, ease, eout, eback, clamp });
-    c.restore(); caption(t); fadeIn(dt);
+    c.restore(); header(t); cards(t); caption(t); fadeIn(dt);
   }
   function fadeIn(dt) { if (dt < 0.1) { c.fillStyle = `rgba(253,253,253,${0.55 * (1 - dt / 0.1)})`; c.fillRect(0, 0, W, H); } }
 
