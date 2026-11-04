@@ -12,6 +12,16 @@ Use it when Dalia asks for a Quran lesson, a faith reminder or "religious teachi
 7. **Ask a person to check it.** After building, tell Dalia the Arabic and meanings should be checked by someone she trusts. We are not scholars.
 8. **No real family or kids' names on screen** (the character names are fine).
 
+## SHORT FORMULA (the new default, Dalia's refinement after watching 3 reference videos). Use this unless she asks for the long lesson.
+About 45 to 75 seconds, vertical 9:16, one idea. Dalia's words: the viewer must SEE the problem at once, read the verse, and get a way to do it easily.
+1. **PROBLEM, ACTED OUT (0 to 8 s).** Do not explain the problem, SHOW it: Dalia does the struggle on screen (scrolling all day, praying with no idea what to say) and says one short line. Pictures pop up when something is mentioned (a phone, a clock). The header on frame 0 says what the viewer gets ("1 EASY WAY TO ...").
+2. **VERSE (8 to 25 s).** The Arabic on a PHONE-SCREEN card (the line highlighted, like the Quran page on a phone) with the surah and number, then the simple meaning, read slowly. Quran only.
+3. **ONE EASY WAY (25 to 55 s).** ONE tiny action, not three. Dalia tries it once on screen so the viewer sees it works and feels small. A "COPY THIS" card shows the exact words or steps (Arabic, English letters, meaning, when to do it). Dalia shows she is unsure at first and then relaxed.
+4. **CLOSE (5 s).** "Try it for 7 days" and one warm line.
+Dropped from the long lesson: the three-Arabic-words chapter, the breathe moment, the three habits, the recap quiz. An Arabic word stays only if it is part of the easy way (the words of the dua or phrase to say).
+Ideas from the references we use: pictures pop up when mentioned; a copy-this card at the end; (optional) the words appear one at a time. We do NOT copy: hadith, rulings, or the other creator's name or watermark.
+All content rules above still apply (Quran only, no hadith, Arabic from the Uthmani text, no music, simple English, a person checks the Arabic). The quality steps still apply (lint, lines check, audio check, movement report, fit sheet, cards must not hide faces, no eye-roll face).
+
 ## ANSWER FIRST (learned from Dalia's feedback on Heart Calm)
 - **Frame 0 carries the whole promise:** a header such as "3 EASY WAYS TO REMEMBER ALLAH" with the three short names (PAUSE, NOTICE, TALK). Many people watch muted, so the first caption is the pitch. The header stays as a slim, readable bar all video, and the chip of the habit being taught lights up.
 - **Say the number and the names in the first 8 seconds, THEN explain why** (the verse). Never hide the answer behind a question.
