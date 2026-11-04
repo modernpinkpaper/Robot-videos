@@ -13,7 +13,7 @@ SCENES = [
   shots=[('daliaHook', 0), ('daliaCu2', 'L1'), ('daliaCu', 'L2'), ('aminaCuS', 'L3'), ('pushAminaS', 'L4')], cards=[], pops=[],
   phones=[('post', 0.0, 'L0+3.6'), ('sent', 'L1+0.4', 'L2+0.5')]),
  dict(id='verse', set='room', pre=0.5, post=1.6, lines=[
-   ('AMINA', 'Al-Hujurat. Verse six.', 'neutral', 0, '{ar:سُورَةُ الْحُجُرَاتِ}. Verse six.'),
+   ('AMINA', 'Al-Hujurat. This is verse number six.', 'neutral', 0, '{ar:سُورَةُ الْحُجُرَاتِ}. This is verse number six.'),
    ('AMINA', "If a wrongdoer brings you news, check it first. Or you might hurt people without knowing, and regret it.", 'sweet', 0.4),
    ('AMINA', "So when news comes from someone you can't trust, slow down.", 'sweet', 0.5),
    ('DALIA', 'So I pause before I post.', 'happy', 0.6)],
