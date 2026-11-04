@@ -153,7 +153,7 @@ const QL = (() => {
     if (k < 1) { c.globalAlpha = a * (1 - k); c.fillStyle = '#8a7f86'; c.font = '700 14px Montserrat'; c.fillText(H.kicker, 288, 38); c.fillStyle = INK; c.font = '800 42px Montserrat'; H.title.forEach((ln, i) => c.fillText(ln, 288, 86 + i * 46)); }
     if (k > 0) { c.globalAlpha = a * k; c.fillStyle = INK; c.font = '800 17px Montserrat'; c.textAlign = 'left'; c.fillText(H.short, 44, 44); }
     c.restore();
-    if (k < 1) chipRow(288, 160, k < 0.5 ? 'all' : -1, 1.1, a * (1 - k)); if (k > 0) chipRow(430, 38, activeChip(t), 0.78, a * k);
+    if (k < 1) chipRow(288, 160, k < 0.5 ? 'all' : -1, 1.1, a * (1 - k)); if (k > 0) chipRow(374, 38, activeChip(t), 0.72, a * k);
   }
   function cards(t) {
     for (const cd of TL.scenes.flatMap(s => s.cards || [])) {
@@ -162,8 +162,8 @@ const QL = (() => {
       c.save(); c.translate(0, off); c.textAlign = 'center';
       if (D.type === 'step') { panel(34, y0, 508, 148); c.beginPath(); c.arc(86, y0 + 52, 30, 0, 7); c.fillStyle = '#ff6fae'; c.fill(); c.fillStyle = '#fff'; c.font = '800 34px Montserrat'; c.textBaseline = 'middle'; c.fillText(D.n, 86, y0 + 54); c.textBaseline = 'alphabetic';
         c.textAlign = 'left'; c.fillStyle = INK; c.font = '800 38px Montserrat'; c.fillText(D.name, 134, y0 + 64); c.fillStyle = '#6a6a6a'; c.font = '600 20px Montserrat'; wrap(D.body, 380).forEach((ln, i) => c.fillText(ln, 134, y0 + 96 + i * 26)); }
-      if (D.type === 'word') { panel(34, y0, 508, 206); c.fillStyle = '#ff6fae'; c.font = '800 14px Montserrat'; c.fillText(D.label, 288, y0 + 28); c.direction = 'rtl'; c.fillStyle = '#1a1a1a'; c.font = '64px Amiri'; c.fillText(D.ar, 288, y0 + 100); c.direction = 'ltr';
-        c.fillStyle = INK; c.font = '800 30px Montserrat'; c.fillText(D.tr + '  =  ' + D.mean, 288, y0 + 145); c.fillStyle = '#8a8a8a'; c.font = '600 17px Montserrat'; c.fillText(D.tip, 288, y0 + 178); }
+      if (D.type === 'word') { panel(34, y0, 508, 214); c.fillStyle = '#ff6fae'; c.font = '800 14px Montserrat'; c.fillText(D.label, 288, y0 + 24); c.direction = 'rtl'; c.fillStyle = '#1a1a1a'; c.font = '58px Amiri'; c.fillText(D.ar, 288, y0 + 96); c.direction = 'ltr';
+        c.fillStyle = INK; c.font = '800 30px Montserrat'; c.fillText(D.tr + '  =  ' + D.mean, 288, y0 + 156); c.fillStyle = '#8a8a8a'; c.font = '600 17px Montserrat'; c.fillText(D.tip, 288, y0 + 188); }
       if (D.type === 'recap') { panel(34, y0, 508, 206); c.fillStyle = '#8a7f86'; c.font = '800 14px Montserrat'; c.fillText('THE LESSON', 288, y0 + 28); D.items.forEach((it, i) => { const x = 110 + i * 178; c.beginPath(); c.arc(x, y0 + 82, 24, 0, 7); c.fillStyle = '#ff6fae'; c.fill(); c.fillStyle = '#fff'; c.font = '800 26px Montserrat'; c.textBaseline = 'middle'; c.fillText(i + 1, x, y0 + 84); c.textBaseline = 'alphabetic'; c.fillStyle = INK; c.font = '800 20px Montserrat'; c.fillText(it, x, y0 + 134); });
         c.fillStyle = '#ff6fae'; c.font = '800 18px Montserrat'; c.fillText(D.note, 288, y0 + 182); }
       c.restore();
