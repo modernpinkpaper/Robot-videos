@@ -8,6 +8,7 @@ from ar_cover import cover, hear
 from faster_whisper import WhisperModel
 M = WhisperModel('small', compute_type='int8'); SR = 44100
 A = [l.strip().lstrip('﻿') for l in open(HERE + '/fatihah_uthmani.txt', encoding='utf-8') if l.strip()]
+A += [l.strip() for l in open(HERE + '/fatihah_closing.txt', encoding='utf-8') if l.strip()]   # 8 = Ameen, 9 = Sadaqallahul Adheem
 W = HERE + '/work'
 def rd(p): w = wave.open(p); return np.frombuffer(w.readframes(w.getnframes()), dtype='<i2').astype(np.float32) / 32768
 def trimmed(p, o):
