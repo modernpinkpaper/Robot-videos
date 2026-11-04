@@ -75,7 +75,7 @@ const QL = (() => {
     if (mine) {
       p.bob += -e * 3.5; p.tilt = Math.sin(t * 3) * 0.02 + e * 0.025;
       const g = clamp((t - l.v0) / 0.35) * (0.45 + 0.55 * Math.sin((t - l.v0) * 2.2) ** 2);   // gesture builds while speaking
-      p.armR = [0.35 + 0.95 * e * g, 1.1 * e * g + 0.15]; p.armL = [0.2, 0.2];
+      const amp = ({ deadpan: .35, stern: .4, tired: .3, neutral: .5, sweet: .5, sad: .3 })[l.emo] ?? .75; p.armR = [0.25 + 0.95 * amp * e * g, 1.1 * amp * e * g + 0.15]; p.armL = [0.2, 0.2];
     } else { p.tilt = Math.sin(t * 1.3 + ch.x) * 0.012; if (l) p.tilt += 0.02; }
     for (const ev of (L.events || [])) if (ev.who === name && t >= ev.t0 && t <= ev.t1) ev.fn(p, t, (t - ev.t0) / (ev.t1 - ev.t0));
     return p;
@@ -85,7 +85,7 @@ const QL = (() => {
   function phone(t, tin, dur) {
     const k = clamp((t - tin) / 0.55), pop = eback(k), A = L.ayah;
     c.save(); c.fillStyle = '#fdfdfd'; c.fillRect(0, 0, W, H);
-    const read = clamp((t - tin - 0.9) / Math.max(dur - 1.2, 1)); const z = 1 + 0.2 * ease(clamp((t - tin) / dur));
+    const read = A.readFrom != null ? clamp((t - A.readFrom) / (A.readTo - A.readFrom)) : clamp((t - tin - 0.9) / Math.max(dur - 1.2, 1)); const z = 1 + 0.2 * ease(clamp((t - tin) / dur));
     c.translate(288, 520 + (1 - pop) * 700); c.rotate(-0.1 + 0.03 * Math.sin(t * 1.2)); c.scale(z, z);
     // phone body
     c.beginPath(); c.roundRect(-190, -420, 380, 800, 38); c.fillStyle = '#111'; c.fill(); stroke(2);
