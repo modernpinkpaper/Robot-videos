@@ -219,7 +219,7 @@ window.renderFrame = t => {
   cv.style.filter = blur > 0.3 ? `blur(${blur.toFixed(1)}px)` : 'none'; $('flash').style.opacity = flash.toFixed(3);
   // captions (also for voice-over lines)
   const ln = TL.lines.find(l => t >= l.v0 - 0.08 && t <= l.v1 + 0.3), cap = $('cap');
-  if (ln) { $('capwho').textContent = NAMES[ln.who]; $('capwho').style.background = ACC[ln.who]; $('captxt').textContent = ln.text; cap.style.opacity = clamp(Math.min((t - ln.v0 + 0.08) / 0.1, (ln.v1 + 0.3 - t) / 0.12)).toFixed(2); } else cap.style.opacity = 0;
+  if (ln) { $('capwho').textContent = NAMES[ln.who]; $('capwho').style.background = ACC[ln.who]; $('captxt').textContent = ln.text; cap.style.opacity = (phoneShown && lastPhone === 'quran') ? 0 : clamp(Math.min((t - ln.v0 + 0.08) / 0.1, (ln.v1 + 0.3 - t) / 0.12)).toFixed(2); } else cap.style.opacity = 0;
     // promise header: big in the first seconds (the whole pitch on frame 0), then a slim but READABLE bar that stays; the chip of the current habit lights up
   { const bigEnd = TL.lines[3].v0 - 0.1, k = clamp((t - bigEnd) / 0.5), box = $('hbox'), chips = [...$('hchips').children], mix = (a, b) => (a + (b - a) * k).toFixed(1);
     $('hbox').children[0].style.cssText = `opacity:${(1 - k).toFixed(2)};height:${mix(22, 0)}px;overflow:hidden`;

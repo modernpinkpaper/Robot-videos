@@ -25,7 +25,7 @@ SCENES = [
    ('DALIA', 'Fa-tabayyanu.', 'neutral', 0.6, '{ar:فَتَبَيَّنُوا}.'),
    ('DALIA', "I just asked Layla. She's fine, and she said thank you.", 'happy', 0.6)],
   shots=[('daliaMed', 0), ('aminaLow', 'L1'), ('daliaCu', 'L2-0.1'), ('daliaCu2', 'L3'), ('aminaCu', 'L3+1.8')], cards=[('copy', 'L0+1.4', 'L2')], pops=[],
-  phones=[('check', 'L2+0.9', 'L3+0.2')]),
+  phones=[('check', 'L2+0.5', 'L3+3.0')]),
  dict(id='close', set='room', pre=0.7, post=1.6, lines=[
    ('AMINA', 'Try it for seven days. Every time you want to forward something.', 'sweet', 0),
    ('DALIA', "Okay. I'll check first.", 'sweet', 0.6)],

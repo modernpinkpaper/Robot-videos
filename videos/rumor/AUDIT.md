@@ -1,0 +1,8 @@
+# Rule audit: "Stop a rumor" (type 3: real-life role-play with a kind correction, with phone close-ups)
+- Short formula: 0 to 15 s problem acted out on a phone (a shocking post in a group chat, Dalia forwards it to three chats, Layla replies "that's NOT true"), the verse on a phone close-up (a hand holding a phone, Arabic highlighted, meaning word by word), ONE easy way (say fa-tabayyanu = check it first before you share) with a "COPY THIS" card, Dalia tries it on a phone (asks Layla, "No! Thank you for asking me"), close "try it for 7 days". Length 63 s. Header on frame 0: "1 easy way to stop a rumor".
+- Quran only, no hadith, no music. Arabic copied from the Uthmani text (api.alquran.cloud) 49:6, and checked with tools/arabic_source_check.py: "all shown Arabic is in the Quran source".
+- Lint gate: 0 errors (2 soft warnings kept). Lines check: all English lines match; the two Arabic-word lines read oddly to the English recognizer (expected). One garbled line (a 2-word sentence "Verse six") was found and rewritten.
+- STRICT Arabic check (tools/ar_cover.py): surah name 0.92, Amina fa-tabayyanu 1.00, Dalia fa-tabayyanu 1.00 (remade with 16 tries; the first take was 0.80).
+- Audio check passes. Movement report passes (Dalia 8 poses, Amina 8 faces).
+- Fit sheet and frames looked at: faces visible in every room shot and under cards, no eye-roll face, the verse phone has no caption over it, the "check" phone lasts through Dalia's line.
+- The persistent limits: the phone close-up has a drawn hand (flat, simple); the "viral post" is made up (a fictional person, no real names). NOT checked: how the voices SOUND (nobody here can hear) and Arabic pronunciation (computer voice, not tajweed): a person must listen.
