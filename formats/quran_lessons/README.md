@@ -17,6 +17,9 @@ Dalia learns, Amina teaches (voices DALIA and AMINA; no names on screen).
 | close | Recap card, quick check "Can you name the three?", "Try it for 7 days", handwritten "Share for Sadaqah Jariya". |
 Cards sit at the top of the screen. Camera shots keep faces BELOW the cards (never hide a face). First example: `videos/quran_stop_gossip/` (the older `videos/quran_gossip/` was the first draft without the formula).
 
+## Craft (from the anidoodle skill, applied to the flat look)
+Hand-inked outlines (thick-thin, tiny boil at 8 fps), interior contour lines (hijab folds, abaya seam, hem, cuffs), tapered sleeves, hands with five fingers, contact shadow, doodles DRAWN ON (never faded in). Never use 1 to 3 word spoken sentences for DALIA or AMINA: the voice garbles them (`tools/lines_check.py` catches it; run it with `voices/cbenv/bin/python`).
+
 ## Rules for religious content (do not skip)
 - Only use ayat and hadith you are SURE of. Copy the English from a standard translation (Sahih International) word for word, and the Arabic exactly. Say in your reply which ayah you used so Dalia can check it against a mushaf. Never invent or paraphrase an ayah; paraphrase only the explanation.
 - Do not draw any prophet, companion or angel. Faceless characters only. No music with instruments over a recitation. No recitation audio is generated (a TTS voice must not recite Quran): the ayah is shown as text and its translation is read.

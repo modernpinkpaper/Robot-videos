@@ -11,46 +11,82 @@ const QL = (() => {
 
   // ---------- drawing helpers (all lines use the same ink colour and a thin stroke)
   function stroke(w = 2) { c.lineWidth = w; c.strokeStyle = INK; c.lineJoin = 'round'; c.lineCap = 'round'; c.stroke(); }
-  function limb(x0, y0, x1, y1, w, col) { c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.lineCap = 'round'; c.lineWidth = w + 4; c.strokeStyle = INK; c.stroke(); c.lineWidth = w; c.strokeStyle = col; c.stroke(); }
+  // ---- hand-inked line work (anidoodle craft bar): a point list is smoothed into a curve, every point is nudged by a tiny wobble that "boils" at 8 fps
+  // like hand-drawn animation, and the outline is drawn as a thick stroke plus a thin second pass, so the line is thick-thin and not one even tube.
+  let BOIL = 0; const hash = (a, b) => { const v = Math.sin(a * 127.1 + b * 311.7 + BOIL * 17.3) * 43758.5453; return v - Math.floor(v); };
+  function inkPts(pts, closed, amp = 0.7) { return pts.map(([x, y], i) => [x + (hash(x, y) - .5) * 2 * amp, y + (hash(y, x + i) - .5) * 2 * amp]); }
+  function smooth(pts, closed) {
+    const n = pts.length; c.moveTo((pts[0][0] + pts[n - 1][0]) / 2 * (closed ? 1 : 0) + (closed ? 0 : pts[0][0]), (pts[0][1] + pts[n - 1][1]) / 2 * (closed ? 1 : 0) + (closed ? 0 : pts[0][1]));
+    for (let i = 0; i < (closed ? n : n - 2); i++) { const p = pts[(i + (closed ? 0 : 1)) % n], q = pts[(i + (closed ? 1 : 2)) % n]; c.quadraticCurveTo(p[0], p[1], (p[0] + q[0]) / 2, (p[1] + q[1]) / 2); }
+    if (!closed) c.lineTo(pts[n - 1][0], pts[n - 1][1]);
+  }
+  function ink(pts, o = {}) {   // o: fill, w (line weight), closed, amp
+    const P = inkPts(pts, o.closed !== false, o.amp ?? 0.7); c.beginPath(); smooth(P, o.closed !== false); if (o.closed !== false) c.closePath();
+    if (o.fill) { c.fillStyle = o.fill; c.fill(); }
+    if (o.w !== 0) { c.lineWidth = o.w ?? 2.2; c.strokeStyle = INK; c.lineJoin = 'round'; c.lineCap = 'round'; c.stroke(); const Q = inkPts(pts, o.closed !== false, (o.amp ?? 0.7) * 1.4); c.beginPath(); smooth(Q, o.closed !== false); if (o.closed !== false) c.closePath(); c.lineWidth = (o.w ?? 2.2) * 0.45; c.strokeStyle = 'rgba(74,59,59,.7)'; c.stroke(); }
+  }
+  const line = (pts, w = 1.3, al = 1) => { c.save(); c.globalAlpha = al; ink(pts, { closed: false, w, amp: 0.5 }); c.restore(); };
+  const ell = (cx, cy, rx, ry, rot = 0, n = 14) => Array.from({ length: n }, (_, i) => { const a = i / n * Math.PI * 2, x = Math.cos(a) * rx, y = Math.sin(a) * ry; return [cx + x * Math.cos(rot) - y * Math.sin(rot), cy + x * Math.sin(rot) + y * Math.cos(rot)]; });
+  function sleeve(sx, sy, ex, ey, w0, w1, col) {   // a tapered sleeve from (sx,sy) to (ex,ey), width w0 -> w1, with a seam
+    const dx = ex - sx, dy = ey - sy, l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
+    const A = [[sx + nx * w0 / 2, sy + ny * w0 / 2], [(sx + ex) / 2 + nx * (w0 + w1) / 4.2, (sy + ey) / 2 + ny * (w0 + w1) / 4.2], [ex + nx * w1 / 2, ey + ny * w1 / 2], [ex - nx * w1 / 2, ey - ny * w1 / 2], [(sx + ex) / 2 - nx * (w0 + w1) / 4.2, (sy + ey) / 2 - ny * (w0 + w1) / 4.2], [sx - nx * w0 / 2, sy - ny * w0 / 2]];
+    ink(A, { fill: col }); return { nx, ny, dx: dx / l, dy: dy / l };
+  }
+  function hand(hx, hy, dx, dy, skin, curl = 0.3) {   // palm, a thumb and three separated fingers, each finger an outlined skin-coloured stroke
+    const nx = -dy, ny = dx, px = hx + dx * 7, py = hy + dy * 7, finger = (x0, y0, x1, y1, w) => { c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.lineCap = 'round'; c.lineWidth = w + 2.4; c.strokeStyle = INK; c.stroke(); c.lineWidth = w; c.strokeStyle = skin; c.stroke(); };
+    for (let i = -1; i <= 1; i++) { const a = i * 0.30 + (i === 0 ? 0 : curl * 0.1 * i), fx = dx * Math.cos(a) - dy * Math.sin(a), fy = dx * Math.sin(a) + dy * Math.cos(a), L = 9 + (i === 0 ? 2.5 : 0) - curl * 3; finger(px + nx * i * 3.6 + dx * 3, py + ny * i * 3.6 + dy * 3, px + nx * i * 4.2 + fx * L + dx * 3, py + ny * i * 4.2 + fy * L + dy * 3, 3.6); }
+    finger(px - nx * 5, py - ny * 5, px - nx * 10 + dx * 6, py - ny * 10 + dy * 6, 4);   // thumb
+    ink(ell(px, py, 7.2, 8.6, Math.atan2(dy, dx) + Math.PI / 2, 10), { fill: skin, w: 1.8 });
+  }
   function arm(side, sx, sy, a1, a2, o) {   // a1,a2 in radians from pointing straight down, positive = outward
     const L1 = 58, L2 = 52, d = side;
     const ex = sx + d * Math.sin(a1) * L1, ey = sy + Math.cos(a1) * L1;
     const hx = ex + d * Math.sin(a1 + a2) * L2, hy = ey + Math.cos(a1 + a2) * L2;
-    limb(sx, sy, ex, ey, 22, o.dress); limb(ex, ey, hx, hy, 19, o.dress);
-    c.beginPath(); c.ellipse(hx, hy + 4, 8, 10, 0, 0, 7); c.fillStyle = o.skin; c.fill(); stroke(1.6);
+    sleeve(sx, sy, ex, ey, 25, 21, o.dress); const f = sleeve(ex, ey, hx, hy, 21, 17, o.dress);   // abaya sleeves: a shoulder, an elbow, a cuff
+    line([[ex - 6, ey - 1], [ex + 5, ey + 2]], 1.1, .45); line([[hx - f.nx * 6.5 - f.dx * 5, hy - f.ny * 6.5 - f.dy * 5], [hx + f.nx * 6.5 - f.dx * 5, hy + f.ny * 6.5 - f.dy * 5]], 1.3, .8);   // an elbow fold and the cuff line
+    hand(hx, hy, f.dx, f.dy, o.skin, 0.4);
     return [hx, hy];
   }
   function girl(o) {   // o: x, face (1 = faces right, -1 left), s, hijab, dress, shoes, skin, tilt, bob, lean, armR:[a1,a2], armL:[a1,a2], bow
-    c.save(); c.translate(o.x, GY); c.scale(o.s * o.face, o.s); c.rotate(o.lean || 0);
-    // body
-    c.beginPath(); c.moveTo(-30, -250); c.quadraticCurveTo(-36, -120, -56, -14); c.lineTo(56, -14); c.quadraticCurveTo(36, -120, 30, -250); c.closePath(); c.fillStyle = o.dress; c.fill(); stroke(2);
-    c.beginPath(); c.moveTo(-56, -14); c.quadraticCurveTo(0, -6, 56, -14); stroke(1.4);
-    for (const sx of [-24, 24]) { c.beginPath(); c.ellipse(sx, -5, 15, 7, 0, 0, 7); c.fillStyle = o.shoes; c.fill(); stroke(1.6); }
-    // back arm (L) then head then front arm (R)
+    c.save(); c.translate(o.x, GY); c.scale(o.s * o.face, o.s);
+    c.beginPath(); c.ellipse(0, 2, 62, 8, 0, 0, 7); c.fillStyle = 'rgba(74,59,59,.10)'; c.fill();   // contact shadow: weight on the ground
+    c.rotate(o.lean || 0);
+    // abaya: widest at the hem, a front seam, hem folds, a waist drape
+    ink([[-30, -250], [-33, -200], [-38, -140], [-46, -82], [-57, -16], [-30, -7], [0, -12], [30, -7], [57, -16], [46, -82], [38, -140], [33, -200], [30, -250], [0, -258]], { fill: o.dress });
+    line([[3, -236], [2, -180], [4, -120], [3, -60], [5, -14]], 1.2, .55); line([[-40, -120], [-18, -108], [8, -112], [34, -122]], 1.1, .4); line([[-52, -42], [-40, -22]], 1.1, .5); line([[50, -44], [38, -22]], 1.1, .5);
+    for (const sx of [-24, 24]) { ink([[sx - 15, -6], [sx - 12, -13], [sx + 6, -14], [sx + 17, -9], [sx + 15, -2], [sx - 8, 1]], { fill: o.shoes, w: 1.8 }); line([[sx + 6, -12], [sx + 12, -4]], 1, .5); }   // shoes with a toe line
     const hands = {};
-    hands.L = arm(-1, -28, -240, o.armL[0], o.armL[1], o);
-    // head
-    c.save(); c.translate(0, -262 + (o.bob || 0)); c.rotate(o.tilt || 0); c.translate(0, 262);
-    const by = o.bow || 0; c.translate(0, -262); c.rotate(by * 0.18); c.translate(0, 262);
-    c.beginPath(); c.moveTo(-40, -290); c.quadraticCurveTo(-52, -232, -38, -214); c.lineTo(38, -214); c.quadraticCurveTo(52, -232, 40, -290); c.closePath(); c.fillStyle = o.hijab; c.fill(); stroke(2);   // drape
-    c.beginPath(); c.ellipse(0, -300, 40, 46, 0, 0, 7); c.fillStyle = o.hijab; c.fill(); stroke(2);
-    c.beginPath(); c.ellipse(6, -298, 22, 29, 0, 0, 7); c.fillStyle = o.skin; c.fill(); stroke(1.6);
-    c.beginPath(); c.moveTo(-14, -262); c.quadraticCurveTo(-4, -246, 22, -262); c.strokeStyle = 'rgba(74,59,59,.35)'; c.lineWidth = 1.2; c.stroke();
+    hands.L = arm(-1, -27, -238, o.armL[0], o.armL[1], o);
+    // head: pivots at the neck. The head follows the body a moment late (overlap)
+    c.save(); c.translate(0, -262 + (o.bob || 0)); c.rotate((o.tilt || 0) + (o.bow || 0) * 0.18); c.translate(0, 262);
+    const H = o.hijab;
+    ink([[-39, -288], [-33, -327], [-4, -349], [28, -337], [41, -296], [47, -252], [45, -226], [30, -212], [0, -207], [-30, -212], [-45, -226], [-47, -252]], { fill: H });   // hijab: dome and drape
+    c.save(); c.beginPath(); smooth(inkPts([[-39, -288], [-33, -327], [-4, -349], [28, -337], [41, -296], [47, -252], [45, -226], [30, -212], [0, -207], [-30, -212], [-45, -226], [-47, -252]], true, 0), true); c.clip();
+    c.fillStyle = 'rgba(74,59,59,.10)'; c.beginPath(); c.moveTo(-60, -230); c.quadraticCurveTo(-20, -240, -8, -200); c.lineTo(-60, -200); c.fill();   // soft shadow under the dome, on the far side
+    c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.ellipse(-12, -330, 14, 6, -0.4, 0, 7); c.fill(); c.restore();   // a light accent on top
+    ink([[-22, -284], [-21, -310], [-8, -327], [10, -326], [24, -308], [24, -280], [14, -264], [2, -259], [-12, -262]], { fill: o.skin, w: 2 });   // face opening (no features, as in the reference)
+    line([[-26, -280], [-27, -306], [-12, -334]], 1.4, .5); line([[-24, -252], [-30, -228]], 1.2, .55); line([[10, -246], [16, -218]], 1.2, .5); line([[-8, -240], [-4, -214]], 1.1, .4);   // hijab folds
+    ink(ell(22, -262, 2.6, 2.6, 0, 8), { fill: '#fff', w: 1.2 });   // pin
     c.restore();
-    hands.R = arm(1, 28, -240, o.armR[0], o.armR[1], o);
+    hands.R = arm(1, 27, -238, o.armR[0], o.armR[1], o);
     c.restore(); return hands;
   }
-  const scribble = (x, y, w, n = 3) => { c.beginPath(); for (let i = 0; i < n; i++) { const yy = y + i * 9; c.moveTo(x, yy); for (let k = 1; k <= 6; k++) c.lineTo(x + w * k / 6, yy + (k % 2 ? -3 : 3)); } stroke(2); };
-  function bubble(x, y, w, h, tailX, tailY, a = 1) {
-    c.save(); c.globalAlpha = a; c.beginPath(); c.roundRect(x, y, w, h, 18); c.fillStyle = '#fff'; c.fill(); stroke(2);
-    c.beginPath(); c.moveTo(x + w * .3, y + h - 1); c.lineTo(tailX, tailY); c.lineTo(x + w * .5, y + h - 1); c.fillStyle = '#fff'; c.fill(); stroke(2);
-    c.beginPath(); c.moveTo(x + w * .3 + 2, y + h - 1); c.lineTo(x + w * .5 - 2, y + h - 1); c.strokeStyle = '#fff'; c.lineWidth = 4; c.stroke(); c.restore();
+  // doodles are DRAWN ON (a pen makes the marks), never faded or scaled in. p = progress 0..1
+  const scribble = (x, y, w, n = 3, p = 1) => { c.save(); c.beginPath(); c.rect(x - 4, y - 12, (w + 8) * p, n * 14); c.clip(); c.beginPath(); for (let i = 0; i < n; i++) { const yy = y + i * 9; c.moveTo(x, yy); for (let k = 1; k <= 6; k++) c.lineTo(x + w * k / 6, yy + (k % 2 ? -3 : 3)); } stroke(2); c.restore(); };
+  function bubble(x, y, w, h, tailX, tailY, a = 1, p = 1) {
+    c.save(); c.globalAlpha = a; const L = 2 * (w + h) + 60; c.beginPath(); c.roundRect(x, y, w, h, 18);
+    if (p > 0.55) { c.fillStyle = `rgba(255,255,255,${clamp((p - 0.55) / 0.3)})`; c.fill(); }
+    c.setLineDash([L, L]); c.lineDashOffset = L * (1 - clamp(p / 0.8)); stroke(2); c.setLineDash([]);
+    if (p > 0.8) { const q = clamp((p - 0.8) / 0.2); c.globalAlpha = a * q; c.beginPath(); c.moveTo(x + w * .3, y + h - 1); c.lineTo(tailX, tailY); c.lineTo(x + w * .5, y + h - 1); c.fillStyle = '#fff'; c.fill(); stroke(2); c.beginPath(); c.moveTo(x + w * .3 + 2, y + h - 1); c.lineTo(x + w * .5 - 2, y + h - 1); c.strokeStyle = '#fff'; c.lineWidth = 4; c.stroke(); }
+    c.restore();
   }
-  function heart(x, y, s, a = 1, col = '#e23b4e') {
-    c.save(); c.globalAlpha = a; c.translate(x, y); c.scale(s, s); c.beginPath(); c.moveTo(0, 8); c.bezierCurveTo(-26, -10, -16, -34, 0, -18); c.bezierCurveTo(16, -34, 26, -10, 0, 8); c.fillStyle = col; c.fill(); stroke(2 / s); c.restore();
+  function heart(x, y, s, a = 1, col = '#e23b4e', p = 1) {
+    c.save(); c.globalAlpha = a; c.translate(x, y); c.scale(s, s); c.beginPath(); c.moveTo(0, 8); c.bezierCurveTo(-26, -10, -16, -34, 0, -18); c.bezierCurveTo(16, -34, 26, -10, 0, 8);
+    if (p > 0.7) { c.fillStyle = col; c.globalAlpha = a * clamp((p - 0.7) / 0.3); c.fill(); c.globalAlpha = a; }
+    c.setLineDash([90, 90]); c.lineDashOffset = 90 * (1 - clamp(p / 0.75)); stroke(2 / s); c.restore();
   }
-  function spark(x, y, s, a = 1) { c.save(); c.globalAlpha = a; c.translate(x, y); c.scale(s, s); c.beginPath(); c.moveTo(0, -20); c.quadraticCurveTo(3, -3, 20, 0); c.quadraticCurveTo(3, 3, 0, 20); c.quadraticCurveTo(-3, 3, -20, 0); c.quadraticCurveTo(-3, -3, 0, -20); c.fillStyle = '#ffd23c'; c.fill(); stroke(2 / s); c.restore(); }
-  function qmark(x, y, s, a = 1) { c.save(); c.globalAlpha = a; c.translate(x, y); c.scale(s, s); c.font = '700 44px Caveat'; c.fillStyle = INK; c.textAlign = 'center'; c.fillText('?', 0, 0); c.restore(); }
+  function spark(x, y, s, a = 1) { c.save(); c.globalAlpha = a; c.translate(x, y); c.rotate(Math.sin(x + BOIL * 0.5) * 0.12); c.scale(s, s); c.beginPath(); c.moveTo(0, -20); c.quadraticCurveTo(3, -3, 20, 0); c.quadraticCurveTo(3, 3, 0, 20); c.quadraticCurveTo(-3, 3, -20, 0); c.quadraticCurveTo(-3, -3, 0, -20); c.fillStyle = '#ffd23c'; c.fill(); stroke(2 / s); c.restore(); }
+  function qmark(x, y, s, a = 1, p = 1) { c.save(); c.globalAlpha = a; c.translate(x, y); c.scale(s, s); c.font = '700 44px Caveat'; c.textAlign = 'center'; c.strokeStyle = INK; c.lineWidth = 2.2; c.setLineDash([70, 70]); c.lineDashOffset = 70 * (1 - clamp(p / 0.85)); c.strokeText('?', 0, 0); c.setLineDash([]); if (p > 0.85) { c.fillStyle = INK; c.globalAlpha = a * clamp((p - 0.85) / 0.15); c.fillText('?', 0, 0); } c.restore(); }
 
   // ---------- scenery (very light, same thin line)
   function scenery(cam) {
@@ -182,6 +218,7 @@ const QL = (() => {
   // ---------- camera
   function shot(t) { const sh = TL.allShots; let cur = sh[0]; for (const s of sh) if (t >= s.t) cur = s; const nxt = sh[sh.indexOf(cur) + 1]; return { s: cur, k: clamp((t - cur.t) / Math.max(0.5, (nxt ? nxt.t : TL.total) - cur.t)), dt: t - cur.t }; }
   function renderFrame(t) {
+    BOIL = Math.floor(t * 8);
     const { s, k, dt } = shot(t), def = L.shots[s.name];
     c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = '#fdfdfd'; c.fillRect(0, 0, W, H);
     if (def.phone) { phone(t, def.from ? TL.allShots.find(x => x.name === def.from).t : s.t, def.dur, L.ayahs ? L.ayahs[def.ayah] : L.ayah); header(t); caption(t); fadeIn(dt); return; }

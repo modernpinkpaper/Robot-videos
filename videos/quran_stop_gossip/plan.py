@@ -26,7 +26,7 @@ SCENES = [
    ('AMINA', 'One: PAUSE. Watch what happens.', 'neutral', 0),
    ('DALIA', "Okay, don't tell anyone, but she's been so annoying lately.", 'smug', 0.5),
    ('AMINA', 'Pause. Would she hate to hear that?', 'stern', 0.5),
-   ('DALIA', '...Yes. She would.', 'tired', 0.7)],
+   ('DALIA', 'It would really hurt her, honestly.', 'tired', 0.7)],
   shots=[('wide', 0), ('dCu3', 'L1'), ('aLow', 'L2'), ('dDown', 'L3-0.2')], cards=[('step1', 0.3, 'E')]),
  dict(id='step2', pre=0.5, post=0.4, lines=[
    ('AMINA', 'Two: PICTURE it. Remember the verse. If the picture makes you cringe, stop.', 'neutral', 0),
@@ -42,7 +42,7 @@ SCENES = [
   shots=[('dCu4', 0), ('aCu3', 'L1'), ('two4', 'L1+3.5')], cards=[('w_tawwab', 'L1+1.9', 'E')]),
  dict(id='close', pre=0.6, post=3.0, lines=[
    ('AMINA', 'Quick check. Can you name the three?', 'sweet', 0),
-   ('DALIA', 'Pause. Picture. Praise.', 'happy', 2.0),
+   ('DALIA', 'I pause, I picture it, and then I praise.', 'happy', 2.0),
    ('AMINA', 'Try it for seven days. One pause a day.', 'sweet', 0.5),
    ('DALIA', "Okay. I'll start today.", 'sweet', 0.6)],
   shots=[('aCu4', 0), ('dCu5', 'L1-0.1'), ('two5', 'L2'), ('dCu5', 'L3-0.1'), ('card', 'E-2.6')], cards=[('recap', 'L1+0.6', 'L3-0.2')]),
