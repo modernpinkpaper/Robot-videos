@@ -12,7 +12,23 @@ Use it when Dalia asks for a Quran lesson, a faith reminder or "religious teachi
 7. **Ask a person to check it.** After building, tell Dalia the Arabic and meanings should be checked by someone she trusts. We are not scholars.
 8. **No real family or kids' names on screen** (the character names are fine).
 
-## SHORT FORMULA (the new default, Dalia's refinement after watching 3 reference videos). Use this unless she asks for the long lesson.
+## THE THREE SCRIPT TYPES (Dalia's approved rotation). The long lesson is RETIRED (too long). Rotate the types; the verse picks the type.
+All are 45 to 75 seconds, vertical 9:16, one idea, bite-sized. Start every one from `videos/rumor/` (it has the phone close-up): copy the folder, change `plan.py`, `cards.js`, `perform.js`. Posting plan: rotate the types, and after 6 to 8 videos compare watch-to-the-end, shares and saves to see which type speaks to people.
+**Type 1: THE SHORT FIX** (made: `videos/remember/`). Dalia says her problem out loud (a feeling or habit), with pictures popping up; then the verse; then ONE easy way, with a COPY THIS card; then "try it for 7 days." Use it when the verse calms a FEELING.
+**Type 2: THE REAL-LIFE ROLE-PLAY WITH A KIND CORRECTION** (made: `videos/rumor/`). Two friends act out a real situation people live today (forwarding a rumor, a zodiac bio, a comparing-yourself feed, an angry text). One makes the mistake; the other kindly corrects her with a Quran verse (no scolding: "let's check it together"); then ONE easy way, a COPY THIS card, and the fix acted out once. Use it when the verse fixes a MISTAKE or habit.
+**Type 3: THE EVERYDAY SITUATION + A DUA** (not made yet). Mostly silent: "POV: you're ___" on frame 0. Pictures and words on screen show what happens and how most people handle it (3 or 4 pictures pop up). A pause, a thinking face. Then the verse (the dua) on the phone close-up, with the Arabic highlighted and the meaning word by word. Then the dua to COPY (Arabic, English letters, simple meaning). Then an ending card "ALSO SAY IT WHEN..." with 3 other everyday moments for the same dua (for example the exam dua: before a job interview, before a hard talk, before a big presentation). Then "try it today." Use it when the verse IS a dua. Only duas from the Quran. Narration: Amina says the simple meaning and the short Arabic phrase in her voice (no long recitation: a full recitation needs a real reciter and a license check).
+Quick options already written for Type 3: exam or interview (20:25-26), worry about money or news (3:173), snapping at parents (17:24), regret after hurting someone (7:23).
+
+## PHONE SCREEN RULE (Dalia's addition, used in `videos/rumor/`)
+Whenever the video mentions the Quran, a verse, a post, a chat message, a search or anything on a phone, SHOW the phone: a close-up where a hand holds a big phone and the screen fills the frame (the room and faces are hidden for those seconds). It feels like today and is easier to read than a card over the room.
+- In `plan.py` each scene can have `phones=[('post', 0.0, 'L0+3.6'), ...]` (screen id, start, end; times like cards).
+- In `cards.js` the `PHONES` object holds each screen's HTML. Things on the screen appear one by one: `data-f="0.3"` means "show at 30 percent of the segment". The verse screen is a Quran page: Arabic highlighted, the key word in a stronger colour, the simple meaning appearing word by word (`qwords`).
+- The rendering code (hand, phone, sway, reveal) is in `videos/rumor/index.html` (`#phoneview`, `#pw`, the "PHONE CLOSE-UP" block). Copy it.
+- Each phone segment must last at least about 3 seconds (a 0.5 second one cannot be read). Turn the caption OFF while the phone shows the same words (the verse screen does this).
+- The Arabic on a phone screen is copied by code from the Uthmani text, then checked with `tools/arabic_source_check.py`.
+- Do not use real people's names or real posts: the "viral post" and the chats are made up.
+
+## SHORT FORMULA (the base of all three types; Dalia's refinement after watching 3 reference videos).
 About 45 to 75 seconds, vertical 9:16, one idea. Dalia's words: the viewer must SEE the problem at once, read the verse, and get a way to do it easily.
 1. **PROBLEM, ACTED OUT (0 to 8 s).** Do not explain the problem, SHOW it: Dalia does the struggle on screen (scrolling all day, praying with no idea what to say) and says one short line. Pictures pop up when something is mentioned (a phone, a clock). The header on frame 0 says what the viewer gets ("1 EASY WAY TO ...").
 2. **VERSE (8 to 25 s).** The Arabic on a PHONE-SCREEN card (the line highlighted, like the Quran page on a phone) with the surah and number, then the simple meaning, read slowly. Quran only.
