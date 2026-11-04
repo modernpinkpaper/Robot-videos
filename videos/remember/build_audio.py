@@ -128,8 +128,8 @@ for sc in scenes:
 # quiet air: soft filtered noise (room tone), a little brighter outdoors (park scene)
 r = np.random.default_rng(3).standard_normal(N)
 air = np.convolve(r, np.ones(400) / 400, 'same') * 0.018
-park = [s for s in scenes if s['set'] == 'park'][0]
-air *= 1 + 0.9 * np.clip(1 - np.abs(t - (park['start'] + park['end']) / 2) / ((park['end'] - park['start']) / 2 + 0.3), 0, 1)
+for park in [s for s in scenes if s['set'] == 'park'][:1]:   # a bit brighter air outdoors, only if the video has a park scene
+    air *= 1 + 0.9 * np.clip(1 - np.abs(t - (park['start'] + park['end']) / 2) / ((park['end'] - park['start']) / 2 + 0.3), 0, 1)
 air *= np.clip(np.minimum(t / 1.0, (TOTAL - t) / 1.5), 0, 1)
 mix = voices + sfx + air
 mix *= np.clip(np.minimum(t / 0.2, (TOTAL - t) / 1.2), 0, 1); mix = np.tanh(mix * 0.9); mix = mix / np.abs(mix).max() * 0.9
