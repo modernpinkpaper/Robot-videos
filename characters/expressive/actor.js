@@ -50,6 +50,7 @@ export function createActorKit(THREE, xk) {
     if (!st.pose && sp) pose = ['idle', 'hips', clamp(0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 2.2 + c.seed)) * (0.5 + amp))];
     if (st.wave) pose = 'wave';
     const o = { face, pose, talk: sp ? amp : 0, turn: st.turn || 0, nod: st.nod || 0, lean: st.lean || 0, laugh: 0, shake: 0, slump: st.slump || 0, wave: !!st.wave };
+    if (st.tilt !== undefined) o.tilt = st.tilt;   // head tilt (sideways), for questions and warmth
     if (!st.pose && sp && !st.wave) o.nod += 0.02 + amp * 0.04;
     if (st.emo === 'laugh' || st.emo === 'giggle') o.laugh = 0.6;
     const act = st.act;

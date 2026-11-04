@@ -35,11 +35,16 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
   // the torso: a soft egg, wider at the bottom, narrower at the top. dims = radii at the widest part.
   function egg(sx, sy, sz, o = {}) {
     const g = new THREE.SphereGeometry(1, 48, 36, o.phiStart || 0, o.phiLen ?? Math.PI * 2, o.thStart || 0, o.thLen ?? Math.PI), pos = g.attributes.position;
-    for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), w = 1 - 0.34 * smooth01((y + 0.15) / 1.15); pos.setXYZ(i, x * sx * w, y * sy, z * sz * w); }
+    const tp = o.taper ?? 0.34, n = o.n || 2;   // taper: how much narrower the top is than the bottom. n: 2 = round egg, higher = straighter sides (a more natural torso)
+    for (let i = 0; i < pos.count; i++) {
+      let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+      if (n !== 2) { const k = 1 / Math.pow(Math.pow(Math.abs(x), n) + Math.pow(Math.abs(y), n) + Math.pow(Math.abs(z), n), 1 / n) || 1; x *= k; y *= k; z *= k; }
+      const w = 1 - tp * smooth01((y + 0.15) / 1.15); pos.setXYZ(i, x * sx * w, y * sy, z * sz * w);
+    }
     g.computeVertexNormals(); return g;
   }
   // z of the front surface of the egg at body position (x, y)
-  function eggZ(x, y, d) { const yy = (y - d.yc) / d.sy, w = 1 - 0.34 * smooth01((yy + 0.15) / 1.15), rx = d.sx * w, rz = d.sz * w, q = 1 - (x / rx) ** 2 - yy * yy; return rz * Math.sqrt(Math.max(0.02, q)); }
+  function eggZ(x, y, d) { const n = d.n || 2, yy = (y - d.yc) / d.sy, w = 1 - (d.taper ?? 0.34) * smooth01((yy + 0.15) / 1.15), rx = d.sx * w, rz = d.sz * w, q = 1 - Math.pow(Math.abs(x / rx), n) - Math.pow(Math.abs(yy), n); return rz * Math.pow(Math.max(0.02, q), 1 / n); }
   // the face decal: same blob, slightly bigger, UV mapped straight from the front so the 2D face fits exactly
   const faceGeoCache = {};
   function facePatch(h) {
@@ -87,6 +92,11 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     crossed:  { R: { e: [1.9, 2.95, 1.05], h: [-0.35, 3.3, 1.5] }, L: { e: [-1.9, 2.8, 0.85], h: [0.35, 3.05, 1.35] } },
     point:    { R: { e: [1.7, 3.6, 0.9], h: [1.9, 4.0, 2.0] }, L: IDLE_L },
     think:    { R: { e: [1.5, 3.7, 0.8], h: [0.55, 4.2, 1.45], hy: true }, L: { e: [-1.9, 2.8, 0.85], h: [0.35, 3.05, 1.35] } },
+    // added for teaching and quiet scenes (used only when asked for; nothing else changes)
+    chest:    { R: { e: [1.55, 2.95, 0.55], h: [0.5, 3.45, 1.2] }, L: IDLE_L },                                  // a hand on the heart
+    open:     { R: { e: [2.2, 3.1, 0.5], h: [2.55, 3.4, 1.4] }, L: { e: [-2.2, 3.1, 0.5], h: [-2.55, 3.4, 1.4] } },   // palms open, welcoming
+    lap:      { R: { e: [1.5, 2.7, 0.7], h: [0.45, 2.5, 1.35] }, L: { e: [-1.5, 2.7, 0.7], h: [-0.45, 2.5, 1.35] } },   // hands together, calm
+    reach:    { R: { e: [2.6, 3.0, 0.8], h: [3.4, 2.75, 1.25] }, L: IDLE_L },                                      // reaching out to the side (a phone on a table)
   };
 
   // ---------- one character ----------
@@ -99,7 +109,7 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     const bodyG = new THREE.Group(); body.add(bodyG);   // torso, arms and head (leans and bounces)
     // measurements
     const hipY = 0.4 + 1.1 * B.leg, tc = hipY - 0.1 + 1.55 * B.h, topY = tc + 1.55 * B.h, headY = topY - 0.3 + HD.ry * B.head;
-    const D = { sx: 1.28 * B.w, sy: 1.55 * B.h, sz: 0.98 * B.w, yc: tc };
+    const D = { sx: 1.28 * B.w, sy: 1.55 * B.h, sz: 0.98 * B.w * (O.torsoDepth ?? 1), yc: tc, n: O.torsoN || 2, taper: O.taper ?? 0.34 };   // options: torsoN (straighter sides), taper, torsoDepth (front to back)
     // legs: short stubby tubes ending in big round shoes
     const legs = [-1, 1].map(s => {
       const l = new THREE.Group(); l.position.set(s * 0.55 * B.w, hipY, 0); g.add(l);
@@ -109,7 +119,17 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     });
     // torso: ONE soft egg, no neck
     const tmat = O.pattern ? new THREE.MeshStandardMaterial({ map: patternTex(O.pattern.type, O.top, O.pattern.color2), roughness: 0.6, metalness: 0.05 }) : mat(top, { roughness: 0.6 });
-    const torso = new THREE.Mesh(egg(D.sx, D.sy, D.sz), tmat); torso.position.set(0, tc, 0); torso.castShadow = true; torso.receiveShadow = true; bodyG.add(torso);
+    const torso = new THREE.Mesh(egg(D.sx, D.sy, D.sz, { n: D.n, taper: D.taper }), tmat); torso.position.set(0, tc, 0); torso.castShadow = true; torso.receiveShadow = true; bodyG.add(torso);
+    if (O.neckline) {   // option: a little skin shows at the neckline under the chin (a regular round neckline), instead of the top going all the way up. A thin patch that lies flat on the top (it follows the torso surface). No neck piece, no trim.
+      const R = 26, C = 20, yT = topY + 0.1, yB = topY - (O.necklineDepth ?? 0.62), halfW = O.necklineWidth ?? 0.62, pos = [], idx = [];
+      for (let r = 0; r < R; r++) {
+        const u = r / (R - 1), y = yT - u * (yT - yB), hw = halfW * Math.sqrt(Math.max(0, 1 - Math.pow(Math.max(0, (u - 0.2) / 0.8), 2.2)));   // straight sides at the top, a round U at the bottom
+        for (let c = 0; c < C; c++) { const x = -hw + 2 * hw * c / (C - 1); pos.push(x, y, eggZ(x, Math.min(y, topY - 0.1), D) + 0.03); }
+      }
+      for (let r = 0; r < R - 1; r++) for (let c = 0; c < C - 1; c++) { const a0 = r * C + c, b0 = a0 + 1, c0 = a0 + C, d0 = c0 + 1; idx.push(a0, c0, b0, b0, c0, d0); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+      const sm = mat(skin, { roughness: 0.6 }); sm.side = THREE.DoubleSide; const patch = new THREE.Mesh(g, sm); patch.receiveShadow = true; bodyG.add(patch);
+    }
     if (O.dress) {   // a flared skirt (same fabric as the top) and a small white collar
       const prof = [[0.0, 0.5], [1.15 * B.w, 0.25], [1.4 * B.w, -0.2], [1.72 * B.w, -0.95], [1.82 * B.w, -1.32], [1.74 * B.w, -1.45], [1.5 * B.w, -1.38]].map(([r, y]) => new THREE.Vector2(r, y));
       const skm = tmat.clone(); skm.side = THREE.DoubleSide; const sk = new THREE.Mesh(new THREE.LatheGeometry(prof, 40), skm); sk.scale.z = 0.86; sk.position.set(0, tc - 0.4 * B.h + 0.2, 0); sk.castShadow = true; sk.receiveShadow = true; bodyG.add(sk);
@@ -154,7 +174,38 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
       cap(); hb(rx * 2.15, 2.3, 0.9, 0, -0.35, -rz * 0.7, 0.45); for (const s of [-1, 1]) hb(0.55, 1.75, 1.5, s * rx * 0.98, 0.0, -0.25);
       if (st === 'bangs') hb(rx * 1.7, 0.34, 0.55, 0, ry * 0.76, rz * 0.7, 0.16);
     }
-    else if (st === 'long') { cap(); hb(rx * 2.15, 3.3, 0.9, 0, -1.4, -rz * 0.7, 0.45); for (const s of [-1, 1]) hb(0.55, 2.5, 1.5, s * rx * 0.98, -0.6, -0.25); }
+    else if (st === 'long') {
+      cap();
+      if (O.hairFlow) {   // option: the hair also wraps the sides and back of the head, stopping just in front of the ears (the ears stay visible), so no bare head shows beside the ears
+        {   // one smooth hair surface over the sides and back of the head. Its front edge sweeps in a curve: far forward at the forehead (b = 56 deg), back to just in front of the ear (b = 10 deg).
+          const R = 44, C = 90, hn = HD.n, pos = [], idx = [], sm = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+          for (let r = 0; r < R; r++) {
+            const u = r / (R - 1), th = (30 + u * 78) * D2R, b = lerp(58, 10, sm((u - 0.05) / 0.9)) * D2R, p0 = Math.PI - b, p1 = 2 * Math.PI + b;
+            for (let c = 0; c < C; c++) {
+              const ph = lerp(p0, p1, c / (C - 1)), x = -Math.cos(ph) * Math.sin(th), y = Math.cos(th), z = Math.sin(ph) * Math.sin(th), k = 1 / Math.pow(Math.pow(Math.abs(x), hn) + Math.pow(Math.abs(y), hn) + Math.pow(Math.abs(z), hn), 1 / hn);
+              pos.push(x * k * rx * 1.075, y * k * ry * 1.075, z * k * rz * 1.075);
+            }
+          }
+          for (let r = 0; r < R - 1; r++) for (let c = 0; c < C - 1; c++) { const a0 = r * C + c, b0 = a0 + 1, c0 = a0 + C, d0 = c0 + 1; idx.push(a0, c0, b0, b0, c0, d0); }
+          const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+          const pm = hmat.clone(); pm.side = THREE.DoubleSide; const patch = new THREE.Mesh(g, pm); patch.castShadow = true; head.add(patch);
+        }
+      }
+      if (O.hairFlow) { const bk = hb(rx * 2.0, 3.5, 1.3, 0, -1.25, -rz * 0.62, 0.62); bk.scale.set(1, 1, 1); } else hb(rx * 2.15, 3.3, 0.9, 0, -1.4, -rz * 0.7, 0.45);
+      for (const s of [-1, 1]) {
+        if (O.hairFlow) {   // option: ONE continuous curtain of hair per side. It starts inside the cap, hugs the side of the head, then falls straight down (no separate pieces, no ponytail look).
+          const R = 46, C = 18, y0 = ry * 0.5, yb = -2.35, zf = -0.02, zb = -rz * 0.8, hn = HD.n, pos = [], idx = [], sm = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+          const xh = (y, z) => rx * Math.pow(Math.max(0.0001, 1 - Math.pow(Math.abs(y / ry), hn) - Math.pow(Math.abs(z / rz), hn)), 1 / hn);
+          for (let r = 0; r < R; r++) {
+            const u = r / (R - 1), y = lerp(y0, yb, u), yy = Math.max(y, -ry * 0.55), off = 0.5 * sm((y0 - y) / 0.9) + 0.04, zc = (zf + zb) / 2, sh = u > 0.82 ? Math.sqrt(Math.max(0.02, 1 - Math.pow((u - 0.82) / 0.18, 2))) : 1;
+            for (let c = 0; c < C; c++) { const z = zc + (lerp(zf, zb, c / (C - 1)) - zc) * sh, x = xh(yy, z) * (1 - 0.1 * sm((-ry * 0.55 - y) / 1.6)) + off; pos.push(s * x, y, z); }
+          }
+          for (let r = 0; r < R - 1; r++) for (let c = 0; c < C - 1; c++) { const a0 = r * C + c, b0 = a0 + 1, c0 = a0 + C, d0 = c0 + 1; if (s > 0) idx.push(a0, c0, b0, b0, c0, d0); else idx.push(a0, b0, c0, b0, d0, c0); }
+          const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+          const hm = hmat.clone(); hm.side = THREE.DoubleSide; const cur = new THREE.Mesh(g, hm); cur.castShadow = true; head.add(cur);
+        } else hb(0.55, 2.5, 1.5, s * rx * 0.98, -0.6, -0.25);
+      }
+    }
     else if (st === 'ponytail') { cap(); const pt = box(head, 0.7, 2.0, 0.7, hair, 0, 0.2, -rz * 1.25, { round: 0.3 }); pt.rotation.x = 0.35; }
     else if (st === 'curly') { cap(1.05); for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2; ball(head, 0.66, hair, Math.cos(a) * rx * 1.02, 0.35 + Math.sin(a) * ry * 0.8, -0.25, { m: { roughness: 0.5 } }); } }
     else if (st === 'pigtails') {   // center part, two low curly pigtails with little ties
@@ -174,10 +225,29 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     else if (st === 'hijab') {
       const sh = new THREE.Mesh(blob(rx * 1.13, ry * 1.13, rz * 1.15, { thLen: 126 * D2R, n: HD.n }), hmat); sh.rotation.x = -(Math.PI / 2 - 0.26); sh.castShadow = true; head.add(sh);   // the opening faces the front
       const dr = ball(head, 1.2, hair, 0, -ry * 0.8, -0.45, { m: { roughness: 0.5 } }); dr.scale.set(1.25, 1.05, 0.95);
-      if (O.hijabDrape) {   // the scarf hangs down the front in two soft panels (one long, one folded across)
-        const soft = (w, h, x, y, rz, tiltX) => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 20), hmat); m.scale.set(w, h, 0.17); m.position.set(x, y, eggZ(x, y, D) + 0.1); m.rotation.set(tiltX, 0, rz); m.castShadow = true; bodyG.add(m); return m; };
-        soft(0.5, 1.5, 0.78, topY - 1.5, -0.06, 0.12);      // the long panel down the front
-        soft(0.46, 1.05, -0.72, topY - 1.0, 0.55, 0.1);     // the folded panel across the chest
+      if (O.hijabDrape) {   // the scarf flows from the head wrap down the front in two soft panels (one long, one folded across). Each panel is a chain of soft overlapping pieces that starts INSIDE the head wrap, so there is no gap.
+        const dmat = hmat.clone(); dmat.side = THREE.DoubleSide;
+        const drape = (pts, w0, w1) => {   // pts: [x, y] top to bottom (the first point is up inside the head wrap). One smooth soft ribbon: rounded across, tapering, rounded at the end.
+          const R = 44, C = 16, at = u => {   // Catmull-Rom spline through the points: a smooth curve with no kinks
+            const f = u * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(f)), k = f - i, P = j => pts[Math.max(0, Math.min(pts.length - 1, j))];
+            const cr = c => 0.5 * ((2 * P(i)[c]) + (-P(i - 1)[c] + P(i + 1)[c]) * k + (2 * P(i - 1)[c] - 5 * P(i)[c] + 4 * P(i + 1)[c] - P(i + 2)[c]) * k * k + (-P(i - 1)[c] + 3 * P(i)[c] - 3 * P(i + 1)[c] + P(i + 2)[c]) * k * k * k);
+            return [cr(0), cr(1)]; };
+          const zAt = (x, y) => eggZ(x, Math.min(y, topY - 0.15), D) + 0.03 + Math.max(0, y - (topY - 0.15)) * 0.25;   // above the torso top the scarf follows the head wrap forward
+          const pos = [], idx = [];
+          for (let i = 0; i < R; i++) {
+            const u = i / (R - 1), p = at(u), p2 = at(Math.min(1, u + 0.03)), p1 = at(Math.max(0, u - 0.03)); let tx = p2[0] - p1[0], ty = p2[1] - p1[1]; const tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;
+            const nx = -ty, ny = tx, end = u > 0.68 ? Math.pow(Math.max(0.02, 1 - ((u - 0.68) / 0.32) ** 2), 0.6) : 1, hw = lerp(w0, w1, u) * end;
+            for (let j = 0; j < C; j++) {
+              const c = -1 + 2 * j / (C - 1), x = p[0] + nx * hw * c, y = p[1] + ny * hw * c, th = 0.24 * Math.pow(Math.max(0, 1 - c * c), 0.6) * Math.min(1, end * 1.4) * (0.8 + 0.2 * Math.sin(u * Math.PI));
+              pos.push(x, y, zAt(x, y) + th);
+            }
+          }
+          for (let i = 0; i < R - 1; i++) for (let j = 0; j < C - 1; j++) { const a0 = i * C + j, b0 = a0 + 1, c0 = a0 + C, d0 = c0 + 1; idx.push(a0, c0, b0, b0, c0, d0); }
+          const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+          const m = new THREE.Mesh(g, dmat); m.castShadow = true; bodyG.add(m);
+        };
+        drape([[0.95, topY + 0.55], [0.92, topY - 0.7], [0.9, topY - 1.9], [0.78, topY - 3.2]], 0.56, 0.5);     // the long panel down the front
+        drape([[-0.95, topY + 0.55], [-0.88, topY - 0.6], [-0.55, topY - 1.5], [-0.1, topY - 2.3]], 0.54, 0.46);  // the folded panel across the chest
       }
       if (O.pin) ball(head, 0.13, hexn(O.pin), rx * 1.1, -0.55, 0.5, { noShadow: true, m: { roughness: 0.25 } });
     }
@@ -286,9 +356,9 @@ export function createExpressiveKit(THREE, RoundedBoxGeometry, kit) {
     { name: 'hana', tags: 'Soft round face · black bob with bangs · small eyes · coral top', bio: 'Quiet and observant. Her one raised eyebrow says it all.', skin: '#f3d0b0', hair: '#15121a', hairStyle: 'bangs', top: '#ff9b7a', bottom: '#4a4466', eye: '#2a1c14',
       build: { w: 0.95, h: 0.98, leg: 1.0, arm: 0.95 }, head: { rx: 1.46, ry: 1.24, rz: 1.2, n: 2.4 },
       look: { eyeScale: 0.92, eyeGap: 1.02, noseSize: 0.65, lipColor: '#c0485f', browThick: 0.85 } },
-    { name: 'dalia', tags: 'Long straight dark hair, slicked back · big wide-set brown eyes · bold thick arched brows · big warm smile · beauty mark · navy ribbed top', bio: 'Big smile, bold brows, and a sharp eye for everything.', skin: '#dcaa82', hair: '#2a1a16', hairStyle: 'long', top: '#27356b', pattern: { type: 'ribs', color2: '#33427d' }, bottom: '#2f2a45', eye: '#3a2118', browColor: '#1f1410',
-      build: { w: 0.98, h: 1.0, leg: 1.05, arm: 0.98 }, head: { rx: 1.42, ry: 1.33, rz: 1.18, n: 2.6 },
-      look: { lashes: 0.5, eyeScale: 1.1, eyeGap: 1.02, browThick: 1.45, noseSize: 1.12, lipColor: '#c4746f', mole: { x: -262, y: 262 } } },
+    { name: 'dalia', tags: 'Long straight dark hair, slicked back · big wide-set brown eyes · bold thick arched brows · big warm smile · beauty mark · navy ribbed top', bio: 'Big smile, bold brows, and a sharp eye for everything.', skin: '#e2bda6', hair: '#2a2527', hairStyle: 'long', hairFlow: true, neckline: true, top: '#27356b', pattern: { type: 'ribs', color2: '#33427d' }, bottom: '#2f2a45', eye: '#3a2118', browColor: '#1c1819',
+      build: { w: 0.9, h: 1.0, leg: 1.25, arm: 1.0 }, torsoN: 2.9, taper: 0.16, torsoDepth: 0.88, head: { rx: 1.42, ry: 1.33, rz: 1.18, n: 2.6 },
+      look: { lashes: 0.5, eyeScale: 1.1, eyeGap: 1.02, browThick: 1.45, noseSize: 1.12, lipColor: '#c47a8b', lipW: 22, mole: { x: -262, y: 262 } } },
     { name: 'nina', tags: 'Six years old · dark curly pigtails with pink ties · big brown eyes · rosy cheeks · cream flower dress with a white collar', bio: 'Six years old, full of questions, and never sits still.', skin: '#f0c9a6', hair: '#43291b', hairStyle: 'pigtails', top: '#f6efe2', pattern: { type: 'floral', color2: '#f0a9b4' }, dress: true, buttons: '#f4efe6', bottom: '#f4e8dc', shoe: '#7a5642', eye: '#3a2118', browColor: '#2a1a12', kid: true,
       build: { w: 0.9, h: 0.8, leg: 0.8, head: 1.2, arm: 0.88 }, head: { rx: 1.5, ry: 1.3, rz: 1.2, n: 2.4 },
       look: { lashes: 0.7, eyeScale: 1.2, eyeGap: 1.03, noseSize: 0.65, lipColor: '#d0707e', browThick: 0.85 } },

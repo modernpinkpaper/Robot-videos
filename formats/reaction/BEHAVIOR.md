@@ -1,4 +1,5 @@
 # How the reactor behaves
+**These human rules are not only for reaction videos.** The same rules now run for stories, skits and explainers through `characters/expressive/behavior.js` (automatic listening and speaking) with hand-written beats on top. Read this file for ANY video with people.
 
 **Two layers.** (1) **Cues** and spoken lines, written by the director AFTER reading the clip's transcript so they fit the meaning (guide: `REACTOR_VOICE.md`, read it first). (2) **Automatic rules** below: baseline watching, rare silent looks at the camera, timing and variety. The word-list guesses in the table are only a FALLBACK when no cues are written (they judge by keywords, so they can miss the mood). Sudden-sound reactions are OFF by default (music and effects caused false gasps): `"sound_reactions": true` turns them on.
 

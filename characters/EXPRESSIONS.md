@@ -75,3 +75,13 @@ node characters/expressive/make_previews.js video     # the motion clip (slow)
 1. Pick which characters to keep, change any look Dalia does not like, and add more.
 2. Voices: DONE. Every character has a Chatterbox voice (`voices/README.md`); lip sync (`talk`) comes from the voice loudness.
 3. Add a "reaction" example video and mark it in `examples/INDEX.md`.
+
+## Extra poses (added for teaching and quiet scenes)
+`chest` (a hand on the heart), `open` (palms open, welcoming), `lap` (hands together, calm), `reach` (reaching to the side, like for a phone). Use them like the other poses: `pose: 'chest'`, or blend `pose: ['idle', 'chest', k]`. The head can also tilt sideways: `tilt` (about 0.1 to 0.15 for warmth or a question).
+
+## Dalia and Amina: the approved looks (matched to Dalia's photos and feedback)
+These two are done. Do not redesign them; change only what Dalia asks.
+- **Dalia:** regular build (straighter torso, slimmer, a little taller than Amina), hair that wraps the top, sides and back of the head with a curved hairline and falls straight down behind the ears, a small round neckline with skin showing, skin `#e2bda6`, hair `#2a2527`, lips `#c47a8b` (thicker line so they show).
+- **Amina:** the hijab panels flow from the head wrap down the front as one soft drape.
+- New options in `ROSTER` / `faces.js` (defaults leave every other character exactly as before): `hairFlow` (hair wrap and curtain), `neckline` (skin patch under the chin; `necklineDepth`, `necklineWidth`), `torsoN` (straighter torso sides), `taper`, `torsoDepth`, `lipW` (mouth line thickness).
+- To check a look from every side: `node characters/expressive/turntable.js <folder> [name1 name2]`, then join the jpgs with ffmpeg at 24 fps.

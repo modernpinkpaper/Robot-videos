@@ -190,6 +190,7 @@ export const LOOK = {
   mustache: null,                // { color, size, style: 'classic'|'handlebar' }
   beard: null,                   // { color, style: 'full'|'goatee'|'stubble' }
   lipColor: null,                // color of the mouth line (pink lips)
+  lipW: null,                    // thickness of the mouth line (default 12 to 13); a bigger number makes the lips easier to see
   mole: null,                    // a small beauty mark: { x, y } offset from the middle of the face
 };
 const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); const r = clamp(((n >> 16) & 255) * f, 0, 255) | 0, g = clamp(((n >> 8) & 255) * f, 0, 255) | 0, b = clamp((n & 255) * f, 0, 255) | 0; return `rgb(${r},${g},${b})`; };
@@ -295,7 +296,7 @@ function drawMouth(x, p, o) {
   if (p.uL > 0) pts.t1.y -= p.uL * 28; if (p.uR > 0) pts.t2.y -= p.uR * 28;
   x.lineJoin = 'round'; x.lineCap = 'round';
   if (H < 5 && p.teethT < 0.05 && p.teethB < 0.05) { // closed mouth: one soft line
-    x.strokeStyle = o.mouthLine; x.lineWidth = 13; mouthPath(x, pts, false); x.stroke();
+    x.strokeStyle = o.mouthLine; x.lineWidth = o.lipW || 13; mouthPath(x, pts, false); x.stroke();
     if (p.chin > 0.05) chinMark(x, mcx, my + 62, p, o);
     return;
   }
@@ -315,7 +316,7 @@ function drawMouth(x, p, o) {
   x.restore();
   // tongue sticking out below the lip
   if (p.tongue > 1.05) { const ext = (p.tongue - 1) * 95; x.fillStyle = '#f26a84'; x.beginPath(); x.roundRect(mcx - 40 + 6, bot - 14, 80, ext + 18, [0, 0, 40, 40]); x.fill(); x.strokeStyle = o.mouthLine; x.lineWidth = 9; x.stroke(); x.strokeStyle = 'rgba(160,40,70,0.6)'; x.lineWidth = 6; x.beginPath(); x.moveTo(mcx + 6, bot); x.lineTo(mcx + 6, bot + ext * 0.7); x.stroke(); }
-  x.strokeStyle = o.mouthLine; x.lineWidth = 12; mouthPath(x, pts, true); x.stroke();
+  x.strokeStyle = o.mouthLine; x.lineWidth = o.lipW || 12; mouthPath(x, pts, true); x.stroke();
   if (p.chin > 0.05) chinMark(x, mcx, bot + 52, p, o);
 }
 function chinMark(x, cx, y, p, o) { x.strokeStyle = shade(o.skin, 0.8); x.lineWidth = 8; x.lineCap = 'round'; const k = p.chin; x.beginPath(); x.moveTo(cx - 44 * k, y + 2); x.quadraticCurveTo(cx, y - 24 * k, cx + 44 * k, y + 2); x.stroke(); }
