@@ -10,7 +10,10 @@ Parse it, then follow **`menu/BRIEF.md`**: BEFORE building, make sure you know t
 Owner: Dalia (modern pink paper). Reply to her in **simple English**. She likes "just do it".
 
 ## Character styles. Keep them separate.
-There are 3 looks: the robots/people (piece 1), the podcast format (piece 2), and **EMOTIONAL ROBOTS** (piece 3, below). Dalia picks the look by name. If she says "emotional robots" (or "emotional robot style", "expressive characters"), read `menu/cast/emotional_robots.md` and use `characters/expressive/`. Otherwise use the default robots/people.
+There are 4 looks (the 4th is the Quran role play style below): the robots/people (piece 1), the podcast format (piece 2), and **EMOTIONAL ROBOTS** (piece 3, below). Dalia picks the look by name. If she says "emotional robots" (or "emotional robot style", "expressive characters"), read `menu/cast/emotional_robots.md` and use `characters/expressive/`. Otherwise use the default robots/people.
+
+## 4. Quran lessons, role play style (new)
+Folder `formats/quran_lessons/` (read its `README.md`). Flat faceless hijabi girls, role play + explanation + the ayah on a phone. Use it ONLY when she asks for a Quran or Islamic lesson, or says "the role play style". Strict rules for religious content are in that README (only ayat you are sure of, exact text, no recitation voice, no prophets drawn). Example: `videos/quran_stop_gossip/` (the current formula).
 
 ## Two separate pieces. Keep them separate.
 1. **The animation style = the characters.** Folder `characters/`. Read `characters/STYLE.md`.
