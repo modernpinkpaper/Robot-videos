@@ -50,6 +50,9 @@ const VOWELS = 'aeiou';
 // ---------- sentence + turn bubble
 const senG = el('g'); const senR = el('rect', { x: 28, y: 606, width: 520, height: 84, rx: 40, fill: '#fff', stroke: '#d8c8f5', 'stroke-width': 5 }, senG); const senT = el('text', { x: 288, y: 662, 'text-anchor': 'middle', 'font-size': 36, fill: '#5b4a8a' }, senG);
 const turnG = el('g'); el('rect', { x: -170, y: -42, width: 340, height: 84, rx: 42, fill: '#ffc93c', stroke: '#e6a800', 'stroke-width': 5 }, turnG); const turnT = el('text', { x: 0, y: 14, 'text-anchor': 'middle', 'font-size': 40, fill: '#6b4a00' }, turnG); const turnBar = el('rect', { x: -140, y: 28, height: 8, rx: 4, fill: '#6b4a00', opacity: .5 }, turnG);
+const streakG = el('g'); el('rect', { x: -62, y: -24, width: 124, height: 48, rx: 24, fill: '#ff8a3d' }, streakG); const streakT = el('text', { x: 0, y: 12, 'text-anchor': 'middle', 'font-size': 30, fill: '#fff' }, streakG);
+const clipD = el('clipPath', { id: 'cardclip' }, defs); el('rect', { x: -144, y: -94, width: 288, height: 188, rx: 36 }, clipD);
+const ringG = el('g', { 'clip-path': 'url(#cardclip)' }, cardG); const rings = [0, 1, 2].map(() => el('circle', { cx: 0, cy: 0, fill: 'none', 'stroke-width': 8 }, ringG));
 // ---------- stars
 const starG = el('g'); const stars = []; for (let i = 0; i < 22; i++) stars.push(el('text', { 'text-anchor': 'middle', 'font-size': 36, class: 'emo' }, starG, ['⭐', '✨', '🌟'][i % 3]));
 // ---------- MICA (2D)
@@ -68,16 +71,17 @@ const smile = el('path', { d: 'M-18,34 Q0,50 18,34', fill: 'none', stroke: '#ff9
 const sparks = el('text', { x: 100, y: -70, 'font-size': 40, class: 'emo', opacity: 0 }, R, '✨');
 // ---------- state
 function stateAt(t) {
-  const st = { banner: null, steps: 0, word: null, sen: null, turn: null, cheer: -9, cheerSmall: 0, wave: null, reveal: -9, hidden: false };
+  const st = { banner: null, steps: 0, word: null, sen: null, turn: null, cheer: -9, cheerSmall: 0, wave: null, reveal: -9, hidden: false, trainAt: null, reveals: 0, trainReveals: 0 };
   for (const e of EV) { if (e.t > t) break;
     switch (e.type) {
       case 'banner': st.banner = e; break; case 'steps': st.steps = e.n; break; case 'wave': st.wave = e; break;
-      case 'hide': st.hidden = true; break;
+      case 'hide': st.hidden = true; break; case 'trainstart': st.trainAt = e.t; st.trainReveals = 0; break;
+      case 'part': if (st.word) st.word.part = e; break;
       case 'scatter': st.word = { w: e.w, pic: e.pic, t: e.t, snap: [], dot: [], hl: [], blend: null, exit: null, ph: TL.words[e.w] }; st.sen = null; st.turn = null; st.reveal = -9; st.steps = 0; st.hidden = false; break;
       case 'snap': if (st.word) st.word.snap[e.i] = e.t; break;
       case 'sound': if (st.word) { st.word.dot[e.i] = e.t; st.word.hl.push(e); } break;
       case 'blend': if (st.word) st.word.blend = e; break;
-      case 'reveal': st.reveal = e.t; break; case 'cheer': st.cheer = e.t; st.cheerSmall = e.small || 0; break;
+      case 'reveal': st.reveal = e.t; if (st.trainAt !== null) st.trainReveals++; break; case 'cheer': st.cheer = e.t; st.cheerSmall = e.small || 0; break;
       case 'sentence': st.sen = e; break; case 'turn': st.turn = e; break;
       case 'exit': if (st.word) st.word.exit = e.t; break;
     } }
@@ -105,6 +109,7 @@ function renderFrame(t) {
     if (sn !== undefined) { const p = clamp((t - sn) / .45), e = easeOut(p); x = lerp(L.x, X0 + i * TW, e); y = lerp(L.y, CY, e); r = lerp(L.r, 0, e); lift = Math.sin(Math.PI * p) * -34; if (t > sn + .45) { const b = t - sn - .45; y += Math.sin(clamp(b / .3) * Math.PI) * -6 * Math.exp(-b * 5); } }
     // glow while its sound is spoken
     const h = w.hl.find(e => e.i === i && t >= e.t && t < e.t + (e.d || .6) + .12); if (h) { sc *= 1 + .1 * Math.sin(clamp((t - h.t) / .25) * Math.PI) + .06; }
+    if (w.part && t >= w.part.t && t < w.part.t + (w.part.d || 1) && i < w.part.n) { sc *= 1.05 + .03 * Math.sin(t * 14); lift += -8; }
     if (blending) { const c = q * 4 - (i + .5); lift += -14 * Math.max(0, 1 - Math.abs(c) / .9); }
     if (st.reveal > -1 && t > st.reveal && t < st.reveal + .8) lift += Math.sin(clamp((t - st.reveal - i * .06) / .35) * Math.PI) * -26;
     const ex = exitP; y += ex * 220; const op = 1 - ex;
@@ -119,17 +124,22 @@ function renderFrame(t) {
   cardG.setAttribute('transform', `translate(288,${190 + exitP * -240}) scale(${cardOn || (show && exitP < 1) ? Math.max(0, pr) : 0})`);
   if (w) { const rv = st.reveal >= w.t && t >= st.reveal; const f = rv ? clamp((t - st.reveal) / .5) : 0; cardG.setAttribute('transform', `translate(288,${190 + exitP * -240}) scale(${Math.max(0, pr) * (rv ? Math.abs(Math.cos(f * Math.PI / 2 * (f < 1 ? 1 : 0)) ) * 0 + (f < .5 ? 1 - f * 2 : (f - .5) * 2) * 0 + 1 : 1)},${Math.max(0, pr)})`);
     const flip = rv ? Math.abs(Math.cos(Math.min(f, 1) * Math.PI)) : 1, showFace = rv && f >= .5; cardG.firstChild.setAttribute('transform', `scale(1,1)`);
-    const sx = rv && f < 1 ? Math.abs(Math.cos(f * Math.PI)) : 1; cardG.setAttribute('transform', `translate(288,190) scale(${show ? Math.max(0, pr) * sx : 0},${show ? Math.max(0, pr) : 0})`); cardG.setAttribute('opacity', 1 - exitP);
-    cardQ.setAttribute('opacity', showFace ? 0 : 1); cardQ.setAttribute('y', 40 + Math.sin(t * 4) * 5);
-    const hasPic = !!w.pic, isLamp = w.pic === 'lamp'; cardPic.textContent = hasPic && !isLamp ? w.pic : ''; cardPic.setAttribute('opacity', showFace && hasPic ? 1 : 0); cardWord.textContent = w.w; cardWord.setAttribute('opacity', showFace && hasPic ? 1 : 0); cardBig.textContent = w.w; cardBig.setAttribute('opacity', showFace && !hasPic ? 1 : 0); lampG.setAttribute('opacity', showFace && isLamp ? 1 : 0); }
+    const sx = rv && f < 1 ? Math.abs(Math.cos(f * Math.PI)) : 1; cardG.setAttribute('transform', `translate(288,190) scale(${show ? Math.max(0, pr) * sx : 0},${show ? Math.max(0, pr) : 0})`); cardG.setAttribute('opacity', 1 - exitP); { const wob = st.turn && t >= st.turn.t && t < st.turn.t + st.turn.d && /Read|Sound/.test(st.turn.label) && !(st.reveal >= w.t && t >= st.reveal) ? Math.sin(t * 22) * 3 : 0; cardG.setAttribute('transform', cardG.getAttribute('transform') + ` rotate(${wob})`); }
+    const hlNow = w.hl.find(e => t >= e.t && t < e.t + (e.d || .6) + .1), partNow = w.part && t >= w.part.t && t < w.part.t + (w.part.d || 1) + .1 && !showFace;
+    const big = hlNow ? w.w[hlNow.i] : (partNow ? w.w.slice(0, w.part.n) : null), vow = hlNow ? VOWELS.includes(w.w[hlNow.i]) : (partNow ? VOWELS.includes(w.w[w.part.n - 1]) : false);
+    cardQ.setAttribute('opacity', showFace || big ? 0 : 1);
+    ringG.setAttribute('opacity', big ? 1 : 0); const t0r = hlNow ? hlNow.t : (partNow ? w.part.t : 0); rings.forEach((c, k) => { const u = ((t - t0r) * 1.6 + k / 3) % 1; c.setAttribute('r', 30 + u * 120); c.setAttribute('opacity', (1 - u) * .8); c.setAttribute('stroke', vow ? '#ff9fc4' : '#9cc8ff'); });
+    if (big) { cardBig.textContent = big; cardBig.setAttribute('font-size', big.length === 1 ? 150 : (big.length === 2 ? 110 : 84)); cardBig.setAttribute('y', big.length === 1 ? 52 : 36); cardBig.setAttribute('fill', vow ? '#ff4f93' : '#3a86d9'); cardBig.setAttribute('opacity', 1); cardPic.setAttribute('opacity', 0); cardWord.setAttribute('opacity', 0); lampG.setAttribute('opacity', 0); } cardQ.setAttribute('y', 40 + Math.sin(t * 4) * 5);
+    const hasPic = !!w.pic, isLamp = w.pic === 'lamp'; cardPic.textContent = hasPic && !isLamp ? w.pic : ''; cardPic.setAttribute('opacity', showFace && hasPic ? 1 : 0); cardWord.textContent = w.w; cardWord.setAttribute('opacity', showFace && hasPic ? 1 : 0); if (!big) { cardBig.textContent = w.w; cardBig.setAttribute('font-size', 100); cardBig.setAttribute('y', 38); cardBig.setAttribute('fill', '#6a4fb3'); cardBig.setAttribute('opacity', showFace && !hasPic ? 1 : 0); lampG.setAttribute('opacity', showFace && isLamp ? 1 : 0); } }
   // sentence and turn
   if (st.sen && show && !(w.exit && t > w.exit)) { const p = easeBack((t - st.sen.t) / .4); senG.setAttribute('transform', `translate(288,648) scale(${Math.max(0, p)}) translate(-288,-648)`); senT.textContent = ''; const words = st.sen.text.split(' '); while (senT.firstChild) senT.removeChild(senT.firstChild); words.forEach((wd, i) => { const ts = el('tspan', { fill: wd.replace(/[.,!]/g, '').toLowerCase() === st.sen.hi ? '#ff4f93' : '#5b4a8a' }, senT, wd + (i < words.length - 1 ? ' ' : '')); }); } else senG.setAttribute('transform', 'translate(288,648) scale(0) translate(-288,-648)');
   if (st.turn && t >= st.turn.t && t < st.turn.t + st.turn.d && show) { const p = easeBack((t - st.turn.t) / .3), u = (t - st.turn.t) / st.turn.d; turnG.setAttribute('transform', `translate(288,${680}) scale(${Math.max(0, p) * (1 + .03 * Math.sin(t * 9))})`); turnT.textContent = st.turn.label; turnBar.setAttribute('width', 280 * (1 - u)); } else turnG.setAttribute('transform', 'translate(288,680) scale(0)');
+  if (st.trainAt !== null && st.trainReveals > 0 && t < TL.total - 12) { const since = t - (EV.filter(e => e.type === 'reveal' && e.t <= t).pop() || { t: 0 }).t; streakG.setAttribute('transform', `translate(488,128) scale(${1 + .25 * Math.max(0, 1 - since * 4)})`); streakT.textContent = '🔥 ' + st.trainReveals; } else streakG.setAttribute('transform', 'translate(488,128) scale(0)');
   // stars
   const cs = st.cheerSmall ? .5 : 1; stars.forEach((s, i) => { const u = (t - st.cheer) / 1.3; if (u < 0 || u > 1) { s.setAttribute('opacity', 0); return; } const a = i / stars.length * Math.PI * 2 + rnd(i) * .6, d = (80 + rnd(i + 9) * 170) * easeOut(u) * cs; s.setAttribute('x', 288 + Math.cos(a) * d); s.setAttribute('y', 400 + Math.sin(a) * d * .9 + u * u * 80); s.setAttribute('opacity', 1 - u * u); s.setAttribute('font-size', (st.cheerSmall ? 26 : 36) * (1 - u * .3)); });
   // ---- MICA
   let env = 0; for (const L of LN) { if (t >= L.t0 && t < L.t1) { env = L.env[Math.min(L.env.length - 1, Math.floor((t - L.t0) * 48))] || 0; break; } }
-  const speaking = LN.some(L => t >= L.t0 && t < L.t1 + .05); const bob = Math.sin(t * 2.2) * 4 + (speaking ? Math.abs(Math.sin(t * 7)) * -2 : 0);
+  const speaking = LN.some(L => t >= L.t0 && t < L.t1 + .05); const beatP = (t * 112 / 60) % 1, bob = -Math.pow(1 - beatP, 2) * 9 + (speaking ? Math.abs(Math.sin(t * 7)) * -2 : 0);
   const waving = st.wave && t >= st.wave.t && t < st.wave.t + st.wave.d; const happy = t - st.cheer < 1.5 && t >= st.cheer || (st.reveal > -1 && t - st.reveal < 1.1 && t >= st.reveal) || waving; const waiting = st.turn && t >= st.turn.t && t < st.turn.t + st.turn.d;
   const tilt = waiting ? Math.sin(t * 2.4) * 3.5 : (speaking ? Math.sin(t * 1.6) * 1.5 : 0);
   R.setAttribute('transform', `translate(288,${858 + bob}) rotate(${tilt})`); rFloor.setAttribute('opacity', .1);
@@ -140,7 +150,7 @@ function renderFrame(t) {
   armL.setAttribute('transform', `translate(-72,136) rotate(${waving ? 150 + Math.sin(t * 9) * 18 : 18 + Math.sin(t * 2) * 3})`); armR.setAttribute('transform', `translate(72,136) rotate(${-18 - Math.sin(t * 2 + 1) * 3})`);
   sparks.setAttribute('opacity', happy ? .5 + .5 * Math.sin(t * 12) : 0);
   // keep decor still but gently drifting
-  decoG.setAttribute('transform', `translate(0,${Math.sin(t * .5) * 6})`);
+  decoG.setAttribute('transform', `translate(288,300) scale(${1 + .03 * Math.pow(1 - (t * 112 / 60) % 1, 2)}) translate(-288,-300)`);
 }
 window.renderFrame = renderFrame;
 (async () => { TL = await (await fetch('work/timeline.json')).json(); EV = TL.events; LN = TL.lines; await document.fonts.load('700 90px Andika'); await document.fonts.load('40px "Noto Color Emoji"'); renderFrame(0); window.ready = true; })();
