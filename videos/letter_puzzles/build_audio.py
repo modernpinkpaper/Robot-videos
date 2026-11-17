@@ -39,10 +39,9 @@ def sound(ph):
     if ph in STOPS: a = fade(a[:int(0.2 * SR)], 0.003, 0.04)               # a quick pop, never "puh"
     else: a = fade(stretch(a, 0.62)[:int(0.8 * SR)], 0.03, 0.08)           # a steady sound you can hold
     return level(a, 0.10)
-def blend(word):
-    ph = VOICE.phonemize(word)[0]
-    a = up(np.asarray(VOICE.phoneme_ids_to_audio(ph_ids(ph), SynthesisConfig(length_scale=1.8)), dtype=np.float32))
-    return level(fade(trim(a)), 0.11)
+def blend(word):  # the word said slowly and stretched (text path, length 1.6: clearest in speech-recognition checks)
+    ch = [c.audio_float_array for c in VOICE.synthesize(word + '.', SynthesisConfig(length_scale=1.6))]
+    return level(fade(trim(up(np.concatenate(ch)))), 0.11)
 def letters(word):
     ph = [p for p in VOICE.phonemize(word)[0] if p not in 'ˈˌː']; assert len(ph) == len(word), (word, ph); return ph
 # ---------------- timeline
